@@ -1,0 +1,24 @@
+# Scratch — untracked by design. Never a source of truth.
+# (REPOSITORY_STRUCTURE.md §2, §4)
+scratch/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Local Claude Code overrides — shared config (.claude/settings.json) IS tracked
+.claude/settings.local.json
+
+# Secrets — no toolchain exists yet; this is a standing floor, not a prediction
+.env
+.env.*
+!.env.example
+*.pem
+*.key

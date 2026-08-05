@@ -1,6 +1,6 @@
 # PROJECT_STATE.md — Live Project Memory
 
-**Last updated:** 2026-07-15
+**Last updated:** 2026-08-05
 **Updated by:** Founding CTO
 **Update cadence:** every session, before ending.
 
@@ -29,7 +29,7 @@ Establishing the engineering operating system. No product, architecture, or code
 | CryptoPanic Reverse Engineering — Part III: Post Detail + `[PATTERN]` layer | ✅ Approved | Same file, Part III. Adds asset-class abstraction lens. |
 | Foundation documents (7) | ✅ Complete | This file and its six siblings. Awaiting founder review. |
 
-**⚠ Correction to prior framing.** The CryptoPanic work is **one document with three parts** (`cryptopanic-product-reverse-engineering-v1.0.md`, 2,736 lines, currently at v1.2), not two separate documents. There are **no other research documents**. Total repository content prior to Phase 0: **2 files, 3,233 lines.**
+**⚠ Correction to prior framing.** The CryptoPanic work is **one document with three parts** (`cryptopanic-product-reverse-engineering.md`, 2,736 lines, currently at v1.2), not two separate documents. There are **no other research documents**. Total repository content prior to Phase 0: **2 files, 3,233 lines.**
 
 ---
 
@@ -49,8 +49,8 @@ Ordered by dependency. Nothing below the gate may start.
 | # | Item | Depends on |
 | --- | --- | --- |
 | 1 | Resolve OQ-2…OQ-5 *(OQ-1 ✅ D-009)* | Founder decision |
-| 2 | Initialise git | Nothing — can start now |
-| 3 | Foundation v1.1 | Review approved (`docs/foundation-v1.0-review.md`) |
+| ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
+| 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
 | 4 | Product definition | OQ-2…OQ-5 |
 | 4 | PRD | Product definition |
 | 5 | Architecture | Approved PRD |
@@ -93,11 +93,11 @@ D-009 superseded or corrected three claims in `phase-01-product-research.md`. Th
 
 **Non-blocking but needed soon:** OQ-6 (feed procurement budget), OQ-7 (vernacular scope), OQ-8 (SEBI counsel — required *before* any AI-layer implementation), OQ-9 (Part IV scope), OQ-10 (vote weighting). Full text in `docs/research/phase-01-product-research.md` §13.
 
-### 🟠 B-2 — Repository is not under version control.
+### ✅ B-2 — **CLOSED 2026-08-05.** Repository is under version control.
 
-`git rev-parse` confirms: **not a git repo.** GUARDRAILS §1 ("never rewrite approved documents") and the correction protocol are both unenforceable without history. 3,233 lines of approved research currently have no backup and no audit trail.
+`git init` on `main`; Foundation v1.0 committed as-found as the baseline; M-1/M-2 executed on top. GUARDRAILS §1.1/§1.2 are now enforceable — a rewrite of approved research is detectable by `git diff`. See [DECISION_LOG](DECISION_LOG.md) D-010.
 
-**Next action:** `git init`, commit the current state as the approved baseline. Requires no decision. **Recommend doing this first.**
+**Residual — not closed by this change:** no remote is configured, so there is still **no off-machine backup**. `git init` bought auditability, not durability; the sole copy remains on one Windows machine. Adding a remote needs a founder decision (which host, and private vs. public). Tracked here as state, deliberately **not** numbered as an OQ — Research §13 owns that sequence and is immutable, so a new OQ-11 cannot be minted outside it (GUARDRAILS §1.3). It belongs in the living risk register the review's H-6 calls for.
 
 ### 🟠 B-3 — Authenticated CryptoPanic study blocked on artefact capture.
 
@@ -117,7 +117,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 **Single next action:** Founder resolves **OQ-2** (B-1). Brief prepared: `docs/q2.md`.
 
-**Parallel, no decision required:** initialise git (B-2).
+**Parallel, no decision required:** ~~initialise git (B-2)~~ ✅ done. Next unblocked item is `.claude/` infrastructure (review roadmap step 2) — now meaningful, because `docs/research/` exists as a real path a `PreToolUse` hook can defend.
 
 Everything else waits.
 
@@ -163,3 +163,4 @@ OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope 
 | 2026-07-15 | Foundation documents created (7). Repo audit found: 2 files, no git. | Phase 0 complete, pending review |
 | 2026-07-15 | CTO review of Foundation v1.0 (`docs/foundation-v1.0-review.md`). Verdict **B — improve to v1.1**. 3 critical findings: foundation duplicates facts against its own §1.3; Session Protocol costs ~12k tokens/session; no `.claude/` infrastructure. | v1.1 roadmap defined |
 | 2026-07-15 | **OQ-1 resolved → D-009.** Live reverse-chron stream as default IA; tie-breaking by product promise, not segment; dedup demoted from moat to enabling capability. Research (`docs/q1.md`) corrected two Phase 1 claims and surfaced a third. | B-1 1/5 done; B-4 opened |
+| 2026-08-05 | Repository audit after a 3-week gap. **git initialised**, Foundation v1.0 committed as-found as baseline, M-1/M-2 executed, stale paths and the `-v1.0` filename corrected → **D-010**. No product work; gate unchanged. | **B-2 closed.** B-1, B-3, B-4 unchanged |

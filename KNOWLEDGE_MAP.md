@@ -25,7 +25,7 @@
 | Document | Purpose | Owner | Depends on | Consumers | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `phase-01-product-research.md` (497 ln) | Market, regulatory, strategic analysis | Founder + CTO | External sources (31 cited) | Product, PRD, Architecture, DB, Security, Roadmap | **Why we are building this, for whom, and what we must not do** | High (cited) / Medium (inferences) | ✅ Approved |
-| `cryptopanic-product-reverse-engineering-v1.0.md` (2,736 ln, **v1.2**) | Reference-product study | CTO | Public CryptoPanic artefacts | Product, PRD, Architecture, Frontend, UX | **How a product of this shape actually behaves** | High (`[VERIFIED]`) / Medium (`[INFERRED]`) / Low (`[ASSUMPTION]`) | ◐ Parts I–III approved; Part IV+ pending |
+| `cryptopanic-product-reverse-engineering.md` (2,736 ln, **v1.2**) | Reference-product study | CTO | Public CryptoPanic artefacts | Product, PRD, Architecture, Frontend, UX | **How a product of this shape actually behaves** | High (`[VERIFIED]`) / Medium (`[INFERRED]`) / Low (`[ASSUMPTION]`) | ◐ Parts I–III approved; Part IV+ pending |
 
 **⚠ Register accuracy note.** The project brief referred to "CryptoPanic Homepage Reverse Engineering" and "CryptoPanic Currency Page Reverse Engineering" as separate documents, plus "additional research documents." **On disk there are exactly two files.** The CryptoPanic work is one document with three parts. No additional research documents exist. This register reflects disk, not the brief.
 

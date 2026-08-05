@@ -117,7 +117,7 @@
 | **Reason** | `git rev-parse` confirms the repository is not under version control. GUARDRAILS §1.1 ("never rewrite approved documents") and §1.2 (correction protocol) are **unenforceable without history** — there is no way to detect a rewrite or reconstruct a prior version. 3,233 lines of approved research have no backup and no audit trail. A foundation whose first rule cannot be enforced is decorative. |
 | **Alternatives** | (a) `git init` immediately — **not taken**: the founder scoped this task to seven documents and set an explicit stop condition. Initialising a repository is a state change outside that scope. (b) Ignore it — rejected: it silently invalidates two guardrails. |
 | **Consequences** | Blocker recorded, not resolved. Awaiting founder go-ahead. |
-| **Status** | Proposed |
+| **Status** | **Superseded by D-010** — founder authorised 2026-08-05; git initialised. |
 
 ---
 
@@ -175,6 +175,49 @@ The live-stream default is a product-identity decision, not a concession to scal
 - **Per-user read state has schema implications** (unread marker). Bears on OQ-4.
 - **Segment tie-breaking is by principle, not cohort.** If the principle fails to break a tie, OQ-1 reopens.
 - **OQ-3 is affected.** A live-stream default has a different mobile story than a digest default would.
+
+**Status** — Active
+
+---
+
+## D-010 — Initialise version control; execute M-1/M-2 *(supersedes D-008, closes B-2)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-08-05 |
+| **Category** | Process |
+| **Decided by** | Founder (authorised the action D-008 recommended) |
+
+**Decision**
+
+1. `git init` on `main`; `.gitignore` added; the repository committed **exactly as found** as the Foundation v1.0 baseline (13 files, 5,345 lines).
+2. `REPOSITORY_STRUCTURE.md` §3 moves **M-1** and **M-2** executed immediately after the baseline commit, as that document sequenced them.
+3. Stale references corrected in the same change. `docs/foundation-v1.0-review.md` deliberately **not** updated.
+
+**Reason**
+
+D-008 declined to act only because initialising a repository was outside the seven-document task scope — not because the case was weak. The founder has now authorised it, so the reasoning in D-008 applies unchanged: without history, GUARDRAILS §1.1 (never rewrite approved documents) and §1.2 (correct by erratum) are undetectable-by-construction. A foundation whose first rule cannot be enforced is decorative.
+
+The moves followed rather than preceded the baseline commit deliberately. The baseline records the repository *as it actually was* — including its defects — so the review's measurements in `docs/foundation-v1.0-review.md` §0 remain reproducible against a real commit rather than against a state that no longer exists anywhere.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Rewrite the links to point at `docs/` instead of moving the files | Contradicts REPOSITORY_STRUCTURE §2/§4, which make `docs/research/` the immutable layer. Path separation is what lets a `PreToolUse` hook enforce §1.1 mechanically (review R-3). Editing ~8 references to preserve a layout we had already rejected is the wrong direction. |
+| Move first, commit once | Loses the as-found baseline. The review's evidence base would then cite a state with no commit behind it. |
+| Also update `foundation-v1.0-review.md` to current paths | Rejected. Its §0 is a dated measurement and its §3.1 finding is the evidence prompting this change. Same reasoning as §1.2: preserve the record, do not launder it. |
+| Create the eight gated directories now | Rejected. Git cannot track empty directories, and the review (§3.7) called the pre-created tree premature. Create each when its gate opens. |
+
+**Consequences**
+
+- **B-2 closed.** GUARDRAILS §1.1/§1.2 are now enforceable; violations are detectable via `git diff`.
+- **Every `docs/research/…` link in the foundation now resolves.** The entry point no longer costs a session a failed tool call (review §3.1).
+- **Unblocks review roadmap step 2** (`.claude/` hooks) — a `PreToolUse` hook denying writes to `docs/research/**` is now meaningful, because that path exists and holds exactly the immutable set.
+- **Roadmap step 6 is now partially done.** M-1/M-2 executed; the RE-study *split* (H-1) is not.
+- **Filename-version drift removed.** `-v1.0` dropped per REPOSITORY_STRUCTURE §5; the version lives in the document header and in git.
+- Foundation v1.1 remains otherwise unstarted: steps 3, 4, 5, 7, 8, 9, 10 open.
+- **Does not touch the critical path.** OQ-2…OQ-5 remain the only thing blocking product work.
 
 **Status** — Active
 

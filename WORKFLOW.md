@@ -51,7 +51,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | --- | --- |
 | **Inputs** | Approved research; **resolved OQ-1…OQ-5** |
 | **Outputs** | `docs/product/` — target user, jobs-to-be-done, scope, non-goals, success metrics |
-| **Entry** | 🔴 **OQ-1…OQ-5 resolved.** Not negotiable — see PROJECT_STATE B-1 |
+| **Entry** | ✅ **OQ-1…OQ-5 resolved** (met 2026-10-02 — D-009, D-011, D-013, D-014, D-015). Not negotiable — see PROJECT_STATE B-1 |
 | **Exit** | Target user named; scope and **non-goals** explicit; success metrics defined and measurable |
 | **Reviewer** | Founder + CTO |
 | **DoD** | Universal + every scope item traces to a research finding + **non-goals list exists** |

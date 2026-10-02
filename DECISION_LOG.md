@@ -381,6 +381,48 @@ D-011's directional voting is defensible because it is user speech, labelled as 
 
 ---
 
+## D-015 — Consumer only; no B2B API on the roadmap *(resolves OQ-5; closes B-1)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Strategy |
+| **Decided by** | Founder |
+| **Brief** | [`docs/q5.md`](docs/q5.md) — Option D |
+
+**Decision**
+
+1. StockPanic is a **consumer product only**. No partner/B2B API and no B2B sales on the roadmap.
+2. The §4 partner-feed rule in the brief is moot and not adopted.
+3. Not a permanent ban: reopening B2B requires a new decision superseding this one.
+
+**Reason**
+
+Founder direction: maximum focus on the consumer stream. Consistent with D-009's rejection of a second motion for one founder. Since D-011, every B2B path runs through unresolved questions: SEBI intermediary association, exchange and publisher redistribution rights, and an occupied lane (stockinsights.ai). Dropping B2B removes all three from the critical path and makes D-011's legal exposure a purely consumer question.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| A — sell at MVP launch | Sells into unresolved legal and rights questions. |
+| B — premium add-on ~90 days post-launch | Gates undefined; still a second motion. |
+| C — API-first now, sell after gates *(CTO recommendation)* | Founder chose focus over keeping the option open. |
+| E — separate B2B entity | Two entities for one founder; premature. |
+
+**Consequences**
+
+- **B-1 closed: all of OQ-1…OQ-5 are resolved.** WORKFLOW §2 (Product) entry criteria are met. The Product Definition phase may begin.
+- **Retail carries the whole business.** Research §11 and R10 treated B2B as the margin engine against Pulse's ₹0 anchor; that mitigation is gone. Pricing and conversion become the central business risk for the PRD.
+- **Redistribution rights drop out of scope.** OQ-6 procurement concerns a display feed only.
+- **OQ-8 counsel scope narrows** to consumer voting (§4.13) and the AI layer (§3.5); the association question is no longer needed.
+- **Architecture is unconstrained on API shape.** An internal API-first design remains a reasonable engineering choice, decided at Architecture, not mandated here.
+- **stockinsights.ai is no longer a direct competitor** in a lane we occupy; it remains a reference for filings + AI.
+- **Research erratum E-7** recorded against `phase-01-product-research.md` §3.3, §11, §12 R10 mitigation and §13 OQ-5 recommendation (superseded by founder decision). Not applied.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -391,7 +433,7 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | ~~OQ-2~~ | Product | ~~Quality voting instead of directional?~~ | — | ✅ **Resolved — see D-011** (directional, CryptoPanic parity) |
 | ~~OQ-3~~ | Product | ~~Desktop-only, or + separate mobile surface?~~ | — | ✅ **Resolved — see D-013** (desktop-only; mobile deferred) |
 | ~~OQ-4~~ | Architecture · Legal | ~~Tone-on-articles-only, enforced in schema?~~ | — | ✅ **Resolved — see D-014** (no AI tone at MVP; article tone after counsel) |
-| **OQ-5** | Strategy | Promote B2B API into core roadmap? | Yes — **at risk under D-011** (§2.2 of `docs/q2.md`) | 🔴 Blocking |
+| ~~OQ-5~~ | Strategy | ~~Promote B2B API into core roadmap?~~ | — | ✅ **Resolved — see D-015** (consumer only; no B2B) |
 | **OQ-6** | Process | Budget for authorised exchange feeds (~₹3L/yr)? | Authorised | 🟠 Soon |
 | **OQ-7** | Product | Vernacular sources in MVP? | Open | 🟠 Soon |
 | **OQ-8** | Legal | Retain SEBI counsel — who, when? | Before AI-layer implementation **and before MVP launch** (D-011) | 🟠 Soon — gates GUARDRAILS §3.5 and launch |

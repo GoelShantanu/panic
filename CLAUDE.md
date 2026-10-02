@@ -22,7 +22,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 **Phase 0 — Foundation.** Establishing the engineering operating system before any product, architecture, or code work.
 
-**Gate:** No PRD, architecture, schema, or code may be produced until the open strategic questions (OQ-1…OQ-5) are resolved. See [PROJECT_STATE.md](PROJECT_STATE.md) → Blockers.
+**Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ---
 
@@ -63,8 +63,8 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 
 In order. Do not skip.
 
-1. **Unblock OQ-1…OQ-5** — five strategic decisions that gate all product work. Owner: Founder. See [PROJECT_STATE.md](PROJECT_STATE.md).
-2. **Initialise version control** — the repo is not under git. Rule "never rewrite approved documents" is unenforceable without history.
+1. **Product Definition** — OQ-1…OQ-5 resolved; WORKFLOW §2 is next. See [PROJECT_STATE.md](PROJECT_STATE.md).
+2. **Retain SEBI counsel (OQ-8)** — launch-blocking under GUARDRAILS §4.13.
 3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ---

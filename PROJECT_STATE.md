@@ -15,7 +15,7 @@
 
 Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No PRD, architecture, or code work has begun.
 
-**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.1 awaiting founder + CTO approval and answers to PD-1…PD-7. Exit criteria: WORKFLOW §2.
+**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.2 — PD-1…PD-7 resolved (D-016); awaiting founder + CTO approval. Exit criteria: WORKFLOW §2.
 
 ---
 
@@ -51,7 +51,7 @@ Ordered by dependency. Nothing below the gate may start.
 | ~~1~~ | ~~Resolve OQ-1…OQ-5~~ | ✅ **Done 2026-10-02** — D-009, D-011, D-013, D-014, D-015 |
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
-| 4 | Product definition | ◐ **Draft v0.1** — awaiting approval + PD-1…PD-7 |
+| 4 | Product definition | ◐ **Draft v0.2** — PD-1…PD-7 resolved (D-016); awaiting approval |
 | 4 | PRD | Product definition |
 | 5 | Architecture | Approved PRD |
 | 6 | Database schema | Approved architecture |
@@ -95,7 +95,7 @@ D-009, D-011, D-013, D-014 and D-015 superseded or corrected seven claims in `ph
 
 **Next action:** apply during Foundation v1.1 (roadmap step 6 already touches these files). Not blocking.
 
-**Non-blocking but needed soon:** OQ-6 (feed procurement budget), OQ-7 (vernacular scope), OQ-8 (SEBI counsel — required *before* any AI-layer implementation), OQ-9 (Part IV scope), OQ-10 (vote weighting). Full text in `docs/research/phase-01-product-research.md` §13.
+**Non-blocking but needed soon:** OQ-6 (feed procurement budget), ~~OQ-7~~ (✅ D-016, English first), OQ-8 (SEBI counsel — required *before* any AI-layer implementation), OQ-9 (Part IV scope), OQ-10 (vote weighting). Full text in `docs/research/phase-01-product-research.md` §13.
 
 ### ✅ B-2 — **CLOSED 2026-08-05.** Repository is under version control.
 
@@ -119,7 +119,9 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder reviews `docs/product/product-definition.md` v0.1 and answers **PD-1…PD-7** (§7). PD-1 (monetisation) matters most: with no B2B, retail pricing is the business.
+**Single next action:** Founder approves `docs/product/product-definition.md` v0.2 (or requests changes). Approval exits WORKFLOW §2 and opens the PRD phase.
+
+**Open from D-016:** comments at launch are a second user-generated surface on listed stocks. Decide whether GUARDRAILS gets a comments rule equivalent to §4.13 (counsel opinion before going live). CTO lean: yes.
 
 **Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion. Scope narrowed by D-015 to consumer voting + AI layer.
 
@@ -147,7 +149,7 @@ None — B-1 closed.
 
 ### Strategic — non-blocking (founder)
 
-OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope · OQ-10 vote weighting.
+OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · OQ-8 counsel · OQ-9 Part IV scope · OQ-10 vote weighting.
 
 ### Foundation — this phase (CTO)
 
@@ -177,3 +179,4 @@ OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope 
 | 2026-10-02 | OQ-5 brief prepared (`docs/q5.md`). Recommends Option C: API-first now, sell only after counsel (association risk from D-011), redistribution rights and traction; separate entity held as fallback. Flags unresearched B2B redistribution rights. | No state change; awaiting founder |
 | 2026-10-02 | **OQ-5 resolved → D-015**: consumer only, no B2B API. **B-1 closed** — all OQ-1…OQ-5 resolved; Product Definition entry criteria met. Erratum E-7 recorded. | **B-1 closed**; B-4 now 7 errata |
 | 2026-10-02 | **Product Definition started.** Draft v0.1 written (`docs/product/product-definition.md`): 2 usage modes, 9 jobs, 15 MVP scope items, 11 non-goals, promise-mapped metrics, 7 open founder choices (PD-1…PD-7). | Phase 2 in progress |
+| 2026-10-02 | **PD-1…PD-7 resolved → D-016** (freemium; comments at launch; polls never; no price at MVP; broker import if feasible; English first, resolving OQ-7; read-only phone view). Product Definition → v0.2. | Product Definition awaiting approval |

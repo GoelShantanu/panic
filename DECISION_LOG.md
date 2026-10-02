@@ -423,6 +423,45 @@ Founder direction: maximum focus on the consumer stream. Consistent with D-009's
 
 ---
 
+## D-016 — Product Definition choices PD-1…PD-7 *(also resolves OQ-7)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product · Strategy |
+| **Decided by** | Founder |
+| **Document** | [`docs/product/product-definition.md`](docs/product/product-definition.md) §7 |
+
+**Decision**
+
+| ID | Question | Decision | CTO lean |
+| --- | --- | --- | --- |
+| **PD-1** | Monetisation | **Freemium.** Feed, company pages, voting free; paid tier for extra alerts, longer history, advanced filters. Exact split is PRD work | Same |
+| **PD-2** | Comments | **Yes, at launch** | Not in MVP |
+| **PD-3** | Polls | **Never** — permanent non-goal, not a deferral | Not in MVP |
+| **PD-4** | Price on company pages | **No price at MVP** | Delayed price |
+| **PD-5** | Broker watchlist import | **Yes if feasible**; otherwise manual add + CSV upload. Feasibility checked in PRD | Same |
+| **PD-6** | Regional-language sources | **English first.** Resolves **OQ-7** | Same |
+| **PD-7** | Phone visitors | **Read-only feed + "best on desktop" notice** | Same |
+
+**Reason**
+
+Founder choices on the open items in Product Definition v0.1. Freemium keeps a revenue path while competing with free Pulse. No price keeps a trading-screen element away from bullish/bearish counts and avoids a price licence. Polls are ruled out permanently: a poll on a stock is a crowd buy/sell call outside the D-011 design. Comments ship at launch for CryptoPanic-style community depth `[RE §29.4]`.
+
+**Alternatives** — listed per question in `docs/product/product-definition.md` v0.1 §7 and the options presented in session.
+
+**Consequences**
+
+- **Comments add a second user-generated surface on listed securities.** `[INFERRED]` Free text can carry explicit buy/sell calls and target prices, which votes cannot. MVP scope gains moderation tooling (report, review queue, removal, eligibility gate, audit log, kill switch), and **comments are added to the OQ-8 counsel question**. GUARDRAILS §4.13 covers directional voting only; whether comments get an equivalent rule is open (see PROJECT_STATE).
+- **Freemium makes conversion a first-class metric.** Added to Product Definition §6.
+- **No price feed needed at MVP.** OQ-6 procurement narrows to the exchange announcements feed.
+- **OQ-7 resolved.** English-only sources simplify entity resolution and dedup at MVP.
+- **Broker import feasibility** becomes a PRD research item.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -435,7 +474,7 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | ~~OQ-4~~ | Architecture · Legal | ~~Tone-on-articles-only, enforced in schema?~~ | — | ✅ **Resolved — see D-014** (no AI tone at MVP; article tone after counsel) |
 | ~~OQ-5~~ | Strategy | ~~Promote B2B API into core roadmap?~~ | — | ✅ **Resolved — see D-015** (consumer only; no B2B) |
 | **OQ-6** | Process | Budget for authorised exchange feeds (~₹3L/yr)? | Authorised | 🟠 Soon |
-| **OQ-7** | Product | Vernacular sources in MVP? | Open | 🟠 Soon |
+| ~~OQ-7~~ | Product | ~~Vernacular sources in MVP?~~ | — | ✅ **Resolved — see D-016** (English first) |
 | **OQ-8** | Legal | Retain SEBI counsel — who, when? | Before AI-layer implementation **and before MVP launch** (D-011) | 🟠 Soon — gates GUARDRAILS §3.5 and launch |
 | **OQ-9** | Research | RE study Part IV scope | Proceed on public surface | 🟢 Low |
 | **OQ-10** | Architecture | Vote weighting: automatic or reviewed? | Open — bears on abuse surface | 🟢 Low |

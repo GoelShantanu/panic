@@ -67,11 +67,19 @@ Not research, not foundation. Historical context once their decision is recorded
 | `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` | Component designs for C4 and C5 | Architect/CTO | system overview, PRD-002, PRD-004, ADR-004/006, D-025 | Database, Backend | **How items, stories, tags and AI outputs are produced** | Medium (thresholds and volumes `[ASSUMPTION]`) | ✅ v1.0 approved — D-026 |
 | `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | ✅ Accepted — D-026 |
 
+### 1.2f Database — `docs/database/`
+
+| File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path | Architect | Architecture v1.0, PRD-001…007 | Backend | **Which rules the database guarantees** | Medium (unexecuted) | 🟡 v0.1 draft |
+| `partitioning.md` | Partitioned tables, retention, lifecycle | Architect | schema.md | Ops | **Retention by partition** | Medium (unexecuted) | 🟡 v0.1 draft |
+| `migrations/0001_initial.sql` | Initial DDL | Architect | schema.md | Backend | **The schema itself** | Unverified until run | 🟡 Not yet executed |
+| `tests/0001_constraints_test.sql` | Constraint tests against real Postgres | Architect | 0001 | CI | **Proof the constraints hold** | Unverified until run | 🟡 Not yet executed |
+
 ### 1.3 Gated — not yet created
 
 | Layer | Path | Gate |
 | --- | --- | --- |
-| Database | `docs/database/` | Architecture approved ✅ (D-026) — awaiting founder go-ahead |
 | API | `docs/api/` | Architecture approved |
 | QA | `docs/qa/` | PRD approved |
 | Security | `docs/security/` | Architecture approved *(counsel gate removed — D-018)* |

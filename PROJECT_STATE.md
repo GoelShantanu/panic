@@ -11,11 +11,20 @@
 
 ## Current Phase
 
-**Phase 4 — Architecture: ✅ complete** *(2026-10-02 — D-026)*. **Next: Phase 5 — Database**, on founder go-ahead.
+**Phase 5 — Database** *(opened 2026-10-02 on founder go-ahead)*
 
-Architecture v1.0 approved; ADR-001…006 accepted. Phase 0 foundation work continues in parallel. No code written.
+Architecture v1.0 approved (D-026). Output: `docs/database/` — schema, partitioning, migrations, constraint tests. No application code written.
 
-**Phase gate status:** 🟢 **Database entry criteria met** (WORKFLOW §5: architecture approved).
+**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §5 — domain constraints enforced structurally; indexes justified by named query patterns; partitioning stated; migration path exists; GUARDRAILS §4.1–4.3 enforced by constraints.
+
+### Database plan
+
+| Document | Status |
+| --- | --- |
+| `schema.md` — tables, constraint map, query patterns → indexes, roles, migration path | ◐ Draft v0.1 |
+| `partitioning.md` | ◐ Draft v0.1 |
+| `migrations/0001_initial.sql` | ◐ Written, reviewed by reading; **not yet executed** |
+| `tests/0001_constraints_test.sql` — ~60 tests against real Postgres | ◐ Written; **not yet executed** — needs Docker Desktop running |
 
 ### Architecture plan
 
@@ -75,7 +84,7 @@ Ordered by dependency. Nothing below the gate may start.
 | 4 | Product definition | ✅ **v1.0 approved** — D-019 |
 | 4 | PRD | ✅ **v1.0 approved** — D-023 |
 | 5 | Architecture | ✅ **v1.0 approved** — D-026 |
-| 6 | Database schema | ✅ Unblocked — founder go-ahead |
+| 6 | Database schema | ◐ **In progress** — see Database plan |
 | 7 | Backend / Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
 
 ---
@@ -141,7 +150,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder go-ahead to start **Database** (WORKFLOW §5): DDL, indexes, partitioning, migrations, with GUARDRAILS §4.1–4.3 enforced by constraints.
+**Single next action:** Founder starts Docker Desktop; CTO runs `0001_initial.sql` + constraint tests on a throwaway PostgreSQL 17 container, fixes failures, then Database sign-off.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -219,3 +228,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Component designs drafted**: ingestion, deduplication, entity resolution, AI layer. Pipeline order corrected in system overview (classify + resolve before clustering). | Phase 4: awaiting sign-off |
 | 2026-10-02 | **Architecture v1.0 approved → D-026.** Exit check passed (payment/email ADRs and feed vendor deferred); ADR-001…006 accepted; F3 corrected. | **Phase 4 complete**; Database unblocked |
 | 2026-10-02 | **Pushed to public GitHub remote → D-027** (`GoelShantanu/panic`, main at f25a996). B-2 residual closed. | Off-machine backup exists |
+| 2026-10-02 | **Database phase opened.** Migration 0001 (≈ 50 tables, tone-column event trigger, temporal exclusion constraints, append-only audit), ~60 constraint tests, schema.md and partitioning.md drafted. Not yet executed: Docker Desktop not running. | Phase 5 in progress |

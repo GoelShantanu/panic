@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | 0.2 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting founder review of open questions (§10). |
+| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10): defaults adopted, summary cap raised to 100 words. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S5 (company page), S6 (story detail), S7 (event types and AI summaries) |
 | **Depends on** | PRD-002 (items, stories, tags, instruments), PRD-005 (vote display), PRD-006 (comments), PRD-007 (history depth by tier) |
 | **Depended on by** | PRD-001 (event-type filter), PRD-003 (alert defaults per event type) |
@@ -110,7 +110,7 @@ The taxonomy is anchored to exchange filing categories where possible, so filing
 | AC | Criterion |
 | --- | --- |
 | AC-1 | Summaries are generated **for filings only** at MVP, from the exchange document (PDF or announcement text). Articles are not summarised: the product stores only RSS headlines and links (PRD-002 US-002.5 AC-8), so there is no permitted text to summarise. |
-| AC-2 | Summary length ≤ **80 words** `[ASSUMPTION]`, plain sentences, no bullet lists of advice, no headings. |
+| AC-2 | Summary length ≤ **100 words** (founder, OQ-004.5), plain sentences, no bullet lists of advice, no headings. |
 | AC-3 | The summary is labelled **"AI summary of the <exchange> filing"** with a link to the source document. |
 | AC-4 | Summaries are generated within **2 min p95** of the filing's ingestion `[ASSUMPTION]`. The story displays without a summary until it passes checks. |
 | AC-5 | A user can **report a summary** as inaccurate. Reports go to the operator queue (PRD-002 US-002.11). An operator can hide or regenerate a summary; actions are audit-logged. |
@@ -242,15 +242,17 @@ GET /v1/event-types
 
 ---
 
-## 10. Open Questions
+## 10. Resolved Questions
 
-| ID | Question | Default if unanswered |
+Resolved by the founder on 2026-10-02. Defaults adopted except OQ-004.5.
+
+| ID | Question | Resolution |
 | --- | --- | --- |
 | **OQ-004.1** | Show sector or industry on company pages? Needs a classification source. | **No** at MVP. |
 | **OQ-004.2** | Summaries for filings only? | **Yes.** Articles have no permitted text to summarise (§5.1 AC-1). |
 | **OQ-004.3** | Window for the company-page community opinion block | **7 days.** |
 | **OQ-004.4** | Let search engines index company and story pages? | **Yes** (AC-8). |
-| **OQ-004.5** | Summary length cap | **80 words.** |
+| **OQ-004.5** | Summary length cap | **100 words** (founder; default was 80). |
 | **OQ-004.6** | Is the event-type taxonomy (§1) and its alert defaults right? | **Adopt as listed**; revise after a month of real data. |
 
 ---

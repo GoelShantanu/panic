@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | 0.2 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting founder review of open questions (§9). |
+| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 — defaults adopted (§9). |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S4 (watchlist), S10 (alerts) |
 | **Depends on** | PRD-002 (stories, tags, τ), PRD-004 (event-type taxonomy and each type's alert default), PRD-007 (accounts, tier limits) |
 
@@ -256,9 +256,11 @@ GET /v1/alerts/history?cursor=<opaque>
 
 ---
 
-## 9. Open Questions
+## 9. Resolved Questions
 
-| ID | Question | Default if unanswered |
+All defaults adopted by the founder on 2026-10-02.
+
+| ID | Question | Resolution (default adopted) |
 | --- | --- | --- |
 | **OQ-003.1** | Broker import: which brokers, and is it feasible? `[ASSUMPTION]` Indian broker APIs typically need the user to authorise and may need a paid developer subscription per broker. | **CSV import at launch; broker import behind a flag.** A short feasibility check for the top 3 brokers by active clients happens during Architecture. |
 | **OQ-003.2** | Which event types alert by default? | Set in PRD-004. Starting rule: results, board-meeting outcomes, dividends and corporate actions, pledge changes, insider/SAST disclosures, credit-rating actions, M&A, auditor or key-management changes, regulatory actions → **on**; routine compliance filings → **off**. |

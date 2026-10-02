@@ -53,7 +53,8 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `prd-001-live-stream.md` | Stream, filters, unread, keyboard, source health, market session, phone view | CTO | Product Definition v1.0 | Architecture, QA | **Testable requirements for the stream** | Medium (targets `[ASSUMPTION]`) | 🟡 v0.2 draft |
 | `prd-002-filings-and-tagging.md` | Filings first, story clustering, ISIN tagging, corrections | CTO | Product Definition v1.0, Research §4.1–4.4 | PRD-001, 003, 004, 005; Architecture | **What an item, story and tag are, and how correct they must be** | Medium (targets `[ASSUMPTION]`; no labelled data) | 🟡 v0.2 draft (D-020) |
-| `prd-003-watchlist-and-alerts.md` | Watchlist building/import; alert rules, budget, digest, corrections | CTO | Product Definition v1.0, PRD-002, Research §4.6, §5.3 | PRD-004, 007; Architecture | **When a user is alerted, and when they are not** | Medium (targets `[ASSUMPTION]`; broker APIs unresearched) | 🟡 v0.1 draft |
+| `prd-003-watchlist-and-alerts.md` | Watchlist building/import; alert rules, budget, digest, corrections | CTO | Product Definition v1.0, PRD-002, Research §4.6, §5.3 | PRD-004, 007; Architecture | **When a user is alerted, and when they are not** | Medium (targets `[ASSUMPTION]`; broker APIs unresearched) | 🟡 v0.2 draft |
+| `prd-004-company-and-story-pages.md` | Event-type taxonomy, story page, company page, AI filing summaries | CTO | Product Definition v1.0, PRD-002, D-014, D-018 | PRD-001, 003; Architecture | **The event taxonomy and the AI-summary safeguards** | Medium (taxonomy untested; targets `[ASSUMPTION]`) | 🟡 v0.1 draft |
 
 ### 1.3 Gated — not yet created
 

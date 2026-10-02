@@ -77,7 +77,7 @@ Raised in Phase 1 §13. Each cascades into schema, IA, and roadmap. Producing a 
 
 **Question text is owned by `phase-01-product-research.md` §13.** This table tracks status only (GUARDRAILS §1.3). CTO recommendations live in the per-question briefs (`docs/qN.md`).
 
-**Next action:** Founder answers OQ-4 (brief to be prepared).
+**Next action:** Founder answers OQ-4. Brief prepared: `docs/q4.md` (recommends no AI tone at MVP; article tone revisited after counsel).
 
 ### 🟡 B-4 — Five errata pending against approved research. *(new, 2026-07-15)*
 
@@ -117,7 +117,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder resolves **OQ-4** (B-1). Brief not yet prepared.
+**Single next action:** Founder resolves **OQ-4** (B-1). Brief prepared: `docs/q4.md`.
 
 **Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion.
 
@@ -170,3 +170,4 @@ OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope 
 | 2026-08-05 | Repository audit after a 3-week gap. **git initialised**, Foundation v1.0 committed as-found as baseline, M-1/M-2 executed, stale paths and the `-v1.0` filename corrected → **D-010**. No product work; gate unchanged. | **B-2 closed.** B-1, B-3, B-4 unchanged |
 | 2026-10-02 | **OQ-2 resolved → D-011.** Founder chose Option A: directional voting at CryptoPanic parity (aggregated, may drive ranking), raw uncapped counts, live at MVP launch. Supersedes Option F. GUARDRAILS §4.3/§4.4 flagged as conflicting; rewrite drafted for approval. Erratum E-4 recorded. OQ-8 now launch-blocking. | B-1 2/5; B-4 now 4 errata |
 | 2026-10-02 | GUARDRAILS §4.3/§4.4 amendment approved and applied, new §4.13 counsel gate → **D-012**. **OQ-3 resolved → D-013**: desktop-only web for MVP, mobile deferred until traffic. Erratum E-5 recorded. | B-1 3/5; B-4 now 5 errata |
+| 2026-10-02 | OQ-4 brief prepared (`docs/q4.md`). Recommends Option E: no AI tone at MVP, event classification + neutral summaries; article tone revisited after counsel. Raises candidate erratum E-6 ("structurally unrepresentable" unachievable as specified). | No state change; awaiting founder |

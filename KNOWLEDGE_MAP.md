@@ -41,11 +41,16 @@ Not research, not foundation. Historical context once their decision is recorded
 | `q4.md` | OQ-4 decision brief | CTO | Research §6.2/E3, RE §4.4/§5.2, D-011/D-012 | D-014 | *Nothing* — decision lives in D-014. **Retained for erratum E-6 (§2.1) and the CryptoPanic AI-surface finding (§2.2).** | Medium (regulatory reading `[INFERRED]`) | ✅ Resolved → D-014 |
 | `q5.md` | OQ-5 decision brief | CTO | Research §3.3/§7.2/§11, `q1.md` §2 (E-3), D-009/D-011/D-014 | D-015 | *Nothing* — decision lives in D-015. **Retained for the B2B analysis if the question is reopened.** | Medium (sizing illustrative; legal `[INFERRED]`; rights `[ASSUMPTION]`) | ✅ Resolved → D-015 |
 
+### 1.2c Product — `docs/product/`
+
+| File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `product-definition.md` | Target user, jobs, MVP scope, non-goals, success metrics | Founder (drafted by CTO) | Research, RE, D-009, D-011…D-015, GUARDRAILS | PRD | **Who the product is for and what it will not do** | Medium (no user research; targets `[ASSUMPTION]`) | 🟡 v0.1 draft, awaiting approval |
+
 ### 1.3 Gated — not yet created
 
 | Layer | Path | Gate |
 | --- | --- | --- |
-| Product | `docs/product/` | OQ-1…OQ-5 resolved |
 | PRD | `docs/prd/` | Product approved |
 | Architecture | `docs/architecture/` | PRD approved |
 | Database | `docs/database/` | Architecture approved |

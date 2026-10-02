@@ -11,11 +11,11 @@
 
 ## Current Phase
 
-**Phase 0 — Foundation**
+**Phase 2 — Product Definition** *(started 2026-10-02 on founder go-ahead)*
 
-Establishing the engineering operating system. No product, architecture, or code work has begun.
+Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No PRD, architecture, or code work has begun.
 
-**Phase gate status:** 🟢 **Product Definition entry criteria met** (WORKFLOW §2) — B-1 closed 2026-10-02, D-015. The phase starts on founder go-ahead.
+**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.1 awaiting founder + CTO approval and answers to PD-1…PD-7. Exit criteria: WORKFLOW §2.
 
 ---
 
@@ -51,7 +51,7 @@ Ordered by dependency. Nothing below the gate may start.
 | ~~1~~ | ~~Resolve OQ-1…OQ-5~~ | ✅ **Done 2026-10-02** — D-009, D-011, D-013, D-014, D-015 |
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
-| 4 | Product definition | ✅ Unblocked — founder go-ahead |
+| 4 | Product definition | ◐ **Draft v0.1** — awaiting approval + PD-1…PD-7 |
 | 4 | PRD | Product definition |
 | 5 | Architecture | Approved PRD |
 | 6 | Database schema | Approved architecture |
@@ -119,7 +119,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder go-ahead to start **Product Definition** (WORKFLOW §2): target user, jobs-to-be-done, scope, **non-goals**, success metrics → `docs/product/`.
+**Single next action:** Founder reviews `docs/product/product-definition.md` v0.1 and answers **PD-1…PD-7** (§7). PD-1 (monetisation) matters most: with no B2B, retail pricing is the business.
 
 **Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion. Scope narrowed by D-015 to consumer voting + AI layer.
 
@@ -176,3 +176,4 @@ OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope 
 | 2026-10-02 | **OQ-4 resolved → D-014**: no AI tone at MVP; AI does event classification + neutral summaries; article tone revisited after counsel. Erratum E-6 recorded. | B-1 4/5; B-4 now 6 errata |
 | 2026-10-02 | OQ-5 brief prepared (`docs/q5.md`). Recommends Option C: API-first now, sell only after counsel (association risk from D-011), redistribution rights and traction; separate entity held as fallback. Flags unresearched B2B redistribution rights. | No state change; awaiting founder |
 | 2026-10-02 | **OQ-5 resolved → D-015**: consumer only, no B2B API. **B-1 closed** — all OQ-1…OQ-5 resolved; Product Definition entry criteria met. Erratum E-7 recorded. | **B-1 closed**; B-4 now 7 errata |
+| 2026-10-02 | **Product Definition started.** Draft v0.1 written (`docs/product/product-definition.md`): 2 usage modes, 9 jobs, 15 MVP scope items, 11 non-goals, promise-mapped metrics, 7 open founder choices (PD-1…PD-7). | Phase 2 in progress |

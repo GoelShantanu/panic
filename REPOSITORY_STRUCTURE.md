@@ -32,7 +32,9 @@ C:\backup_15th June 2026\StockPanic\
 **Total content:** 12 files, 5,345 lines. No code.
 **Under version control since 2026-08-05** (D-010). B-2 closed.
 
-**Gated directories are not created until their gate opens.** `docs/product/`, `docs/prd/`, `docs/architecture/`, `docs/database/`, `docs/api/`, `docs/qa/`, `docs/security/`, `docs/ops/`, and `src/` are defined in §2 but absent from disk by design — git cannot track an empty directory, and a pre-created empty tree is structure theatre (`docs/foundation-v1.0-review.md` §3.7).
+**Gated directories are not created until their gate opens.** `docs/prd/`, `docs/architecture/`, `docs/database/`, `docs/api/`, `docs/qa/`, `docs/security/`, `docs/ops/`, and `src/` are defined in §2 but absent from disk by design — git cannot track an empty directory, and a pre-created empty tree is structure theatre (`docs/foundation-v1.0-review.md` §3.7).
+
+**`docs/product/` created 2026-10-02** — gate opened by D-015 (OQ-1…OQ-5 resolved).
 
 **Unresolved:** `docs/` holds working documents (`foundation-v1.0-review.md`, `q1.md`, `q2.md`) that §2 defines no home for. Gap already recorded in KNOWLEDGE_MAP §1.2b.
 

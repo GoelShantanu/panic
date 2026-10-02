@@ -56,6 +56,8 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | Founder + CTO |
 | **DoD** | Universal + every scope item traces to a research finding + **non-goals list exists** |
 
+**Status:** ◐ Started 2026-10-02. Draft v0.1 awaiting approval.
+
 **Why the gate is hard:** OQ-1 changes the target user. OQ-2 changes the data model. OQ-3 changes the entire frontend. OQ-4 changes the schema. Answering them after this phase means redoing it.
 
 ---

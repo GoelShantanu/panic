@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 0 — Foundation.** Establishing the engineering operating system before any product, architecture, or code work.
+**Phase 2 — Product Definition** (started 2026-10-02). Draft: [`docs/product/product-definition.md`](docs/product/product-definition.md).
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 

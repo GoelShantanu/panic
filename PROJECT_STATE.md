@@ -23,7 +23,7 @@ Product Definition v1.0 approved. PRD work splits into numbered documents (below
 | --- | --- | --- |
 | `prd-001-live-stream.md` | S1 stream, S9 filters, S11 unread, S12 keyboard, S13 source health, S14 market session, S18 phone view | ◐ Draft v0.2 — format accepted; OQs resolved (defaults) |
 | `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging, story clustering | ◐ Draft v0.2 — OQs resolved (D-020) |
-| `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ☐ |
+| `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ◐ Draft v0.1 — 6 OQs awaiting founder |
 | `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ☐ |
 | `prd-005-voting.md` | S8 voting | ☐ |
 | `prd-006-comments.md` | S16 comments | ☐ |
@@ -132,7 +132,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO drafts PRD-003 (watchlist and alerts).
+**Single next action:** Founder answers PRD-003 open questions (§9); then CTO drafts PRD-004.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -197,3 +197,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Product Definition v1.0 approved → D-019.** PRD phase opened; 7-document PRD plan set; PRD-001 (live stream) drafted. | **Phase 3 — PRD** |
 | 2026-10-02 | PRD-001 defaults adopted (v0.2). **PRD-002 drafted** (filings, clustering, tagging, user corrections); OQ-002.1 = Research OQ-10. | Phase 3 in progress |
 | 2026-10-02 | **PRD-002 OQs resolved → D-020** (operator-reviewed corrections, resolving Research OQ-10; equities mainboard+SME; τ=0.95; RSS feeds as launch sources; founder staffs review queue). | Phase 3 in progress |
+| 2026-10-02 | **PRD-003 drafted** (watchlist: search, CSV import, flagged broker import; alerts: materiality rule, one-per-story, budget + digest, quiet hours, correction notices). | Phase 3 in progress |

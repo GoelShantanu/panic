@@ -629,6 +629,34 @@ Founder preference for voter privacy.
 
 ---
 
+## D-022 — Operators may remove spam and bot content *(extends D-017)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product |
+| **Decided by** | Founder |
+| **Document** | [`docs/prd/prd-006-comments.md`](docs/prd/prd-006-comments.md) §10 OQ-006.4 |
+
+**Decision**
+
+1. Operators may remove **commercial spam** (ads, referral or affiliate links, promotional copy unrelated to the story) and **automated or bulk posting** (bots, copy-paste floods across stories).
+2. **Opinions are never removed as spam**, including buy/sell calls, targets and predictions. D-017 otherwise stands.
+3. Spam removal is an operator action, never an automatic filter, audit-logged with reason.
+
+**Reason**
+
+Spam is not unlawful, so D-017's legal-minimum rule gave no way to remove it; without this, rate limits were the only defence.
+
+**Consequences**
+
+- PRD-006 gains a spam-removal criterion and a `spam` takedown reason; C-006.2 is amended to allow operator spam removal.
+- The line between "promotional spam" and "a user pushing a stock" needs judgement. Rule of thumb in PRD-006: content about the story is opinion; content advertising a product, service, channel or paid group is spam.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

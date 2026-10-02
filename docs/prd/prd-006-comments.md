@@ -2,12 +2,12 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | 0.2 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting founder review of open questions (§10). |
+| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10): defaults adopted; spam removal allowed ([D-022](../../DECISION_LOG.md)); public profile pages added. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S16 (comments); commenting eligibility in S15 |
-| **Decisions** | [D-016](../../DECISION_LOG.md) PD-2 (comments at launch) · [D-017](../../DECISION_LOG.md) (unrestricted; legal-minimum moderation only) · [D-018](../../DECISION_LOG.md) (no counsel) |
+| **Decisions** | [D-016](../../DECISION_LOG.md) PD-2 (comments at launch) · [D-017](../../DECISION_LOG.md) (unrestricted; legal-minimum moderation only) · [D-018](../../DECISION_LOG.md) (no counsel) · [D-022](../../DECISION_LOG.md) (operator spam removal) |
 | **Depends on** | PRD-002 (stories), PRD-004 (story page), PRD-005 (eligibility rules reused), PRD-007 (accounts, usernames, terms of use) |
 
 > Comments are **unrestricted** (D-017): users may post any opinion, including buy/sell calls and target prices. Moderation is limited to what the law requires of a host: user reports, a grievance officer, and takedown of unlawful content. Everything here that touches the law is an engineer's `[INFERRED]` reading of the IT Rules 2021, not legal advice; no counsel review is planned (D-018). Requirements use **MUST / SHOULD / MAY**. Numbers marked `[ASSUMPTION]` are starting targets.
@@ -65,7 +65,16 @@
 | AC-4 | The comment section carries a fixed note: "Comments are posted by users and are not reviewed by StockPanic." *(A backstop only; GUARDRAILS §4.7.)* |
 | AC-5 | Comment count appears on stream rows and story pages (PRD-001 §4.1 `comment_count`). Deleted and taken-down comments are not counted. |
 
-**§2.4 Not in MVP:** votes or reactions on comments, comment sorting by popularity, @-mentions with notifications, comment search, and user profile pages listing a user's comments (§10 OQ-006.5).
+**US-006.10** As a user, I can see what another user has said (§10 OQ-006.5).
+
+| AC | Criterion |
+| --- | --- |
+| AC-1 | Each username links to a public profile page `/u/{username}` showing username, join month, and the user's visible comments newest first, each linking to its story. |
+| AC-2 | Profiles never show votes, watchlists, alert settings or tier (D-021; PRD-003; PRD-007). |
+| AC-3 | Deleted and removed comments are not listed. A deleted account's profile returns `404`. |
+| AC-4 | Profile pages are readable without signing in and are **not** indexed by search engines (`noindex`) `[ASSUMPTION]`. |
+
+**§2.4 Not in MVP:** votes or reactions on comments, comment sorting by popularity, @-mentions with notifications, and comment search.
 
 ---
 
@@ -100,7 +109,7 @@
 
 | AC | Criterion |
 | --- | --- |
-| AC-1 | Every comment has a Report control. Signed-in users choose a reason: **defamation**, **impersonation**, **obscene or sexual content**, **threat or incitement to violence**, **hate speech**, **privacy violation / personal data**, **copyright**, **other unlawful content** (free text). |
+| AC-1 | Every comment has a Report control. Signed-in users choose a reason: **defamation**, **impersonation**, **obscene or sexual content**, **threat or incitement to violence**, **hate speech**, **privacy violation / personal data**, **copyright**, **spam or bot** (D-022), **other unlawful content** (free text). |
 | AC-2 | "I disagree" and "bad investment advice" are **not** report reasons (D-017). |
 | AC-3 | The reporter gets an acknowledgement with a reference number. |
 | AC-4 | Reports go to the grievance queue; repeated reports on one comment are grouped. |
@@ -118,12 +127,21 @@
 | AC-7 | An author can dispute a takedown once via the grievance form; the grievance officer decides and the decision is logged. |
 | AC-8 | Grievance and takedown actions are audit-logged (GUARDRAILS §4.8). |
 
+**US-006.11** As an operator, I remove spam without touching opinions (D-022).
+
+| AC | Criterion |
+| --- | --- |
+| AC-1 | An operator may remove a comment as **spam** when it advertises a product, service, channel, paid group or referral/affiliate link, or is part of automated or bulk posting. |
+| AC-2 | Content about the story — including buy/sell calls, targets and predictions — is **never** removed as spam. |
+| AC-3 | Spam removal shows "[removed: spam]", notifies the author, and is disputable like any takedown (US-006.8 AC-7). |
+| AC-4 | Operators may suspend commenting for accounts with upheld spam removals. |
+
 **US-006.9** As an operator, I deal with accounts that repeatedly post unlawful content.
 
 | AC | Criterion |
 | --- | --- |
 | AC-1 | An operator can suspend an account's commenting rights. Suspension is audit-logged with reason. |
-| AC-2 | Suspension is based only on upheld takedowns (§5), not on opinions expressed. |
+| AC-2 | Suspension is based only on upheld takedowns or spam removals (§5, US-006.11), not on opinions expressed. |
 
 ---
 
@@ -132,7 +150,7 @@
 | ID | Criterion | Source |
 | --- | --- | --- |
 | **C-006.1** | Comments never affect ranking, Trending, alerts, event types, summaries or vote counts. Test: adding comments to a fixture story changes only `comment_count`. | Product Definition S16; GUARDRAILS §4.4 |
-| **C-006.2** | No automated filter removes, hides or holds comments based on content, except a takedown performed by an operator under §5. Test: a comment containing "buy", "sell" or a price target is posted and visible. | D-017 |
+| **C-006.2** | No automated filter removes, hides or holds comments based on content. Removal happens only by operator action: a takedown under §5 or spam removal under US-006.11. Test: a comment containing "buy", "sell" or a price target is posted and visible. | D-017, D-022 |
 | **C-006.3** | The product never edits user comments. Takedown replaces the whole comment with a removal notice. | GUARDRAILS §4.5 (product doesn't speak in users' voice either) |
 | **C-006.4** | Comments appear in no email, push alert or digest. | PRD-003 C-003.1 |
 | **C-006.5** | Every create, edit, delete, report, takedown and suspension is in an append-only audit log. | GUARDRAILS §4.8 |
@@ -216,20 +234,22 @@ All require an operator role (`403` otherwise); `reason` is mandatory.
 | Story's only item removed by source | Comments stay. |
 | Author deletes account | Comments show "[deleted user]" as author; text stays visible unless the user also asks for content deletion under PRD-007. |
 | Comment contains a phone number or email address | Posted as written (no content filter). Removable on a privacy report (§5). |
-| Burst of identical comments from many new accounts | Not removed automatically (C-006.2). Rate limits and eligibility apply; an operator may suspend accounts only on upheld takedowns (US-006.9). See §10 OQ-006.4. |
+| Burst of identical comments from many new accounts | Not removed automatically (C-006.2). An operator removes them as bulk posting (US-006.11) and may suspend the accounts. |
 | Takedown order names a comment already deleted by its author | Recorded as complied; retention rules still apply. |
 
 ---
 
-## 10. Open Questions
+## 10. Resolved Questions
 
-| ID | Question | Default if unanswered |
+Resolved by the founder on 2026-10-02.
+
+| ID | Question | Resolution |
 | --- | --- | --- |
 | **OQ-006.1** | Email or push notifications for replies? | **No.** In-app only; pulling users back for replies is an engagement mechanic (GUARDRAILS §4.10). |
 | **OQ-006.2** | Allow links in comments? | **Yes**, `nofollow ugc`. |
 | **OQ-006.3** | Edit window | **10 minutes.** |
-| **OQ-006.4** | **Spam and bots.** D-017 allows only legal-minimum moderation, and commercial spam (ads, referral links, copy-paste floods) is not unlawful. May operators remove obvious spam and bot content? | **CTO lean: yes**, as a narrow exception: operators may remove commercial spam and automated posting, never opinions. Needs founder confirmation because it extends D-017. |
-| **OQ-006.5** | Public profile pages listing a user's comments? | **No** at MVP. |
+| **OQ-006.4** | May operators remove spam and bot content? | **Yes** — commercial spam and automated posting only, never opinions ([D-022](../../DECISION_LOG.md); US-006.11). |
+| **OQ-006.5** | Public profile pages listing a user's comments? | **Yes** (founder; default was no) — US-006.10. Comments only, never votes. |
 | **OQ-006.6** | Keep the fixed note "Comments are posted by users and are not reviewed by StockPanic"? | **Yes.** |
 
 ---
@@ -241,4 +261,4 @@ All require an operator role (`403` otherwise); `reason` is mandatory.
 | **No legal review** | IT Rules timelines and duties in §5 are `[INFERRED]` from the rules as published; not checked by counsel (D-018). |
 | **Unrestricted advice content** | Comments may carry explicit buy/sell calls and targets by founder decision (D-017). Risk recorded in D-017 and D-018. |
 | **Founder as grievance officer** | The 24 h and 36 h deadlines (§5) assume someone checks the queue daily, including weekends and holidays. |
-| **Spam exposure** | Unless OQ-006.4 is answered yes, rate limits and eligibility are the only defence against spam. |
+| **Spam judgement** | The spam/opinion line (US-006.11) relies on operator judgement; disputes go through the grievance process. |

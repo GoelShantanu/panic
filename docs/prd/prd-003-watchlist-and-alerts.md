@@ -104,7 +104,7 @@
 
 | AC | Criterion |
 | --- | --- |
-| AC-1 | **Daily budget**: default **10** individual alerts per day `[ASSUMPTION]`; the tier ceiling is set in PRD-007. The user can lower it. |
+| AC-1 | **Daily budget**: default **5 (Free) / 10 (Paid)** individual alerts per day; ceilings **5 (Free) / 30 (Paid)** — set in PRD-007 §2.1. The user can lower it. |
 | AC-2 | The settings page shows the budget and how many were used today. |
 | AC-3 | Alert-worthy stories beyond the budget go to the next **digest**. They are never dropped (C-003.4). |
 | AC-4 | **Quiet hours**: default **22:00–08:00 IST** `[ASSUMPTION]`, user-editable or off. Stories during quiet hours go to the morning digest. |

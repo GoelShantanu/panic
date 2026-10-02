@@ -27,7 +27,7 @@ Product Definition v1.0 approved. PRD work splits into numbered documents (below
 | `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ◐ Draft v0.2 — OQs resolved (defaults; summary cap 100 words) |
 | `prd-005-voting.md` | S8 voting | ◐ Draft v0.2 — OQs resolved (defaults; votes anonymous, D-021) |
 | `prd-006-comments.md` | S16 comments | ◐ Draft v0.2 — OQs resolved (spam removal D-022; profile pages added) |
-| `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ☐ |
+| `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ◐ Draft v0.1 — 7 OQs awaiting founder |
 
 ---
 
@@ -132,7 +132,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder answers PRD-006 open questions (§10; OQ-006.4 spam removal needs an explicit answer); then CTO drafts PRD-007, the last PRD.
+**Single next action:** Founder answers PRD-007 open questions (§11). Then CTO runs a cross-PRD consistency check and signs off all seven PRDs, exiting WORKFLOW §3.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -203,3 +203,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **PRD-005 resolved → D-021**: votes publicly anonymous (Product Definition S15 amended); other defaults adopted. | Phase 3 in progress |
 | 2026-10-02 | **PRD-006 drafted** (unrestricted comments, 3-level threads, author edit/delete, in-app reply notices only, comment kill switch, grievance officer + IT Rules takedown timelines). OQ-006.4 asks whether spam removal may extend D-017. | Phase 3 in progress |
 | 2026-10-02 | **PRD-006 resolved → D-022** (operators may remove spam/bot content, never opinions); public profile pages added (comments only). | Phase 3 in progress |
+| 2026-10-02 | **PRD-007 drafted** (email-code + Google sign-in, usernames, DPDP notice/consent/deletion/export, operator 2FA; free/paid entitlements, ₹299/₹2,999 with 14-day no-card trial, cancel-as-easy-as-subscribe). All seven PRDs now drafted. PRD-003 budget defaults pointed at PRD-007. | Phase 3: all PRDs drafted |

@@ -57,6 +57,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | `prd-004-company-and-story-pages.md` | Event-type taxonomy, story page, company page, AI filing summaries | CTO | Product Definition v1.0, PRD-002, D-014, D-018 | PRD-001, 003; Architecture | **The event taxonomy and the AI-summary safeguards** | Medium (taxonomy untested; targets `[ASSUMPTION]`) | 🟡 v0.2 draft |
 | `prd-005-voting.md` | Directional and quality votes, display, eligibility, abuse handling, kill switch | CTO | Product Definition v1.0, D-011, D-012, D-018, D-020, `q2.md` §F.3–F.4 | PRD-001, 004; Architecture | **The vote display object and view thresholds** | Medium (thresholds `[ASSUMPTION]`) | 🟡 v0.2 draft (D-021) |
 | `prd-006-comments.md` | Comments, reports, grievance handling, takedowns, kill switch | CTO | Product Definition v1.0, D-016, D-017, D-018, PRD-005 | Architecture | **How comments work and the legal-minimum moderation process** | Medium (IT Rules duties `[INFERRED]`, unreviewed) | 🟡 v0.2 draft (D-022) |
+| `prd-007-accounts-and-tiers.md` | Sign-up, usernames, privacy (DPDP), operator accounts, free/paid entitlements, pricing, billing | CTO | Product Definition v1.0, D-015, D-016, D-018, D-021 | PRD-001, 003, 004; Architecture | **The entitlements object and tier limits** | Medium (price and split untested; legal duties `[INFERRED]`) | 🟡 v0.1 draft |
 
 ### 1.3 Gated — not yet created
 

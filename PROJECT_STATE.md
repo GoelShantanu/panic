@@ -24,8 +24,9 @@ Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26.
 | B1 | Foundation: workspace, `core` domain package, `db` package with migration runner | ADR-002; schema 0001 | ✅ Done — typecheck clean; 29/29 tests (23 unit, 6 integration on PG 17); migrate CLI observed end-to-end |
 | B2 | Ingestion framework: adapter contract, RSS adapter, source health, circuit breaker, scheduler | ingestion.md; PRD-002 US-002.5 | ✅ Done — migration 0002; 68/68 tests (10 end-to-end ingestion on PG 17); `ingest` CLI observed end-to-end; staleness rule recorded as D-029 |
 | B3 | Pipeline: rule classification, rule-only entity resolution, clustering, story events | deduplication.md, entity-resolution.md; PRD-002 | ✅ Done — migration 0003; 98/98 tests (9 end-to-end pipeline); ingest → pipeline observed end-to-end; D-030. Classification rules live in code for now (operator-editable table: with operator console) |
-| B4 | Read API + live channel: stream, story, company, instruments; SSE broadcast | PRD-001, PRD-004; ADR-005 | ☐ Next |
-| B5 | Accounts, sessions, entitlements | PRD-007 | ☐ |
+| B4 | Read API + live channel: stream, story, company, instruments; SSE broadcast | PRD-001, PRD-004; ADR-005 | ✅ Done — 126/126 tests (18 API, 7 live); feed → ingest → pipeline → API + SSE observed end-to-end as separate processes. API handlers are framework-independent (served by a small Node server; Next.js pages arrive with Frontend). Anonymous viewer until B5 |
+| B4b | Trending view (activity vs per-company baseline in the same session type) | PRD-001 US-001.3 AC-7, OQ-001.3 | ☐ — **blocked on trading-calendar source**; returns 404 until then |
+| B5 | Accounts, sessions, entitlements | PRD-007 | ☐ Next |
 | B6 | Watchlist and alerts | PRD-003 | ☐ |
 | B7 | Votes and comments, grievances | PRD-005, PRD-006 | ☐ |
 | B8 | AI layer: classification, summaries, safeguards, spend cap | ai-layer.md; D-025 | ☐ — needs Haiku feature check |
@@ -166,7 +167,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO builds B4 (read API + SSE live channel). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, trading-calendar source, first curated aliases.
+**Single next action:** CTO builds B5 (accounts, sessions, entitlements). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, **trading-calendar source** (now blocks B4b Trending), first curated aliases, email-provider preference (B6).
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -250,3 +251,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Backend opened; B1 done.** npm-workspace monorepo (Node 26 native TS, TypeScript 7, Vitest 5, pg 8). `core`: ISIN with check digit, ULID public IDs, taxonomy, entitlements, PRD-005 vote display. `db`: forward-only migration runner with advisory lock, self-transaction check, rollback on failure. 29/29 tests incl. integration on PG 17; seeds proven identical to core constants. | Phase 6 in progress |
 | 2026-10-02 | **B2 done.** Migration 0002 (job queue, fetch state, adapter config, tracking_since). Ingestion: adapter contract, conditional GET, RSS 2.0/Atom parser, English-only filter, canonical URLs, per-item transaction with job, health (stale/down) with live event + audit, circuit breaker, scheduler, `ingest` CLI. 68/68 tests; CLI observed end-to-end. **D-029**: staleness = failed fetches (PRD-002 AC-9 amended). | Phase 6 in progress |
 | 2026-10-03 | **B3 done.** Migration 0003 (rule tag method, item_analysis). Pipeline: job queue with SKIP LOCKED, retries with backoff, stuck-lock release; rule classification (20 types, exclusive routine rules); rule-only tagging (exact names, curated aliases, ambiguity → unresolved, common-word casing); clustering S2–S6 with MinHash LSH candidates; story recompute; live events. 98/98 tests; ingest → pipeline observed end-to-end (6 syndicated items → 3 stories). **D-030** (clustering score fix). Found: concurrent migrations on one server race on role creation — tests serialised, limitation recorded in schema.md. | Phase 6 in progress |
+| 2026-10-03 | **B4 done.** Read API: stream (views, filters, keyset cursor, free-tier depth and 402 rules, session, stale tier-1 sources), story detail (301 for merged), company + community opinion, company timeline, instrument as-of, search, event types. Live channel: SSE broadcast via LISTEN/NOTIFY, heartbeat, Last-Event-ID replay, resync. 126/126 tests; end-to-end SSE delivery observed (705 ms incl. process start-up). Trending split to B4b (needs trading calendar). | Phase 6 in progress |

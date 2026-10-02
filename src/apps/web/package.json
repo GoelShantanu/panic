@@ -1,0 +1,10 @@
+{
+  "name": "@stockpanic/web",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@stockpanic/core": "*",
+    "@stockpanic/db": "*",
+    "pg": "^8.23.1"
+  }
+}

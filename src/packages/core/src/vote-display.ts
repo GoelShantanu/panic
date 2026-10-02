@@ -8,6 +8,8 @@ export type CanVoteReason = 'not_signed_in' | 'email_unverified' | 'account_too_
 
 export const COMMUNITY_OPINION_LABEL = 'Community opinion';
 export const COUNTS_THRESHOLD = 3;
+// PRD-005 §4: votes needed for a story to enter the Important / Bullish / Bearish views.
+export const VIEW_VOTE_THRESHOLD = 3;
 
 export interface VoteCounts {
   readonly bullish: number;

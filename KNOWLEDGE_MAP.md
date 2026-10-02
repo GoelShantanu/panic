@@ -82,6 +82,8 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- |
 | `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, text features, classification, tagging, clustering | CTO | PRD-002, 004, 005, 007; ADR-001; D-030 | ✅ B1–B3 — 62 unit tests |
 | `src/packages/db` | Migration runner; ingestion data access (grows with each milestone) | CTO | `docs/database/` | ✅ B1–B2 |
+| `src/apps/web` | Read API handlers (PRD-001, 002, 003, 004) + Node server | CTO | read side of `db`; PRD contracts | ✅ B4 — 18 integration tests |
+| `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |
 | `src/apps/worker` | Ingestion (RSS, health, scheduler) and pipeline (classify, tag, cluster, recompute); `ingest` and `pipeline` CLIs | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030 | ✅ B2–B3 — 37 tests incl. 19 end-to-end |
 
 ### 1.3 Gated — not yet created

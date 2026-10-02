@@ -37,7 +37,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `foundation-v1.0-review.md` | CTO architecture review of Foundation v1.0 | CTO | All foundation docs | Foundation v1.1 work | **The v1.1 roadmap and its priority matrix** | High (measured) / Medium (scaling extrapolations) | ✅ Verdict B, awaiting approval |
 | `q1.md` | OQ-1 decision brief | CTO | Research §3, §13 | D-009 | *Nothing* — decision lives in DECISION_LOG D-009. **Retained for the sourced funnel in §3 and the errata in §2.** | High (sourced) | ✅ Resolved → D-009 |
-| `q2.md` | OQ-2 decision brief | CTO | Research §6, RE §4.4/§29.2 | *pending* | *Nothing* — pending decision | — | 🔴 Awaiting founder |
+| `q2.md` | OQ-2 decision brief | CTO | Research §6, RE §4.4/§29.2 | 2026-10-02 | D-011; GUARDRAILS §4.3/§4.4 rewrite (§III.3) | — | ✅ Resolved — D-011 |
 
 ### 1.3 Gated — not yet created
 

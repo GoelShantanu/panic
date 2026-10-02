@@ -50,8 +50,8 @@ Derived from approved research. These are **product-defining**, not preferences.
 | --- | --- | --- |
 | 4.1 | **ISIN is the canonical instrument key.** Ticker is a display projection, never a primary key. | `[Research E1]` |
 | 4.2 | **All instrument mappings are temporally versioned.** Corporate actions rewrite symbol→entity relations; a flat table cannot express that. | `[Research §4.2]` |
-| 4.3 | **Tone attaches to `articles`, never to `tickers`.** No schema path may aggregate sentiment to a security. Make it **structurally unrepresentable**. | `[Research §6.2, E3]` |
-| 4.4 | **No cross-security ranking by any sentiment-derived metric.** "Most discussed" (volume fact) is permitted; "most bullish" (directional claim) is not. | `[Research §6.3]` |
+| 4.3 | ⚠ **Conflicts with [D-011](DECISION_LOG.md); rewrite pending founder approval — draft in `docs/q2.md` §III.3.** **Tone attaches to `articles`, never to `tickers`.** No schema path may aggregate sentiment to a security. Make it **structurally unrepresentable**. | `[Research §6.2, E3]` |
+| 4.4 | ⚠ **Conflicts with [D-011](DECISION_LOG.md); rewrite pending — see `docs/q2.md` §III.3.** **No cross-security ranking by any sentiment-derived metric.** "Most discussed" (volume fact) is permitted; "most bullish" (directional claim) is not. | `[Research §6.3]` |
 | 4.5 | **Every claim is attributed** to a source with URL and timestamp. The product never speaks in its own voice about a security. | `[Research §6.3]` |
 | 4.6 | **Show unresolved rather than guess.** Below the entity-resolution confidence threshold, display unresolved. A mis-tagged instrument is a trust-extinction event. | `[Research R2]` |
 | 4.7 | **A disclaimer does not cure a recommendation.** Disclaimers are a backstop, never a primary control. The control is not saying it. | `[Research §6.3]` |

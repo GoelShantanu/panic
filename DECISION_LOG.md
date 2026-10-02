@@ -223,6 +223,52 @@ The moves followed rather than preceded the baseline commit deliberately. The ba
 
 ---
 
+## D-011 — Directional voting at CryptoPanic parity *(resolves OQ-2)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product · Legal |
+| **Decided by** | Founder |
+| **Brief** | [`docs/q2.md`](docs/q2.md) — Part I (A–E), Part II (F), Part III (this decision) |
+
+**Decision**
+
+1. **Option A.** Users vote Bullish / Bearish / Neutral, and directional votes behave as they do in the reference product `[RE §4.4]`: aggregated, displayed, and **permitted to drive** ranking, feed filters, and per-instrument views.
+2. **Display: raw counts, uncapped.** §F.6 resolved toward raw counts, with the consensus-at-scale effect accepted consciously.
+3. **Live at MVP launch.** Not dark-shipped.
+4. Non-directional axes (salience, moderation, personal utility — brief §1) remain in scope as the brief stated. The exact vote set is a PRD decision.
+
+**Reason**
+
+Founder direction: match the reference product. Directional voting is the proven engagement mechanic, it is familiar to users arriving from comparable products, and it yields a sentiment layer with standalone value (brief Part I, Option A advantages).
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| B — quality voting only | Founder judged it insufficiently engaging. |
+| C — private, non-aggregated directional | Not selected. |
+| D — quality now, directional after counsel | Not selected; founder wants directional at launch. |
+| E — quality + magnitude signal | Rejected as sufficient on its own (2026-07-15). |
+| F — Community Opinion, ranking-isolated | Founder-approved 2026-07-15 as product vision; **superseded by this entry.** Its ranking isolation and partner-API exclusion are removed. |
+| Capped (`20+`) or bucketed display | Founder chose raw counts. |
+| Build in MVP, ship dark | Founder chose live at launch. |
+
+**Consequences**
+
+- **GUARDRAILS §4.3 and §4.4 conflict with this decision.** Rewrite drafted for founder approval in `docs/q2.md` §III.3; banners placed at the rule sites. Until approved, the rules stand as written and the conflict is open.
+- **OQ-4 is substantially pre-empted.** Directional votes aggregated per instrument are tone→ticker by construction. OQ-4 narrows to *AI* tone handling only.
+- **OQ-5 is at risk.** `[INFERRED]` Under the 29 Jan 2025 SEBI circular, registered intermediaries may be unable to partner with or license from a platform hosting aggregated crowd directional calls (brief §2.2). OQ-5 must be answered knowing this.
+- **OQ-8 counsel becomes launch-blocking.** The feature is live at launch, so a counsel opinion on directional voting is needed before MVP ships, not only before the AI layer. Counsel question: brief §F.7, broadened to the aggregated, ranking-active design.
+- **Manipulation surface opens** (brief §2.3). Attributable voting, an eligibility gate, an immutable vote audit log, and a server-side kill switch (brief §F.3.5–F.3.8) are carried forward as mitigations; they reduce brigading cost, not regulatory exposure.
+- **Research erratum E-4 recorded** against `phase-01-product-research.md` §13 (OQ-2 recommendation) and §6.3 (ranking rule) — superseded by founder decision. Recorded in PROJECT_STATE B-4, not applied.
+- `[ASSUMPTION]` The CTO is not a lawyer. The regulatory reading behind these consequences is inferred, not advised; counsel may find it stricter or looser.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -230,13 +276,13 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | ID | Category | Question | Recommendation | Status |
 | --- | --- | --- | --- | --- |
 | ~~OQ-1~~ | Strategy | ~~Re-base beachhead to swing/positional investors?~~ | — | ✅ **Resolved — see D-009** |
-| **OQ-2** | Product | Quality voting instead of directional? | Yes | 🔴 Blocking |
+| ~~OQ-2~~ | Product | ~~Quality voting instead of directional?~~ | — | ✅ **Resolved — see D-011** (directional, CryptoPanic parity) |
 | **OQ-3** | Product | Desktop-only, or + separate mobile surface? | Desktop-first; mobile as distinct surface | 🔴 Blocking |
-| **OQ-4** | Architecture · Legal | Tone-on-articles-only, enforced in schema? | Yes | 🔴 Blocking |
-| **OQ-5** | Strategy | Promote B2B API into core roadmap? | Yes | 🔴 Blocking |
+| **OQ-4** | Architecture · Legal | Tone-on-articles-only, enforced in schema? | Yes — **narrowed by D-011 to AI tone only** | 🔴 Blocking |
+| **OQ-5** | Strategy | Promote B2B API into core roadmap? | Yes — **at risk under D-011** (§2.2 of `docs/q2.md`) | 🔴 Blocking |
 | **OQ-6** | Process | Budget for authorised exchange feeds (~₹3L/yr)? | Authorised | 🟠 Soon |
 | **OQ-7** | Product | Vernacular sources in MVP? | Open | 🟠 Soon |
-| **OQ-8** | Legal | Retain SEBI counsel — who, when? | Before AI-layer implementation | 🟠 Soon — gates GUARDRAILS §3.5 |
+| **OQ-8** | Legal | Retain SEBI counsel — who, when? | Before AI-layer implementation **and before MVP launch** (D-011) | 🟠 Soon — gates GUARDRAILS §3.5 and launch |
 | **OQ-9** | Research | RE study Part IV scope | Proceed on public surface | 🟢 Low |
 | **OQ-10** | Architecture | Vote weighting: automatic or reviewed? | Open — bears on abuse surface | 🟢 Low |
 | **F-1** | Process | Approved research immutable, changes via errata? | Yes — already precedented | 🟢 Low |

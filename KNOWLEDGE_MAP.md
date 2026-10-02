@@ -64,7 +64,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `system-overview.md` | Components, data flow, PRD→component map, market-session assumptions, failure modes, scaling | Architect/CTO | PRD-001…007, D-024 | Database, Backend, Ops | **What runs where, and how it fails** | Medium (volumes `[ASSUMPTION]`) | 🟡 v0.1 draft |
-| `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | 🟡 Proposed (ADR-006 awaits founder) |
+| `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | 🟡 Proposed (ADR-006 tier decided, D-025) |
 
 ### 1.3 Gated — not yet created
 

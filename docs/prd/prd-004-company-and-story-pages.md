@@ -109,7 +109,7 @@ The taxonomy is anchored to exchange filing categories where possible, so filing
 
 | AC | Criterion |
 | --- | --- |
-| AC-1 | Summaries are generated **for filings only** at MVP, from the exchange document (PDF or announcement text). Articles are not summarised: the product stores only RSS headlines and links (PRD-002 US-002.5 AC-8), so there is no permitted text to summarise. |
+| AC-1 | *(Amended by [D-025](../../DECISION_LOG.md): summaries are generated only for filings whose event type has alert default **On**, §1.)* Summaries are generated **for filings only** at MVP, from the exchange document (PDF or announcement text). Articles are not summarised: the product stores only RSS headlines and links (PRD-002 US-002.5 AC-8), so there is no permitted text to summarise. |
 | AC-2 | Summary length ≤ **100 words** (founder, OQ-004.5), plain sentences, no bullet lists of advice, no headings. |
 | AC-3 | The summary is labelled **"AI summary of the <exchange> filing"** with a link to the source document. |
 | AC-4 | Summaries are generated within **2 min p95** of the filing's ingestion `[ASSUMPTION]`. The story displays without a summary until it passes checks. |

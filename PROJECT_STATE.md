@@ -23,8 +23,8 @@ PRD-001…007 v1.0 approved (D-023). Founder constraints: built with AI coding a
 | --- | --- |
 | `system-overview.md` — components, data flow, requirement map, market-session assumptions, failure modes, scaling | ◐ Draft v0.1 |
 | `adr/adr-001…005` — ISIN key, TypeScript stack, two VPSs, Postgres-only, SSE broadcast | ◐ Proposed |
-| `adr/adr-006-claude-ai-layer.md` | ◐ Proposed — **model tier awaits founder** |
-| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` (component designs) | ☐ After ADR-006 decision |
+| `adr/adr-006-claude-ai-layer.md` | ◐ Proposed — tier decided: Haiku 4.5, ₹50k cap (D-025) |
+| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` (component designs) | ☐ Next |
 
 ### PRD plan
 
@@ -141,7 +141,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder decides ADR-006: AI model tier (A–D), monthly AI spend ceiling, and whether summaries are limited to alert-worthy filing types (§3.4).
+**Single next action:** CTO drafts component designs (`ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md`), then Architecture sign-off.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -215,3 +215,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **PRD-007 drafted** (email-code + Google sign-in, usernames, DPDP notice/consent/deletion/export, operator 2FA; free/paid entitlements, ₹299/₹2,999 with 14-day no-card trial, cancel-as-easy-as-subscribe). All seven PRDs now drafted. PRD-003 budget defaults pointed at PRD-007. | Phase 3: all PRDs drafted |
 | 2026-10-02 | PRD-007 resolved (free history 30 days). **Cross-PRD consistency check: 9 findings fixed. All seven PRDs approved v1.0 → D-023.** Product Definition §6.3 metric amended. | **Phase 3 complete**; Architecture unblocked |
 | 2026-10-02 | **Architecture opened → D-024.** Founder constraints recorded. System overview v0.1 + ADR-001…006 proposed. ADR-006 shows AI cost ≈ ₹16k–1.8 lakh/month by tier; founder decision pending. | Phase 4 in progress |
+| 2026-10-02 | **ADR-006 resolved → D-025**: Claude Haiku 4.5 for all AI tasks, ₹50k/month cap, summaries for alert-worthy filings only (PRD-004 amended). Quality risk and revisit triggers recorded. | Phase 4 in progress |

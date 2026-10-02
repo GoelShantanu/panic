@@ -737,6 +737,44 @@ Every story has testable acceptance criteria, payload contracts, and empty and f
 
 ---
 
+## D-025 — AI tier: Claude Haiku 4.5 for all tasks; ₹50k/month cap; summaries for alert-worthy filings only
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Architecture · Business |
+| **Decided by** | Founder |
+| **Document** | [`docs/architecture/adr/adr-006-claude-ai-layer.md`](docs/architecture/adr/adr-006-claude-ai-layer.md) §4 |
+
+**Decision**
+
+1. **Claude Haiku 4.5 (`claude-haiku-4-5`)** for event classification, article-tagging support and filing summaries (ADR-006 Option D).
+2. **Hard AI spend cap: ₹50k/month.** At the cap, summaries pause (stories still publish) and the founder is alerted.
+3. **Summaries only for filings whose event type alerts by default** (13 of 20 types, PRD-004 §1). Amends PRD-004 US-004.4 AC-1.
+
+**Reason**
+
+Lowest cost (≈ ₹16k–38k/month in normal months, ADR-006 §3.2), inside the cap with room for results-season peaks.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| B — Opus 5.5 summaries, eval-chosen classification *(CTO view)* | Founder chose lower cost. |
+| A — Opus 5.5 for both; C — Sonnet 5.5 for both | Higher cost. |
+| Summaries for all filings | About double the summary cost for routine filings with little to summarise. |
+
+**Consequences**
+
+- **Quality risk recorded.** Haiku 4.5 is a previous-generation model. Summaries are the only AI text users read and have no legal review (D-018); the PRD-004 §5.2 safeguards are the control, and a weaker model is expected to fail them more often, so more summaries will be withheld.
+- **Revisit triggers** (written into ADR-006): classification accuracy below the PRD-004 targets (95% overall, 98% key types) on the labelled set, or summary withhold rate above 20% for a week. Either reopens the tier decision.
+- **Implementation differences** from the newer models (ADR-006 §2): no `effort` parameter; thinking off unless needed; refusals handled in application code (server-side fallback not used); support for citations, structured outputs and the prompt-caching minimum to be confirmed via the Models API before the pipeline is built.
+- PRD-004 US-004.4 AC-1 carries an amendment note pointing here.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

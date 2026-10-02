@@ -5,7 +5,7 @@
 | **Version** | 0.1 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect / CTO (WORKFLOW §4) |
-| **Status** | 🟡 Draft. ADR-006 (AI model tier) awaits founder decision. |
+| **Status** | 🟡 Draft. All founder inputs received; AI tier = Claude Haiku 4.5 (D-025). |
 | **Inputs** | PRD-001…007 v1.0 (D-023); founder constraints 2026-10-02: built by founder with AI coding agents, simple VPS/PaaS hosting, infrastructure **< ₹15k/month** (excluding exchange feed and AI usage), AI provider chosen by CTO |
 | **ADRs** | [ADR-001](adr/adr-001-isin-canonical-key.md) ISIN key · [ADR-002](adr/adr-002-typescript-modular-monolith.md) stack · [ADR-003](adr/adr-003-hosting-two-vps.md) hosting · [ADR-004](adr/adr-004-postgres-only.md) Postgres for everything · [ADR-005](adr/adr-005-sse-broadcast-transport.md) live transport · [ADR-006](adr/adr-006-claude-ai-layer.md) AI layer |
 
@@ -209,7 +209,7 @@ Detailed security review is a later phase (WORKFLOW). Constraints the architectu
 | Email provider choice | Before alerts build | CTO (ADR to follow) |
 | Broker-import feasibility (top 3 brokers) | Before PRD-003 US-003.3 build | CTO |
 | Labelled evaluation sets (clustering, tagging, event types, summaries) | Before launch | Founder + CTO |
-| **AI model tier and cost ceiling** | Before pipeline build | **Founder — ADR-006** |
+| ~~AI model tier and cost ceiling~~ | — | ✅ Haiku 4.5, ₹50k/month cap — D-025 |
 
 ---
 

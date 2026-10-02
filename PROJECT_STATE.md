@@ -11,23 +11,23 @@
 
 ## Current Phase
 
-**Phase 3 — PRD** *(opened 2026-10-02 — D-019)*
+**Phase 3 — PRD: ✅ complete** *(2026-10-02 — D-023)*. **Next: Phase 4 — Architecture**, on founder go-ahead.
 
-Product Definition v1.0 approved. PRD work splits into numbered documents (below). Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No architecture or code work has begun.
+All seven PRDs approved as v1.0 after a cross-PRD consistency check (9 fixes, listed in D-023). Phase 0 foundation work (v1.1 roadmap) continues in parallel. No architecture or code work has begun.
 
-**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §3 — every story has testable acceptance criteria, contracts as payloads, failure and empty states defined; compliance constraints as explicit criteria.
+**Phase gate status:** 🟢 **Architecture entry criteria met** (WORKFLOW §4: approved PRD).
 
 ### PRD plan
 
 | PRD | Covers (Product Definition §4) | Status |
 | --- | --- | --- |
-| `prd-001-live-stream.md` | S1 stream, S9 filters, S11 unread, S12 keyboard, S13 source health, S14 market session, S18 phone view | ◐ Draft v0.2 — format accepted; OQs resolved (defaults) |
-| `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging, story clustering | ◐ Draft v0.2 — OQs resolved (D-020) |
-| `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ◐ Draft v0.2 — OQs resolved (defaults) |
-| `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ◐ Draft v0.2 — OQs resolved (defaults; summary cap 100 words) |
-| `prd-005-voting.md` | S8 voting | ◐ Draft v0.2 — OQs resolved (defaults; votes anonymous, D-021) |
-| `prd-006-comments.md` | S16 comments | ◐ Draft v0.2 — OQs resolved (spam removal D-022; profile pages added) |
-| `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ◐ Draft v0.1 — 7 OQs awaiting founder |
+| `prd-001-live-stream.md` | S1 stream, S9 filters, S11 unread, S12 keyboard, S13 source health, S14 market session, S18 phone view | ✅ v1.0 approved (D-023) |
+| `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging, story clustering | ✅ v1.0 approved (D-023) |
+| `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ✅ v1.0 approved (D-023) |
+| `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ✅ v1.0 approved (D-023) |
+| `prd-005-voting.md` | S8 voting | ✅ v1.0 approved (D-023) |
+| `prd-006-comments.md` | S16 comments | ✅ v1.0 approved (D-023) |
+| `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ✅ v1.0 approved (D-023) |
 
 ---
 
@@ -64,8 +64,8 @@ Ordered by dependency. Nothing below the gate may start.
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
 | 4 | Product definition | ✅ **v1.0 approved** — D-019 |
-| 4 | PRD | ◐ **In progress** — see PRD plan |
-| 5 | Architecture | Approved PRD |
+| 4 | PRD | ✅ **v1.0 approved** — D-023 |
+| 5 | Architecture | ✅ Unblocked — founder go-ahead |
 | 6 | Database schema | Approved architecture |
 | 7 | Backend / Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
 
@@ -132,7 +132,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder answers PRD-007 open questions (§11). Then CTO runs a cross-PRD consistency check and signs off all seven PRDs, exiting WORKFLOW §3.
+**Single next action:** Founder go-ahead to start **Architecture** (WORKFLOW §4). Carried items: broker-import feasibility, payment provider, exchange feed procurement (OQ-6), RSS feed list and terms checks, labelled evaluation sets.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -204,3 +204,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **PRD-006 drafted** (unrestricted comments, 3-level threads, author edit/delete, in-app reply notices only, comment kill switch, grievance officer + IT Rules takedown timelines). OQ-006.4 asks whether spam removal may extend D-017. | Phase 3 in progress |
 | 2026-10-02 | **PRD-006 resolved → D-022** (operators may remove spam/bot content, never opinions); public profile pages added (comments only). | Phase 3 in progress |
 | 2026-10-02 | **PRD-007 drafted** (email-code + Google sign-in, usernames, DPDP notice/consent/deletion/export, operator 2FA; free/paid entitlements, ₹299/₹2,999 with 14-day no-card trial, cancel-as-easy-as-subscribe). All seven PRDs now drafted. PRD-003 budget defaults pointed at PRD-007. | Phase 3: all PRDs drafted |
+| 2026-10-02 | PRD-007 resolved (free history 30 days). **Cross-PRD consistency check: 9 findings fixed. All seven PRDs approved v1.0 → D-023.** Product Definition §6.3 metric amended. | **Phase 3 complete**; Architecture unblocked |

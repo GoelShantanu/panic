@@ -159,7 +159,7 @@ Things the MVP explicitly does **not** do. Each is a decision, not an omission.
 | Metric | Why it is watched |
 | --- | --- |
 | Sessions per user per market day | A rise driven by product mechanics, not news volume, signals urgency creep (GUARDRAILS §4.10) |
-| Share of Trending occupied by small caps with high Bullish counts | Early warning of vote brigading or pump use (`docs/q2.md` §2.3) |
+| ~~Share of Trending occupied by small caps with high Bullish counts~~ Share of the **Bullish view** occupied by SME-segment stories *(amended by [D-023](../../DECISION_LOG.md): Trending takes no vote input, PRD-001 C-001.2)* | Early warning of vote brigading or pump use (`docs/q2.md` §2.3) |
 | Count of AI outputs containing tone language | Must stay at zero (D-014) |
 
 ---

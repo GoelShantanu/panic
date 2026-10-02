@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10): defaults adopted; spam removal allowed ([D-022](../../DECISION_LOG.md)); public profile pages added. |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S16 (comments); commenting eligibility in S15 |
 | **Decisions** | [D-016](../../DECISION_LOG.md) PD-2 (comments at launch) · [D-017](../../DECISION_LOG.md) (unrestricted; legal-minimum moderation only) · [D-018](../../DECISION_LOG.md) (no counsel) · [D-022](../../DECISION_LOG.md) (operator spam removal) |
 | **Depends on** | PRD-002 (stories), PRD-004 (story page), PRD-005 (eligibility rules reused), PRD-007 (accounts, usernames, terms of use) |
@@ -84,7 +84,7 @@
 
 | AC | Criterion |
 | --- | --- |
-| AC-1 | Replies to a user's comment show as an **in-app** indicator (a count on the account menu) and a list of replies. |
+| AC-1 | Replies to a user's comment show as an **in-app** dot on the account menu (no number; PRD-001 C-001.6) and a list of replies. |
 | AC-2 | No email or push notifications for comments or replies (§10 OQ-006.1). |
 | AC-3 | Reply notifications never count against or mix with the alert budget (PRD-003). |
 

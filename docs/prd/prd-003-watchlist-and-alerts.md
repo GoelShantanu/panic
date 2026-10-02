@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 — defaults adopted (§9). |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S4 (watchlist), S10 (alerts) |
 | **Depends on** | PRD-002 (stories, tags, τ), PRD-004 (event-type taxonomy and each type's alert default), PRD-007 (accounts, tier limits) |
 
@@ -153,7 +153,7 @@ Logical payloads. ISINs are placeholders.
 
 ```
 GET    /v1/watchlist                     → 200 { "instruments": [ { "isin": "INE000X01010", "display_symbol": "COMPANYX", "name": "Company X Limited", "status": "listed", "latest_story_at": "2026-10-05T10:02:06Z", "added_at": "2026-10-01T06:00:00Z" } ], "limit": 20 }
-POST   /v1/watchlist      { "isin": "INE000X01010" }      → 201 | 409 already present | 402 { "error": "upgrade_required", "feature": "watchlist_limit" } | 404 unknown ISIN
+POST   /v1/watchlist      { "isin": "INE000X01010" }      → 201 | 409 already present | 402 { "error": "upgrade_required", "feature": "watchlist_limit", "limit": 20, "paid_value": 200 } | 404 unknown ISIN
 DELETE /v1/watchlist/{isin}                                → 204 | 404
 ```
 
@@ -263,7 +263,7 @@ All defaults adopted by the founder on 2026-10-02.
 | ID | Question | Resolution (default adopted) |
 | --- | --- | --- |
 | **OQ-003.1** | Broker import: which brokers, and is it feasible? `[ASSUMPTION]` Indian broker APIs typically need the user to authorise and may need a paid developer subscription per broker. | **CSV import at launch; broker import behind a flag.** A short feasibility check for the top 3 brokers by active clients happens during Architecture. |
-| **OQ-003.2** | Which event types alert by default? | Set in PRD-004. Starting rule: results, board-meeting outcomes, dividends and corporate actions, pledge changes, insider/SAST disclosures, credit-rating actions, M&A, auditor or key-management changes, regulatory actions → **on**; routine compliance filings → **off**. |
+| **OQ-003.2** | Which event types alert by default? | **As set in PRD-004 §1** (13 types on, including fundraise, order/contract and litigation in addition to the starting list; 7 off). |
 | **OQ-003.3** | Default daily budget | **10** individual alerts/day; free/paid ceilings in PRD-007. |
 | **OQ-003.4** | Default quiet hours | **22:00–08:00 IST.** |
 | **OQ-003.5** | Send correction notices for mis-tagged alerts? | **Yes** (US-003.8). Trust over silence. |

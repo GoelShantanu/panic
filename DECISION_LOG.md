@@ -657,6 +657,50 @@ Spam is not unlawful, so D-017's legal-minimum rule gave no way to remove it; wi
 
 ---
 
+## D-023 — PRD set v1.0 approved after consistency check; PRD phase exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Process · Product |
+| **Decided by** | CTO (WORKFLOW §3 reviewer), on founder instruction; founder answered all PRD open questions |
+
+**Decision**
+
+1. PRD-001…PRD-007 approved as **v1.0**. WORKFLOW §3 exits; Architecture (WORKFLOW §4) entry criteria are met.
+2. PRD-007 open questions resolved: defaults adopted, except **free history depth = 30 days** (founder). Individual story pages stay reachable by link at any age.
+3. The consistency fixes below were applied before sign-off.
+
+**Consistency check — findings and fixes**
+
+| # | Finding | Fix |
+| --- | --- | --- |
+| 1 | PRD-001 stream row omitted the compact vote display and row vote controls that PRD-005 places there | PRD-001 US-001.1 AC-2 extended |
+| 2 | PRD-007 made multi-type event filter, stream "filings only" and saved views paid, but PRD-001 allowed free multi-type filtering and defined neither of the other two | PRD-001 US-001.3 AC-2/2a/2b and `filings_only` param added |
+| 3 | PRD-001 example used event code `order_win`; PRD-004's code is `order_contract` | Example corrected |
+| 4 | PRD-001 C-001.6 said the unread divider is the only count of unseen content, contradicting its own "N new stories" control and PRD-006's reply count | C-001.6 reworded; PRD-006 reply indicator changed to a dot without a number |
+| 5 | `402` bodies in PRD-001/003 lacked the `limit` / `paid_value` fields PRD-007 defines as standard | Aligned to PRD-007 §4.2 |
+| 6 | PRD-003's starting list of alerting event types omitted three types PRD-004 sets to on (fundraise, order/contract, litigation) | PRD-003 OQ-003.2 now defers to PRD-004 §1 |
+| 7 | PRD-007 history depth could be read as blocking old story pages, breaking shared links and search | PRD-007 §2.1: depth limits lists only |
+| 8 | Username change (PRD-007) would break profile URLs (PRD-006) | 30-day redirect from old username added |
+| 9 | Product Definition §6.3 metric measured vote-driven small caps in **Trending**, but Trending takes no vote input (PRD-001 C-001.2) | Metric amended to the Bullish view (as PRD-005 §6 AC-4 already did) |
+
+**Checked and consistent:** event-type codes across PRD-001/003/004; τ = 0.95 (PRD-002, 003); eligibility rules (PRD-005, 006, 007); kill switches (PRD-005, 006); vote display object (PRD-001, 004, 005); IP retention (PRD-005, 007); watchlist limits and alert budgets (PRD-003, 007); anonymous access (PRD-001, 007); operator roles (PRD-002, 005, 006, 007); compliance criteria cover GUARDRAILS §4.1–4.10 as amended.
+
+**Reason**
+
+Every story has testable acceptance criteria, payload contracts, and empty and failure states; compliance constraints appear as explicit criteria (WORKFLOW §3 exit and DoD).
+
+**Consequences**
+
+- Architecture may begin on founder go-ahead. PRD changes now require a new decision.
+- Carried into Architecture: broker-import feasibility (PRD-003 OQ-003.1); payment provider choice (PRD-007); exchange feed procurement (OQ-6); RSS feed list and terms checks (PRD-002); labelled evaluation sets for clustering, tagging and event types (PRD-002, 004).
+- Unchanged risk posture: no counsel review of any PRD (D-018).
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

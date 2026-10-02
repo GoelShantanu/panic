@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10): defaults adopted, summary cap raised to 100 words. |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S5 (company page), S6 (story detail), S7 (event types and AI summaries) |
 | **Depends on** | PRD-002 (items, stories, tags, instruments), PRD-005 (vote display), PRD-006 (comments), PRD-007 (history depth by tier) |
 | **Depended on by** | PRD-001 (event-type filter), PRD-003 (alert defaults per event type) |

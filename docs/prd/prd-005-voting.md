@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10): defaults adopted, except votes are publicly anonymous ([D-021](../../DECISION_LOG.md)). |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S8 (voting); the eligibility and attribution parts of S15 |
 | **Decisions** | [D-011](../../DECISION_LOG.md) (directional voting at CryptoPanic parity, raw uncapped counts, live at launch) · [D-012](../../DECISION_LOG.md) (GUARDRAILS §4.3/§4.4 as amended) · [D-018](../../DECISION_LOG.md) (no counsel; kill switch retained) · [D-020](../../DECISION_LOG.md) (corrections via operator review) · [D-021](../../DECISION_LOG.md) (votes publicly anonymous) |
 | **Defines for others** | The **vote display object** referenced by PRD-001, PRD-004; Important / Bullish / Bearish view thresholds used by PRD-001 |

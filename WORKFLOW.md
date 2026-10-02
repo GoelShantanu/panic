@@ -75,7 +75,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 
 **Constraint:** GUARDRAILS §4.3/§4.4 (tone on articles, no cross-security sentiment ranking) must appear as acceptance criteria here, or they will not survive to the schema.
 
-**Status:** ◐ Opened 2026-10-02 (D-019). Plan and progress: PROJECT_STATE → PRD plan.
+**Status:** ✅ Exited 2026-10-02 — PRD-001…007 v1.0 approved (D-023).
 
 ---
 

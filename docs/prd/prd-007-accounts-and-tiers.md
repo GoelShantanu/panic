@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting founder review of open questions (§11). |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S15 (accounts, as amended by D-021), S17 (free and paid tiers) |
 | **Decisions** | [D-015](../../DECISION_LOG.md) (consumer only: retail pricing carries the business) · [D-016](../../DECISION_LOG.md) PD-1 (freemium) · [D-018](../../DECISION_LOG.md) (no counsel) · [D-021](../../DECISION_LOG.md) (votes anonymous) |
 | **Resolves for others** | PRD-001 OQ-001.2 (history depth) · PRD-003 alert-budget ceilings and watchlist limits · PRD-004 timeline depth · the `402 upgrade_required` responses in PRD-001, 003, 004 |
@@ -96,7 +96,8 @@ Default split `[ASSUMPTION]` — §11 OQ-007.1…007.6:
 | Event-type filter | 1 type at a time | 1 type at a time | **Multiple types combined** |
 | **Filings only** toggle on the stream | — | — | ✅ |
 | Saved views (view + filters, one click) | — | — | **Up to 10** |
-| Stream and company timeline history | 90 days | 90 days | **All history since launch** |
+| Stream and company timeline history (lists) | 30 days | 30 days | **All history since launch** |
+| Individual story pages by direct link | ✅ any age | ✅ any age | ✅ any age |
 | Watchlist size | — | 20 | **200** |
 | Alert budget ceiling (individual alerts/day) | — | **5** | **30** |
 | Default alert budget | — | 5 | 10 |
@@ -111,7 +112,7 @@ Default split `[ASSUMPTION]` — §11 OQ-007.1…007.6:
 | --- | --- |
 | AC-1 | Paid features appear in place with a small "Paid" label. Selecting one shows a single upgrade panel listing paid features and the price. |
 | AC-2 | No upgrade prompt interrupts reading: no pop-ups on page load, no countdowns, no "offer ends" timers, no repeated prompts after dismissal in the same session (C-007.3). |
-| AC-3 | Hitting a limit (watchlist size, history depth, alert ceiling) shows the limit and the paid value plainly, e.g. "Free plan shows 90 days. Paid shows all history since launch." |
+| AC-3 | Hitting a limit (watchlist size, history depth, alert ceiling) shows the limit and the paid value plainly, e.g. "Free plan shows 30 days. Paid shows all history since launch." |
 | AC-4 | Free users over the alert ceiling still get every alert-worthy story through the digest (PRD-003 C-003.4). **Paid is never required to avoid missing news.** |
 
 ### 2.2 Pricing, trial, payment
@@ -187,7 +188,7 @@ GET /v1/me
   "entitlements": {
     "watchlist_limit": 20,
     "alert_budget_ceiling": 5,
-    "history_days": 90,
+    "history_days": 30,
     "alert_history_days": 30,
     "multi_event_filter": false,
     "stream_filings_only": false,
@@ -230,7 +231,7 @@ POST /v1/me/delete               { "comments": "keep_as_deleted_user" | "delete"
 | **Trial active** | Settings and header show "Trial · ends <date>". No countdown banners. |
 | **Trial ended** | One in-app notice; account on Free. |
 | **Payment retrying** | In-app notice with "Update payment method"; paid access continues. |
-| **Downgraded** | Notice explaining what changed (watchlist alerts for 20, history 90 days, saved views disabled). |
+| **Downgraded** | Notice explaining what changed (watchlist alerts for 20, history 30 days, saved views disabled). |
 | **Deletion pending** | Sign-in disabled; confirmation email sent with completion date. |
 | **Export ready** | Email with a download link valid 7 days. |
 
@@ -243,6 +244,7 @@ POST /v1/me/delete               { "comments": "keep_as_deleted_user" | "delete"
 | Same email used via email-code and Google | One account; both sign-in methods linked. |
 | User loses access to their email | Recovery via Google sign-in if linked; otherwise via the grievance contact with operator review. No security questions. |
 | Username of a deleted account | Held for 90 days, then released `[ASSUMPTION]`. |
+| Username changed (US-007.2 AC-3) | `/u/{old}` redirects to `/u/{new}` while the old name is held (30 days). |
 | Payment succeeds but webhook delayed | Checkout return page polls subscription state for up to 60 s; paid access granted as soon as confirmed. |
 | Refund forced by payment provider or chargeback | Account returns to Free; the event is logged. |
 | Free user had 30 alerts budget set during trial | Budget clamps to the Free ceiling (5) when the trial ends. |
@@ -264,10 +266,10 @@ POST /v1/me/delete               { "comments": "keep_as_deleted_user" | "delete"
 
 | PRD | Item | Value set here |
 | --- | --- | --- |
-| PRD-001 | OQ-001.2 free history depth; paid filters (US-001.3 AC-8) | 90 days free, all history paid; multi-type event filter, filings-only toggle and saved views are paid |
+| PRD-001 | OQ-001.2 free history depth; paid filters (US-001.3 AC-8) | 30 days free, all history paid; multi-type event filter, filings-only toggle and saved views are paid |
 | PRD-003 | Watchlist limits; alert budget ceilings | 20 / 200; ceiling 5 free, 30 paid; default 5 free, 10 paid |
 | PRD-003 | Alert history depth | 30 days free, 1 year paid |
-| PRD-004 | Company timeline depth | 90 days free, all history paid |
+| PRD-004 | Company timeline depth | 30 days free, all history paid. Individual story pages stay reachable by link at any age (shared links, search) |
 
 *PRD-003 US-003.7 AC-1 set the default budget to 10. For Free users it is now 5 (the Free ceiling); PRD-003 is updated to point here.*
 
@@ -289,14 +291,16 @@ Team or family plans; coupons and referral credits; regional pricing; in-app pur
 
 ---
 
-## 11. Open Questions
+## 11. Resolved Questions
 
-| ID | Question | Default if unanswered |
+Resolved by the founder on 2026-10-02. Defaults adopted except OQ-007.4.
+
+| ID | Question | Resolution |
 | --- | --- | --- |
 | **OQ-007.1** | Price | **₹299/month or ₹2,999/year**, GST-inclusive. |
 | **OQ-007.2** | Free trial | **14 days, once per account, no payment method required.** |
 | **OQ-007.3** | Sign-in methods | **Email one-time code + Sign in with Google.** No passwords, no phone OTP at MVP. |
-| **OQ-007.4** | Free history depth | **90 days.** |
+| **OQ-007.4** | Free history depth | **30 days** (founder; default was 90). |
 | **OQ-007.5** | Free alert ceiling | **5 per day** (rest to digest). |
 | **OQ-007.6** | Which features are paid | **As in §2.1:** multi-type event filter, stream filings-only toggle, saved views, full history, 200-instrument watchlist, 30 alerts/day, 1-year alert history. |
 | **OQ-007.7** | Minimum age | **18+**, self-declared at sign-up. |

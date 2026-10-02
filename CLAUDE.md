@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 3 — PRD** (opened 2026-10-02). Approved input: [`docs/product/product-definition.md`](docs/product/product-definition.md). Plan: [PROJECT_STATE.md](PROJECT_STATE.md) → PRD plan.
+**Phase 3 — PRD: complete** (2026-10-02, D-023). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`. **Next: Architecture** on founder go-ahead.
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -63,7 +63,7 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 
 In order. Do not skip.
 
-1. **PRD** — seven numbered documents under `docs/prd/`. See [PROJECT_STATE.md](PROJECT_STATE.md).
+1. **Architecture** — WORKFLOW §4, from the approved PRDs. See [PROJECT_STATE.md](PROJECT_STATE.md).
 2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
 3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
 

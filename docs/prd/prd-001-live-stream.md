@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Format accepted by founder 2026-10-02; open questions resolved (§8). Final CTO sign-off when PRD-002…007 are drafted, so cross-references can be checked. |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S1, S9, S11, S12, S13, S14, S18 |
 | **Depends on** | PRD-002 (filings, tagging), PRD-003 (watchlist), PRD-004 (event types), PRD-005 (vote display, Important), PRD-007 (tiers). Those define the objects this PRD displays. |
 
@@ -35,7 +35,7 @@
 | AC | Criterion |
 | --- | --- |
 | AC-1 | The default view lists stories ordered by `first_seen_at` descending. Ties broken by `story_id` descending. |
-| AC-2 | Each row shows: headline, primary item's source name, relative time, instrument display symbols, event-type labels, source count when > 1, comment count when > 0. |
+| AC-2 | Each row shows: headline, primary item's source name, relative time, instrument display symbols, event-type labels, source count when > 1, comment count when > 0, and the compact community-opinion display at ≥ 3 directional votes (PRD-005 US-005.3 AC-3). The selected row carries vote controls (PRD-005 US-005.1 AC-1). |
 | AC-3 | A story with N items shows exactly one row. No two rows in a page share a `story_id`. |
 | AC-4 | When a new item joins an existing story, the row's `source_count` and `updated_at` change **in place**. The row does not move. *(See OQ-001.1.)* |
 | AC-5 | The first page loads 50 stories. Scrolling to the end loads the next 50 via cursor. No story repeats or is skipped across pages while new stories arrive. |
@@ -58,7 +58,9 @@
 | AC | Criterion |
 | --- | --- |
 | AC-1 | Available views: **Latest** (default), **Watchlist**, **Important**, **Bullish**, **Bearish**, **Trending**. Exactly one view is active. |
-| AC-2 | **Event-type filter** (PRD-004 taxonomy) combines with any view. Multiple event types combine with OR. |
+| AC-2 | **Event-type filter** (PRD-004 taxonomy) combines with any view. Free and anonymous users pick one type; paid users combine several with OR (PRD-007 §2.1). |
+| AC-2a | **Filings only** toggle (paid, PRD-007) restricts any view to stories whose primary item is a filing. |
+| AC-2b | **Saved views** (paid, up to 10, PRD-007): the user saves the current view + filters under a name and reopens it in one click. |
 | AC-3 | Active view and filters are reflected in the URL. Loading that URL reproduces the same view. |
 | AC-4 | **Watchlist** shows only stories tagged to at least one instrument on the user's watchlist (PRD-003). Anonymous users see a sign-in prompt instead. |
 | AC-5 | **Important** shows stories meeting the Important-vote threshold defined in PRD-005. |
@@ -137,7 +139,7 @@ Required by WORKFLOW §3 as explicit, testable criteria, not prose.
 | **C-001.3** | **Bullish / Bearish** views are controlled by the directional-voting kill switch. With the switch off, both views are absent from the UI and the API returns `404` for them, with no deploy. | GUARDRAILS §4.4; `docs/q2.md` §F.3.5 |
 | **C-001.4** | No view ranks **instruments** against each other by any measure. Views rank stories. | GUARDRAILS §4.4 |
 | **C-001.5** | Any directional vote counts shown in a row carry the label "Community opinion". | GUARDRAILS §4.3 |
-| **C-001.6** | No streaks, "you missed" counts, countdowns or flashing elements. The unread count (US-001.4) is the only count of unseen content and appears only as the divider. | GUARDRAILS §4.10 |
+| **C-001.6** | No streaks, "you missed" counts, countdowns or flashing elements. Counts of unseen content appear only in the unread divider (US-001.4) and the "N new stories" control (US-001.2 AC-3); comment replies use a dot without a number (PRD-006 US-006.5). | GUARDRAILS §4.10 |
 
 ---
 
@@ -150,13 +152,14 @@ Logical payloads. Transport and URL scheme are Architecture decisions; field nam
 Request:
 
 ```
-GET /v1/stream?view=latest&event_types=results,order_win&cursor=<opaque>&limit=50
+GET /v1/stream?view=latest&event_types=results,order_contract&filings_only=false&cursor=<opaque>&limit=50
 ```
 
 | Param | Values | Default |
 | --- | --- | --- |
 | `view` | `latest` · `watchlist` · `important` · `bullish` · `bearish` · `trending` | `latest` |
-| `event_types` | comma-separated PRD-004 codes | none |
+| `event_types` | comma-separated PRD-004 codes (more than one requires paid) | none |
+| `filings_only` | `true` · `false` (true requires paid) | `false` |
 | `cursor` | opaque, from previous response | none |
 | `limit` | 1–100 | 50 |
 
@@ -208,7 +211,7 @@ Errors:
 | --- | --- | --- |
 | `400` | Unknown `view` or `event_types` code; `limit` out of range | `{ "error": "invalid_param", "param": "view" }` |
 | `401` | `view=watchlist` without a session | `{ "error": "auth_required" }` |
-| `402` | Paid filter on a free account (PRD-007) | `{ "error": "upgrade_required", "feature": "<code>" }` |
+| `402` | Paid filter on a free account | PRD-007 §4.2 shape, e.g. `{ "error": "upgrade_required", "feature": "multi_event_filter", "limit": false, "paid_value": true }` |
 | `404` | `view=bullish` or `bearish` while the kill switch is off (C-001.3) | `{ "error": "not_found" }` |
 
 ### 4.2 Live updates

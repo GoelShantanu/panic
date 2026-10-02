@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10, [D-020](../../DECISION_LOG.md)). |
+| **Status** | ✅ **Approved 2026-10-02 — [D-023](../../DECISION_LOG.md)** (CTO sign-off after cross-PRD consistency check). Changes require a new decision. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S2 (filings first), S3 (company tagging), and the story clustering S1 depends on |
 | **Depended on by** | PRD-001 (stream), PRD-003 (watchlist alerts), PRD-004 (pages), PRD-005 (quality votes feed corrections) |
 

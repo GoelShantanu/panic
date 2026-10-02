@@ -1,11 +1,11 @@
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ENTITLEMENTS, EVENT_TYPES } from '@stockpanic/core';
-import { MigrationError, migrate } from './migrate.ts';
+import { MIGRATIONS_DIR, MigrationError, migrate } from './migrate.ts';
 
 // Needs a PostgreSQL 17+ server: TEST_DATABASE_URL=postgres://postgres:…@host:port/postgres
 const adminUrl = process.env['TEST_DATABASE_URL'];
@@ -31,8 +31,13 @@ describe.skipIf(!adminUrl)('migrations against PostgreSQL', () => {
     await admin?.end();
   });
 
-  it('applies 0001 once, then is up to date', async () => {
-    expect(await migrate(client)).toEqual(['0001_initial']);
+  it('applies every migration once, in order, then is up to date', async () => {
+    const expected = (await readdir(MIGRATIONS_DIR))
+      .filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f))
+      .sort()
+      .map((f) => f.slice(0, -'.sql'.length));
+    expect(expected[0]).toBe('0001_initial');
+    expect(await migrate(client)).toEqual(expected);
     expect(await migrate(client)).toEqual([]);
   });
 

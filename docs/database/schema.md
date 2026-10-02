@@ -131,7 +131,7 @@ Listed so they are not mistaken for structural guarantees. Each has a PRD test.
 | Platform | `setting`, `live_event` (partitioned), `audit_log` (partitioned), `ip_log` (partitioned), `schema_migrations` |
 | Views | `story_tag_display`, `user_tier`, `ai_spend_month` |
 
-The job queue's tables belong to the queue library chosen in the Backend phase (ADR-004) and are created by its own migration.
+**Migration 0002** (Backend B2) adds `job` (Postgres queue, ADR-004), `source_fetch_state` (conditional-request validators, next fetch, last new item), `source.adapter` (adapter config; enabled sources must have one) and `source_health.tracking_since`. Indexes: Q24 `job_runnable (queue, priority DESC, run_after, id)` for the next runnable job; Q25 `job_locked` for the stuck-lock sweep.
 
 ---
 

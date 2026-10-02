@@ -80,7 +80,7 @@
 | AC-6 | **Launch sources are publishers' public RSS feeds** from Indian stock-market and business news sites (§10 OQ-002.4). Each feed is polled at its expected cadence (default every 60 s during market hours, 5 min otherwise `[ASSUMPTION]`), honouring HTTP caching headers. |
 | AC-7 | Before a feed is enabled, its publisher's terms are checked and recorded in the adapter's access basis (AC-1). `[INFERRED]` Some publishers limit RSS use to personal or non-commercial reading; a feed whose terms forbid commercial display is not enabled. |
 | AC-8 | From RSS items the product stores and shows **headline, link, publisher timestamp** only. Feed descriptions are not displayed unless the terms permit excerpts. |
-| AC-9 | RSS feeds can lag, truncate or change format. A feed returning malformed XML or no new items for 3× its cadence during market hours is marked `stale` (PRD-001 US-001.6). |
+| AC-9 | *(Amended by [D-029](../../DECISION_LOG.md): staleness = no successful fetch for 3× cadence; the "no new items" clause is an optional per-source rule.)* RSS feeds can lag, truncate or change format. A feed returning malformed XML or no new items for 3× its cadence during market hours is marked `stale` (PRD-001 US-001.6). |
 
 ---
 

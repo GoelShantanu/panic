@@ -1,0 +1,11 @@
+{
+  "name": "@stockpanic/worker",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@stockpanic/core": "*",
+    "@stockpanic/db": "*",
+    "fast-xml-parser": "^5.11.2",
+    "pg": "^8.23.1"
+  }
+}

@@ -885,6 +885,32 @@ Founder instruction. Resolves the B-2 residual: the repository now has an off-ma
 
 ---
 
+## D-029 — Source staleness = failed fetches; "no new items" is an optional per-source rule *(amends PRD-002 US-002.5 AC-9)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Backend B2. Founder may override |
+
+**Decision**
+
+1. A source is **stale** after 3× its session cadence, and **down** after 10×, **without a successful fetch** (ingestion.md §5). Malformed XML counts as a failed fetch.
+2. The "no new items for 3× cadence during market hours" clause in PRD-002 US-002.5 AC-9 is implemented as an **optional per-source `max_quiet_s`**, off by default.
+
+**Reason**
+
+PRD-002 AC-9 and ingestion.md §5 conflict. Read literally, AC-9 marks a 60 s-cadence feed stale after 3 quiet minutes, which is normal for most feeds, so the stale banner would fire constantly and stop meaning anything. ingestion.md (approved later, more specific) measures whether we *can* reach the source, which is what the banner promises users ("we tell users what we don't have").
+
+**Consequences**
+
+- PRD-002 US-002.5 AC-9 carries an amendment note pointing here.
+- A feed that keeps responding but silently stops publishing is not flagged unless `max_quiet_s` is set for it; set it for feeds where silence is abnormal.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

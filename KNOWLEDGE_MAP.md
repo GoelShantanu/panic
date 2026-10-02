@@ -80,8 +80,9 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | Path | Purpose | Owner | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| `src/packages/core` | Shared domain rules: ISIN, public IDs, event taxonomy, entitlements, vote display | CTO | PRD-004, 005, 007; ADR-001 | ✅ B1 — 23 unit tests |
-| `src/packages/db` | Migration runner; DB access (grows with each milestone) | CTO | `docs/database/` | ✅ B1 — 6 integration tests |
+| `src/packages/core` | Shared domain rules: ISIN, public IDs, event taxonomy, entitlements, vote display, ingestion rules | CTO | PRD-002, 004, 005, 007; ADR-001 | ✅ B1–B2 — 37 unit tests |
+| `src/packages/db` | Migration runner; ingestion data access (grows with each milestone) | CTO | `docs/database/` | ✅ B1–B2 |
+| `src/apps/worker` | Ingestion: RSS adapter, HTTP, health, scheduler, `ingest` CLI | CTO | ingestion.md, PRD-002, D-029 | ✅ B2 — 28 tests incl. 10 end-to-end |
 
 ### 1.3 Gated — not yet created
 

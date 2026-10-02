@@ -2,15 +2,15 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | 0.2 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting founder review of open questions (§10). |
+| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10): defaults adopted, except votes are publicly anonymous ([D-021](../../DECISION_LOG.md)). |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S8 (voting); the eligibility and attribution parts of S15 |
-| **Decisions** | [D-011](../../DECISION_LOG.md) (directional voting at CryptoPanic parity, raw uncapped counts, live at launch) · [D-012](../../DECISION_LOG.md) (GUARDRAILS §4.3/§4.4 as amended) · [D-018](../../DECISION_LOG.md) (no counsel; kill switch retained) · [D-020](../../DECISION_LOG.md) (corrections via operator review) |
+| **Decisions** | [D-011](../../DECISION_LOG.md) (directional voting at CryptoPanic parity, raw uncapped counts, live at launch) · [D-012](../../DECISION_LOG.md) (GUARDRAILS §4.3/§4.4 as amended) · [D-018](../../DECISION_LOG.md) (no counsel; kill switch retained) · [D-020](../../DECISION_LOG.md) (corrections via operator review) · [D-021](../../DECISION_LOG.md) (votes publicly anonymous) |
 | **Defines for others** | The **vote display object** referenced by PRD-001, PRD-004; Important / Bullish / Bearish view thresholds used by PRD-001 |
 
-> Directional voting is the product's most exposed feature (D-018 risk note). The mitigations carried forward from `docs/q2.md` §III.2 — kill switch, attributable voting, eligibility gate, audit log, one vote per user per story, progressive display — are written here as acceptance criteria so they survive to the schema. Requirements use **MUST / SHOULD / MAY**. Numbers marked `[ASSUMPTION]` are starting targets.
+> Directional voting is the product's most exposed feature (D-018 risk note). The mitigations carried forward from `docs/q2.md` §III.2 — kill switch, eligibility gate, audit log, one vote per user per story, progressive display — are written here (attributable voting was dropped by D-021) as acceptance criteria so they survive to the schema. Requirements use **MUST / SHOULD / MAY**. Numbers marked `[ASSUMPTION]` are starting targets.
 
 ---
 
@@ -72,13 +72,12 @@ Directional and quality votes are independent: a user may vote `bearish` and `im
 | AC-5 | `duplicate`, `wrong_stock`, `spam`, `old_news` counts are never shown to users. |
 | AC-6 | Counts update on open pages within **10 s** of a vote `[ASSUMPTION]`. |
 
-**US-005.4** As a user, I can see who voted (`docs/q2.md` §F.3.6; RE §29.3).
+**US-005.4** As a voter, my vote is not publicly attributed to me (D-021).
 
 | AC | Criterion |
 | --- | --- |
-| AC-1 | "Show voters" on the story page lists the usernames behind each directional and Important count, newest first, paginated. |
-| AC-2 | Only usernames and vote time are shown. No email, no real name unless the user chose it as their username. |
-| AC-3 | Voters are listed for every count shown; a vote not attributable to a public username is not counted (C-005.4). |
+| AC-1 | No surface or API shows which users cast which votes. Users see counts and their own votes only. |
+| AC-2 | Operators can see voters per story for abuse handling (§6). Operator access to voter identities is audit-logged. |
 
 ---
 
@@ -143,7 +142,7 @@ Votes discounted by an operator (§6) are excluded from these counts.
 | **C-005.1** | Every rendering of directional counts carries "Community opinion". Test: UI snapshot search across stream, story and company pages. | GUARDRAILS §4.3 |
 | **C-005.2** | No API returns a percentage, ratio, score or consensus field derived from directional votes. Test: contract test rejects keys matching `/pct\|percent\|ratio\|score\|consensus/` in vote objects. | D-011 (raw counts); `docs/q2.md` §F.1 |
 | **C-005.3** | Changing only directional votes leaves Latest, Watchlist, Trending, alerts and summaries unchanged. Test: fixture story, vote change, diff outputs. | GUARDRAILS §4.4; PRD-001 C-001.2; PRD-003 C-003.3 |
-| **C-005.4** | Every counted vote belongs to an account with a public username. Test: count = number of rows in voters list. | `docs/q2.md` §F.3.6 |
+| **C-005.4** | Every counted vote belongs to an eligible account, and no public API exposes voter identity. Test: counts equal eligible, non-discounted vote rows; contract test finds no user identifiers in public vote payloads. | D-021 |
 | **C-005.5** | No list, page or API orders companies by any vote count. | GUARDRAILS §4.4 |
 | **C-005.6** | Every vote cast, changed or removed is written to an append-only audit log with user, story, vote, previous vote, time and IP. | GUARDRAILS §4.8; `docs/q2.md` §F.3.8 |
 | **C-005.7** | The kill switch behaves per US-005.7 in an automated test that toggles it. | GUARDRAILS §4.4 |
@@ -203,24 +202,28 @@ DELETE /v1/stories/{story_id}/votes/quality/{type}                          → 
 
 ### 9.3 Voters
 
+No public endpoint (D-021). Operator-only:
+
 ```
-GET /v1/stories/{story_id}/voters?vote=bullish&cursor=<opaque>
-→ 200 { "voters": [ { "username": "trader_a", "voted_at": "2026-10-05T10:20:00Z" } ], "next_cursor": "…" }
+GET /v1/admin/stories/{story_id}/voters?vote=bullish&cursor=<opaque>
+→ 200 { "voters": [ { "user_id": "us_…", "username": "…", "account_created_at": "…", "voted_at": "…", "discounted": false } ], "next_cursor": "…" }
 ```
 
-`vote`: `bullish` · `bearish` · `neutral` · `important`. Quality report types are not listable (`400`).
+Requires an operator role (`403` otherwise); every call is audit-logged.
 
 ---
 
-## 10. Open Questions
+## 10. Resolved Questions
 
-| ID | Question | Default if unanswered |
+Resolved by the founder on 2026-10-02. Defaults adopted except OQ-005.5.
+
+| ID | Question | Resolution |
 | --- | --- | --- |
 | **OQ-005.1** | Directional eligibility: account age | **7 days + verified email.** |
 | **OQ-005.2** | View thresholds (§4) | **≥ 3** votes, plus majority over the opposite direction for Bullish/Bearish. Tune on real data. |
 | **OQ-005.3** | Show directional counts in stream rows? | **Yes, compact, only at ≥ 3 votes** (US-005.3 AC-3). |
 | **OQ-005.4** | Allow users to change or remove a directional vote? | **Yes** (US-005.1 AC-4); every change audit-logged. |
-| **OQ-005.5** | Public voter lists ("Show voters")? | **Yes** (`docs/q2.md` §F.3.6). |
+| **OQ-005.5** | Public voter lists ("Show voters")? | **No — votes are publicly anonymous** ([D-021](../../DECISION_LOG.md)). Operators can still see voters. |
 | **OQ-005.6** | How long to keep voter IP addresses in the audit log? | **180 days**, then dropped from the log row; the rest of the row is kept. |
 
 ---
@@ -229,7 +232,7 @@ GET /v1/stories/{story_id}/voters?vote=bullish&cursor=<opaque>
 
 | Limit | Detail |
 | --- | --- |
-| **No legal review** | Directional voting ships without counsel (D-018). The mitigations here reduce brigading and keep the "user opinion" framing explicit; they are not a legal opinion. |
+| **No legal review** | Directional voting ships without counsel (D-018). The mitigations here reduce brigading and keep the "user opinion" label explicit; they are not a legal opinion. Without public voter identity (D-021), brigading is cheaper and counts read more like a platform figure. |
 | **Cold start** | At launch most stories will show "Be the first to vote", and few will reach the view thresholds. Bullish/Bearish views may be near-empty for weeks (`docs/q2.md` §F.5). |
 | **Abuse thresholds guessed** | Detection rules (§6) have no baseline and will need tuning against real behaviour. |
 | **Privacy basis unreviewed** | Storing IP addresses for abuse handling needs a stated purpose and retention under India's DPDP Act 2023; OQ-005.6 sets a retention period, but the notice wording belongs in PRD-007 and is not reviewed by counsel. |

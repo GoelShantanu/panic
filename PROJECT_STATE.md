@@ -25,7 +25,7 @@ Product Definition v1.0 approved. PRD work splits into numbered documents (below
 | `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging, story clustering | ◐ Draft v0.2 — OQs resolved (D-020) |
 | `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ◐ Draft v0.2 — OQs resolved (defaults) |
 | `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ◐ Draft v0.2 — OQs resolved (defaults; summary cap 100 words) |
-| `prd-005-voting.md` | S8 voting | ◐ Draft v0.1 — 6 OQs awaiting founder |
+| `prd-005-voting.md` | S8 voting | ◐ Draft v0.2 — OQs resolved (defaults; votes anonymous, D-021) |
 | `prd-006-comments.md` | S16 comments | ☐ |
 | `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ☐ |
 
@@ -200,3 +200,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **PRD-003 drafted** (watchlist: search, CSV import, flagged broker import; alerts: materiality rule, one-per-story, budget + digest, quiet hours, correction notices). | Phase 3 in progress |
 | 2026-10-02 | PRD-003 defaults adopted (v0.2). **PRD-004 drafted** (20-type event taxonomy with alert defaults; story and company pages; filing-only AI summaries with grounding, number, tone and advice checks). | Phase 3 in progress |
 | 2026-10-02 | PRD-004 resolved (v0.2; summary cap 100 words). **PRD-005 drafted** (directional + quality votes, progressive display, voter lists, eligibility, abuse handling, kill switch; defines vote display object and view thresholds). | Phase 3 in progress |
+| 2026-10-02 | **PRD-005 resolved → D-021**: votes publicly anonymous (Product Definition S15 amended); other defaults adopted. | Phase 3 in progress |

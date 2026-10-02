@@ -594,6 +594,41 @@ Research R6: an automatic correction path lets coordinated users retag stories. 
 
 ---
 
+## D-021 — Votes are publicly anonymous *(amends Product Definition S15; supersedes `docs/q2.md` §F.3.6 for votes)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product |
+| **Decided by** | Founder |
+| **Document** | [`docs/prd/prd-005-voting.md`](docs/prd/prd-005-voting.md) §10 OQ-005.5 |
+
+**Decision**
+
+1. **No public voter lists.** Users see vote counts, never who voted.
+2. Every vote stays tied to an account internally, for eligibility, one-vote-per-story, abuse handling, operator discounting and the audit log. Operators can see voters; users cannot.
+3. Comments remain under the author's public username (Product Definition S16, unchanged).
+
+**Reason**
+
+Founder preference for voter privacy.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Public voter lists *(CTO default; `docs/q2.md` §F.3.6; RE §29.3)* | Founder chose anonymity. |
+
+**Consequences**
+
+- **One voting mitigation is removed.** `docs/q2.md` §2.3 and §F.3.6 relied on public identity to raise the cost of brigading, and on named voters to support the "user opinion, not platform voice" framing. Remaining mitigations: eligibility gate, rate limit, abuse detection, operator discounting, kill switch, audit log (PRD-005 §5–§7).
+- `[INFERRED]` Anonymous aggregated directional counts read more like a platform-produced sentiment figure than named individuals' opinions. Recorded alongside the D-018 risk note; no counsel review is planned.
+- Product Definition v1.0 S15 amended by this decision ("public voter identity" removed); PRD-005 US-005.4 and the voters endpoint removed.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

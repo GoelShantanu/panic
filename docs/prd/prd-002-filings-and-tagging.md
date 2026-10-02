@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | 0.2 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting founder review of open questions (§10). |
+| **Status** | 🟡 Draft. Open questions resolved by founder 2026-10-02 (§10, [D-020](../../DECISION_LOG.md)). |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S2 (filings first), S3 (company tagging), and the story clustering S1 depends on |
 | **Depended on by** | PRD-001 (stream), PRD-003 (watchlist alerts), PRD-004 (pages), PRD-005 (quality votes feed corrections) |
 
@@ -77,6 +77,10 @@
 | AC-3 | The product displays the publisher's headline and links out. Full article text is never republished. |
 | AC-4 | Sources are English-only at MVP. Non-English items are discarded at ingestion, counted, and reported. |
 | AC-5 | Adapters fail independently: one source failing does not delay others. |
+| AC-6 | **Launch sources are publishers' public RSS feeds** from Indian stock-market and business news sites (§10 OQ-002.4). Each feed is polled at its expected cadence (default every 60 s during market hours, 5 min otherwise `[ASSUMPTION]`), honouring HTTP caching headers. |
+| AC-7 | Before a feed is enabled, its publisher's terms are checked and recorded in the adapter's access basis (AC-1). `[INFERRED]` Some publishers limit RSS use to personal or non-commercial reading; a feed whose terms forbid commercial display is not enabled. |
+| AC-8 | From RSS items the product stores and shows **headline, link, publisher timestamp** only. Feed descriptions are not displayed unless the terms permit excerpts. |
+| AC-9 | RSS feeds can lag, truncate or change format. A feed returning malformed XML or no new items for 3× its cadence during market hours is marked `stale` (PRD-001 US-001.6). |
 
 ---
 
@@ -275,15 +279,17 @@ All require an operator role; `403` otherwise. `reason` is mandatory; `400` if m
 
 ---
 
-## 10. Open Questions
+## 10. Resolved Questions
 
-| ID | Question | Default if unanswered |
+Resolved by the founder on 2026-10-02 — [D-020](../../DECISION_LOG.md).
+
+| ID | Question | Resolution |
 | --- | --- | --- |
-| **OQ-002.1** | **= Research OQ-10.** Do user "Wrong stock" / "Duplicate" reports fix tags automatically, or only via operator review? | **Operator review only** (US-002.11 AC-3). Research R6 flags the automatic path as an attack surface. |
-| **OQ-002.2** | Which instruments are in scope at MVP? | **Equity: mainboard + SME** on NSE and BSE. Debt, mutual fund and REIT/InvIT filings excluded. |
-| **OQ-002.3** | Display threshold τ | **0.95**; tuned so tagging precision meets ≥ 99.5%. |
-| **OQ-002.4** | Article source list at launch | Set during procurement (OQ-6). PRD requires only the adapter contract (US-002.5 AC-1). |
-| **OQ-002.5** | Who staffs the operator review queue during market hours? | Founder at launch; the 2 h target (US-002.11 AC-6) assumes someone is watching. |
+| **OQ-002.1** | **= Research OQ-10.** Do user reports fix tags automatically? | **Operator review only** (US-002.11 AC-3). |
+| **OQ-002.2** | Instruments in scope at MVP | **Equity: mainboard + SME** on NSE and BSE. Debt, MF, REIT/InvIT excluded. |
+| **OQ-002.3** | Display threshold τ | **0.95**, tuned to meet ≥ 99.5% tagging precision. |
+| **OQ-002.4** | Article sources at launch | **Public RSS feeds of Indian stock-market and business news sites** (US-002.5 AC-6…AC-9). Feed list compiled pre-launch; each feed's terms checked before enabling. |
+| **OQ-002.5** | Who staffs the review queue? | **Founder at launch.** |
 
 ---
 
@@ -292,6 +298,6 @@ All require an operator role; `403` otherwise. `reason` is mandatory; `400` if m
 | Limit | Detail |
 | --- | --- |
 | **Targets unvalidated** | Latency, coverage, precision and clustering targets have no measured baseline. Feasibility depends on the exchange feed procured (OQ-6). |
-| **Access basis unresearched** | Whether each news source may be ingested and excerpted is not established. US-002.5 AC-1 makes it a per-source gate. |
+| **Access basis unresearched** | No RSS feed's terms have been checked yet. US-002.5 AC-1 and AC-7 make it a per-feed gate before launch. |
 | **No labelled data yet** | Clustering and tagging targets require a labelled evaluation set that doesn't exist. Building it is pre-launch work. |
 | **Exchange behaviours assumed** | Revision, withdrawal and duplicate-delivery behaviour (§9) are `[ASSUMPTION]`, to be confirmed against the procured feed. |

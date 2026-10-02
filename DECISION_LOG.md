@@ -563,6 +563,37 @@ All OQ-1…OQ-5 and PD-1…PD-7 resolved; non-goals list exists; every scope ite
 
 ---
 
+## D-020 — PRD-002 resolutions: operator-reviewed corrections, RSS sources *(resolves OQ-10)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product · Architecture |
+| **Decided by** | Founder |
+| **Document** | [`docs/prd/prd-002-filings-and-tagging.md`](docs/prd/prd-002-filings-and-tagging.md) §10 |
+
+**Decision**
+
+1. **OQ-10 resolved:** user "Wrong stock" / "Duplicate" reports change tags and clusters **only through operator review**, never automatically.
+2. **Scope:** NSE + BSE equities, mainboard and SME. Debt, MF, REIT/InvIT out at MVP.
+3. **Display threshold τ = 0.95**, tuned to the 99.5% precision target.
+4. **Article sources at launch: public RSS feeds** of Indian stock-market and business news sites. Headline, link and timestamp only; each feed's terms checked before enabling.
+5. **Founder staffs the correction queue** at launch.
+
+**Reason**
+
+Research R6: an automatic correction path lets coordinated users retag stories. RSS is the cheapest broad source of Indian financial headlines and needs no procurement beyond the exchange feed.
+
+**Consequences**
+
+- RSS content is publisher-controlled: feeds can lag, truncate or disappear. Source health (PRD-001 US-001.6) covers this.
+- `[INFERRED]` Some publishers restrict RSS to non-commercial use. Feeds with such terms are excluded, which may thin coverage; the gap shows up in the coverage metric.
+- Founder time is committed to market-hours review until staffing changes.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -578,7 +609,7 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | ~~OQ-7~~ | Product | ~~Vernacular sources in MVP?~~ | — | ✅ **Resolved — see D-016** (English first) |
 | ~~OQ-8~~ | Legal | ~~Retain SEBI counsel — who, when?~~ | — | ✅ **Closed — not pursued, see D-018** |
 | **OQ-9** | Research | RE study Part IV scope | Proceed on public surface | 🟢 Low |
-| **OQ-10** | Architecture | Vote weighting: automatic or reviewed? | Open — bears on abuse surface | 🟢 Low |
+| ~~OQ-10~~ | Architecture | ~~Vote weighting: automatic or reviewed?~~ | — | ✅ **Resolved — see D-020** (operator review only) |
 | **F-1** | Process | Approved research immutable, changes via errata? | Yes — already precedented | 🟢 Low |
 | **F-2** | Research | Continue RE study while product is blocked? | Yes — only unblocked work | 🟢 Low |
 | **F-3** | Process | Do these seven documents need approval to bind? | Assumed yes | 🟢 Low |

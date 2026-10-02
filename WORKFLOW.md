@@ -56,7 +56,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | Founder + CTO |
 | **DoD** | Universal + every scope item traces to a research finding + **non-goals list exists** |
 
-**Status:** ◐ Started 2026-10-02. Draft v0.3 awaiting approval.
+**Status:** ◐ Started 2026-10-02. Draft v0.4 awaiting approval.
 
 **Why the gate is hard:** OQ-1 changes the target user. OQ-2 changes the data model. OQ-3 changes the entire frontend. OQ-4 changes the schema. Answering them after this phase means redoing it.
 
@@ -159,7 +159,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | Security |
 | **DoD** | Universal + findings are fixed or explicitly accepted with rationale |
 
-**Blocking:** no AI-layer release without SEBI-competent counsel (GUARDRAILS §3.5).
+~~**Blocking:** no AI-layer release without SEBI-competent counsel (GUARDRAILS §3.5).~~ Removed 2026-10-02 — D-018.
 
 ---
 

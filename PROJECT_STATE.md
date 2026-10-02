@@ -15,7 +15,7 @@
 
 Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No PRD, architecture, or code work has begun.
 
-**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.3 — PD-1…PD-7 resolved (D-016), comments policy (D-017); awaiting founder + CTO approval. Exit criteria: WORKFLOW §2.
+**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.4 — D-016, D-017, D-018; awaiting founder + CTO approval. Exit criteria: WORKFLOW §2.
 
 ---
 
@@ -51,7 +51,7 @@ Ordered by dependency. Nothing below the gate may start.
 | ~~1~~ | ~~Resolve OQ-1…OQ-5~~ | ✅ **Done 2026-10-02** — D-009, D-011, D-013, D-014, D-015 |
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
-| 4 | Product definition | ◐ **Draft v0.3** — D-016, D-017; awaiting approval |
+| 4 | Product definition | ◐ **Draft v0.4** — D-016…D-018; awaiting approval |
 | 4 | PRD | Product definition |
 | 5 | Architecture | Approved PRD |
 | 6 | Database schema | Approved architecture |
@@ -79,9 +79,9 @@ Raised in Phase 1 §13. Each cascades into schema, IA, and roadmap. Producing a 
 
 **Next action:** none — closed. Product Definition may begin.
 
-### 🟡 B-4 — Seven errata pending against approved research. *(new, 2026-07-15)*
+### 🟡 B-4 — Eight errata pending against approved research. *(new, 2026-07-15)*
 
-D-009, D-011, D-013, D-014 and D-015 superseded or corrected seven claims in `phase-01-product-research.md`. That document is approved and immutable, so corrections require an erratum pass per GUARDRAILS §1.2 (erratum section + banner at the error site + version bump). **Recorded, not applied.**
+D-009, D-011, D-013, D-014, D-015 and D-018 superseded or corrected eight claims in `phase-01-product-research.md`. That document is approved and immutable, so corrections require an erratum pass per GUARDRAILS §1.2 (erratum section + banner at the error site + version bump). **Recorded, not applied.**
 
 | # | Target | Correction | Origin |
 | --- | --- | --- | --- |
@@ -91,11 +91,12 @@ D-009, D-011, D-013, D-014 and D-015 superseded or corrected seven claims in `ph
 | **E-4** | §13 OQ-2 recommendation; §6.3 sentiment-ranking rule | Superseded. Directional voting at CryptoPanic parity adopted | Founder, D-011 |
 | **E-5** | §13 OQ-3 recommendation (desktop + separate mobile surface) | Superseded. Desktop-only for MVP; mobile deferred | Founder, D-013 |
 | **E-7** | §3.3, §11, §12 R10 mitigation, §13 OQ-5 — B2B as margin engine / core roadmap | Superseded. Consumer only; no B2B | Founder, D-015 |
+| **E-8** | §6.3, §11 — counsel before Phase 5 / counsel as prerequisite | Superseded. No counsel | Founder, D-018 |
 | **E-6** | §6.2, E3, §13 OQ-4 — tone→security aggregate "structurally unrepresentable" in schema | Unachievable as specified: one JOIN away while tone and instrument tags coexist. Achievable forms: don't store tone, or physically separate it | CTO error, `docs/q2.md` §F.2, `docs/q4.md` §2.1; acknowledged D-014 |
 
 **Next action:** apply during Foundation v1.1 (roadmap step 6 already touches these files). Not blocking.
 
-**Non-blocking but needed soon:** OQ-6 (feed procurement budget), ~~OQ-7~~ (✅ D-016, English first), OQ-8 (SEBI counsel — required *before* any AI-layer implementation), OQ-9 (Part IV scope), OQ-10 (vote weighting). Full text in `docs/research/phase-01-product-research.md` §13.
+**Non-blocking but needed soon:** OQ-6 (feed procurement budget), ~~OQ-7~~ (✅ D-016, English first), ~~OQ-8~~ (✅ D-018, not pursued), OQ-9 (Part IV scope), OQ-10 (vote weighting). Full text in `docs/research/phase-01-product-research.md` §13.
 
 ### ✅ B-2 — **CLOSED 2026-08-05.** Repository is under version control.
 
@@ -119,11 +120,10 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder approves `docs/product/product-definition.md` v0.3 (or requests changes). Approval exits WORKFLOW §2 and opens the PRD phase.
+**Single next action:** Founder approves `docs/product/product-definition.md` v0.4 (or requests changes). Approval exits WORKFLOW §2 and opens the PRD phase.
 
-**Open from D-017:** founder stated "no need of lawyer here in India" when deciding comments. Whether that extends to GUARDRAILS §3.5 (counsel before AI layer) and §4.13 (counsel before directional voting) is **unconfirmed**; both rules stand until the founder decides.
 
-**Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion. Scope narrowed by D-015 to consumer voting + AI layer.
+**Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
 
 **Parallel, no decision required:** ~~initialise git (B-2)~~ ✅ done. Next unblocked item is `.claude/` infrastructure (review roadmap step 2) — now meaningful, because `docs/research/` exists as a real path a `PreToolUse` hook can defend.
 
@@ -149,7 +149,7 @@ None — B-1 closed.
 
 ### Strategic — non-blocking (founder)
 
-OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · OQ-8 counsel · OQ-9 Part IV scope · OQ-10 vote weighting.
+OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV scope · OQ-10 vote weighting.
 
 ### Foundation — this phase (CTO)
 
@@ -181,3 +181,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · OQ-8 counsel · OQ-9 Part IV scope · 
 | 2026-10-02 | **Product Definition started.** Draft v0.1 written (`docs/product/product-definition.md`): 2 usage modes, 9 jobs, 15 MVP scope items, 11 non-goals, promise-mapped metrics, 7 open founder choices (PD-1…PD-7). | Phase 2 in progress |
 | 2026-10-02 | **PD-1…PD-7 resolved → D-016** (freemium; comments at launch; polls never; no price at MVP; broker import if feasible; English first, resolving OQ-7; read-only phone view). Product Definition → v0.2. | Product Definition awaiting approval |
 | 2026-10-02 | **D-017**: comments unrestricted, no counsel gate for comments; legal-minimum moderation (reports, grievance officer, takedown on order) retained. Product Definition → v0.3. Scope of "no lawyer" for §3.5/§4.13 unconfirmed. | Product Definition awaiting approval |
+| 2026-10-02 | **D-018**: no legal counsel; GUARDRAILS §3.5 and §4.13 removed, §4.4 counsel clause dropped; OQ-8 closed as not pursued. Erratum E-8 recorded. Product Definition → v0.4. | OQ-8 closed; B-4 now 8 errata |

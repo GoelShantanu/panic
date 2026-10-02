@@ -64,7 +64,7 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 In order. Do not skip.
 
 1. **Product Definition** — OQ-1…OQ-5 resolved; WORKFLOW §2 is next. See [PROJECT_STATE.md](PROJECT_STATE.md).
-2. **Retain SEBI counsel (OQ-8)** — launch-blocking under GUARDRAILS §4.13.
+2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
 3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ---

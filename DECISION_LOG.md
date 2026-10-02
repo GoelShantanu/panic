@@ -498,6 +498,44 @@ Founder direction: open community discussion, and founder view that a lawyer is 
 
 ---
 
+## D-018 — No legal counsel; remove GUARDRAILS §3.5 and §4.13 *(closes OQ-8)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Legal · Process |
+| **Decided by** | Founder |
+
+**Decision**
+
+1. **No SEBI or other legal counsel** will be engaged before launch. OQ-8 is closed as *not pursued*.
+2. **GUARDRAILS §3.5 removed** (counsel before AI-layer implementation).
+3. **GUARDRAILS §4.13 removed** (counsel opinion before directional voting goes live).
+4. **GUARDRAILS §4.4 amended**: vote-driven ranking stays behind a server-side kill switch; the counsel condition is dropped.
+
+**Reason**
+
+Founder view: "no need of lawyer here in India." Extends D-017 (comments) to the AI layer and voting.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Keep both rules *(CTO lean)* | Founder declined. |
+| Keep the voting rule only | Founder declined. |
+
+**Consequences**
+
+- **CTO risk note, recorded per CLAUDE.md evidence discipline. Not legal advice.** `[VERIFIED, Research §6.1]` SEBI's Investment Adviser rules bar unregistered buy/sell/hold calls and coded references to securities, and enforcement reached ₹546 crore against one actor. `[INFERRED]` The product now launches with three directional surfaces and no legal review: aggregated crowd votes that can drive ranking (D-011), unrestricted comments (D-017), and AI summaries (D-014). Each was designed with mitigations (labelling, kill switch, neutral summaries, attributable identity, audit log). Those remain; none is a substitute for a legal opinion. Every regulatory claim in `docs/q2.md`, `docs/q4.md` and `docs/q5.md` is now unchecked by anyone qualified.
+- **Mitigations retained:** kill switch for directional voting (§4.4), user-opinion labelling (§4.3), tone-neutral attributed summaries (§4.5, D-014), audit logs (§4.8), the legal-minimum takedown process (D-017).
+- **D-014 item 3** ("article-level AI tone revisited after counsel") loses its trigger. Article tone stays out until a new decision.
+- **Research erratum E-8** recorded against `phase-01-product-research.md` §6.3 and §11 ("engage SEBI-competent counsel before Phase 5"; "counsel is a Phase 5 prerequisite") — superseded by founder decision. Not applied.
+- Product Definition §4.1 launch conditions lose both counsel rows.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -511,7 +549,7 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | ~~OQ-5~~ | Strategy | ~~Promote B2B API into core roadmap?~~ | — | ✅ **Resolved — see D-015** (consumer only; no B2B) |
 | **OQ-6** | Process | Budget for authorised exchange feeds (~₹3L/yr)? | Authorised | 🟠 Soon |
 | ~~OQ-7~~ | Product | ~~Vernacular sources in MVP?~~ | — | ✅ **Resolved — see D-016** (English first) |
-| **OQ-8** | Legal | Retain SEBI counsel — who, when? | Before AI-layer implementation **and before MVP launch** (D-011) | 🟠 Soon — gates GUARDRAILS §3.5 and launch |
+| ~~OQ-8~~ | Legal | ~~Retain SEBI counsel — who, when?~~ | — | ✅ **Closed — not pursued, see D-018** |
 | **OQ-9** | Research | RE study Part IV scope | Proceed on public surface | 🟢 Low |
 | **OQ-10** | Architecture | Vote weighting: automatic or reviewed? | Open — bears on abuse surface | 🟢 Low |
 | **F-1** | Process | Approved research immutable, changes via errata? | Yes — already precedented | 🟢 Low |

@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.3 — **DRAFT** |
+| **Version** | 0.4 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | Founder (REPOSITORY_STRUCTURE §4) · drafted by CTO |
-| **Status** | 🟡 **Awaiting founder + CTO approval** (WORKFLOW §2). Open choices PD-1…PD-7 resolved in [D-016](../../DECISION_LOG.md); comments policy in [D-017](../../DECISION_LOG.md). Nothing here binds until approved. |
-| **Inputs** | `docs/research/phase-01-product-research.md` (Research) · `docs/research/cryptopanic-product-reverse-engineering.md` (RE) · [D-009](../../DECISION_LOG.md), [D-011](../../DECISION_LOG.md)…[D-017](../../DECISION_LOG.md) · [GUARDRAILS.md](../../GUARDRAILS.md) |
+| **Status** | 🟡 **Awaiting founder + CTO approval** (WORKFLOW §2). Open choices PD-1…PD-7 resolved in [D-016](../../DECISION_LOG.md); comments policy in [D-017](../../DECISION_LOG.md); no counsel in [D-018](../../DECISION_LOG.md). Nothing here binds until approved. |
+| **Inputs** | `docs/research/phase-01-product-research.md` (Research) · `docs/research/cryptopanic-product-reverse-engineering.md` (RE) · [D-009](../../DECISION_LOG.md), [D-011](../../DECISION_LOG.md)…[D-018](../../DECISION_LOG.md) · [GUARDRAILS.md](../../GUARDRAILS.md) |
 | **Next phase** | PRD (`docs/prd/`), which turns each scope item below into testable requirements |
 
 > This document says **who** the product is for, **what** it must do for them, what it will **not** do, and **how we will know it works**. It does not say how it is built (Architecture) or specify behaviour precisely (PRD). Where a fact already lives elsewhere, this document links to it rather than restating it (GUARDRAILS §1.3).
@@ -94,9 +94,7 @@ These are not features. They are conditions the scope above cannot ship without.
 
 | Condition | Applies to | Source |
 | --- | --- | --- |
-| Written counsel opinion on directional voting | S8 directional, S9 Bullish/Bearish | GUARDRAILS §4.13 |
 | Grievance officer appointed; report and takedown-on-order process live | S16 | D-017 (IT Rules 2021) |
-| Counsel retained before AI-layer implementation | S6 summaries, S7 event types | GUARDRAILS §3.5 |
 | Server-side kill switch for directional voting | S8, S9 | GUARDRAILS §4.4 (as amended) |
 | Immutable audit log of AI outputs and votes | S6, S7, S8 | GUARDRAILS §4.8; `docs/q2.md` §F.3.8 |
 | Authorised exchange announcements feed procured (no price feed needed) | S2 | OQ-6 (open); D-016 PD-4 |
@@ -189,6 +187,6 @@ All seven open choices from v0.1 were answered on 2026-10-02 and recorded in [D-
 | **No user research** | Jobs (§3), modes (§2.1) and metric targets (§6) are `[INFERRED]` from research and decisions, not from talking to users. |
 | **Targets are placeholders** | Every number in §6 is an `[ASSUMPTION]` pending founder input and a baseline. |
 | **Feasibility unchecked** | Filing latency (§6.1), broker import (S4) and source coverage depend on procurement (OQ-6) and have not been tested. |
-| **Legal scope unconfirmed** | S6–S9 depend on counsel (§4.1). S16 ships without counsel review by founder decision (D-017); its risk is recorded there. |
+| **No legal review** | By founder decision (D-017, D-018) no part of the product is reviewed by counsel. Regulatory readings behind S6–S9 and S16 are an engineer's `[INFERRED]` interpretation; the risk is recorded in D-018. |
 | **CryptoPanic parity is from public artefacts** | Logged-in features (alerts detail, API, reputation rules) are partly unverified (PROJECT_STATE B-3). |
 | **Seven research errata unapplied** | E-1…E-7 (PROJECT_STATE B-4). This document follows the decisions, not the superseded research text. |

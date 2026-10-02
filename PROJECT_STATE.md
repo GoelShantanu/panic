@@ -123,7 +123,7 @@ D-009, D-011, D-013, D-014, D-015 and D-018 superseded or corrected eight claims
 
 `git init` on `main`; Foundation v1.0 committed as-found as the baseline; M-1/M-2 executed on top. GUARDRAILS §1.1/§1.2 are now enforceable — a rewrite of approved research is detectable by `git diff`. See [DECISION_LOG](DECISION_LOG.md) D-010.
 
-**Residual — not closed by this change:** no remote is configured, so there is still **no off-machine backup**. `git init` bought auditability, not durability; the sole copy remains on one Windows machine. Adding a remote needs a founder decision (which host, and private vs. public). Tracked here as state, deliberately **not** numbered as an OQ — Research §13 owns that sequence and is immutable, so a new OQ-11 cannot be minted outside it (GUARDRAILS §1.3). It belongs in the living risk register the review's H-6 calls for.
+**Residual — ✅ closed 2026-10-02 (D-027):** remote `origin` = `github.com/GoelShantanu/panic` (**public**). Off-machine copy exists. *Historical note below kept for the record:* no remote was configured, so there was **no off-machine backup**. `git init` bought auditability, not durability; the sole copy remains on one Windows machine. Adding a remote needs a founder decision (which host, and private vs. public). Tracked here as state, deliberately **not** numbered as an OQ — Research §13 owns that sequence and is immutable, so a new OQ-11 cannot be minted outside it (GUARDRAILS §1.3). It belongs in the living risk register the review's H-6 calls for.
 
 ### 🟠 B-3 — Authenticated CryptoPanic study blocked on artefact capture.
 
@@ -218,3 +218,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **ADR-006 resolved → D-025**: Claude Haiku 4.5 for all AI tasks, ₹50k/month cap, summaries for alert-worthy filings only (PRD-004 amended). Quality risk and revisit triggers recorded. | Phase 4 in progress |
 | 2026-10-02 | **Component designs drafted**: ingestion, deduplication, entity resolution, AI layer. Pipeline order corrected in system overview (classify + resolve before clustering). | Phase 4: awaiting sign-off |
 | 2026-10-02 | **Architecture v1.0 approved → D-026.** Exit check passed (payment/email ADRs and feed vendor deferred); ADR-001…006 accepted; F3 corrected. | **Phase 4 complete**; Database unblocked |
+| 2026-10-02 | **Pushed to public GitHub remote → D-027** (`GoelShantanu/panic`, main at f25a996). B-2 residual closed. | Off-machine backup exists |

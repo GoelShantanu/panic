@@ -816,6 +816,39 @@ Lowest cost (≈ ₹16k–38k/month in normal months, ADR-006 §3.2), inside the
 
 ---
 
+## D-027 — Git remote: public GitHub repository
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Process |
+| **Decided by** | Founder |
+
+**Decision**
+
+`origin` = `https://github.com/GoelShantanu/panic.git`, a **public** repository. All history pushed (28 commits, `main` at f25a996).
+
+**Reason**
+
+Founder instruction. Resolves the B-2 residual: the repository now has an off-machine copy.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Make the repository private before pushing *(CTO recommendation)* | Founder chose to push public. |
+| Push without the CryptoPanic study | Founder chose to push everything. |
+
+**Consequences**
+
+- Off-machine backup exists; durability no longer depends on one Windows machine.
+- **Everything in the repository is public**: strategy, decision log including the D-017/D-018/D-021/D-025 risk notes, pricing, and the CryptoPanic study with its quoted code fragments. Public content may be cached or indexed even if later removed.
+- Future commits are public on push. Credentials and secrets must never enter the repository (GUARDRAILS §5.3); this now has public consequences.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

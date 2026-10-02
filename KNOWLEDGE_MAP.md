@@ -59,11 +59,17 @@ Not research, not foundation. Historical context once their decision is recorded
 | `prd-006-comments.md` | Comments, reports, grievance handling, takedowns, kill switch | CTO | Product Definition v1.0, D-016, D-017, D-018, PRD-005 | Architecture | **How comments work and the legal-minimum moderation process** | Medium (IT Rules duties `[INFERRED]`, unreviewed) | ✅ v1.0 approved — D-023 |
 | `prd-007-accounts-and-tiers.md` | Sign-up, usernames, privacy (DPDP), operator accounts, free/paid entitlements, pricing, billing | CTO | Product Definition v1.0, D-015, D-016, D-018, D-021 | PRD-001, 003, 004; Architecture | **The entitlements object and tier limits** | Medium (price and split untested; legal duties `[INFERRED]`) | ✅ v1.0 approved — D-023 |
 
+### 1.2e Architecture — `docs/architecture/`
+
+| File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `system-overview.md` | Components, data flow, PRD→component map, market-session assumptions, failure modes, scaling | Architect/CTO | PRD-001…007, D-024 | Database, Backend, Ops | **What runs where, and how it fails** | Medium (volumes `[ASSUMPTION]`) | 🟡 v0.1 draft |
+| `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | 🟡 Proposed (ADR-006 awaits founder) |
+
 ### 1.3 Gated — not yet created
 
 | Layer | Path | Gate |
 | --- | --- | --- |
-| Architecture | `docs/architecture/` | PRD approved ✅ (D-023) — awaiting founder go-ahead |
 | Database | `docs/database/` | Architecture approved |
 | API | `docs/api/` | Architecture approved |
 | QA | `docs/qa/` | PRD approved |

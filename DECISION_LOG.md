@@ -701,6 +701,42 @@ Every story has testable acceptance criteria, payload contracts, and empty and f
 
 ---
 
+## D-024 — Architecture phase opened; founder constraints; ADR-001…006 proposed
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Architecture · Process |
+| **Decided by** | Founder (go-ahead and constraints); CTO (proposed ADRs) |
+| **Documents** | [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md), `docs/architecture/adr/` |
+
+**Founder constraints**
+
+1. Built by the founder with multiple AI coding agents; operated by one person.
+2. Simple VPS / PaaS hosting.
+3. Infrastructure budget **under ₹15k/month**, excluding the exchange feed and AI usage.
+4. AI provider delegated to the CTO.
+
+**Proposed ADRs** (status Proposed until Architecture sign-off)
+
+| ADR | Choice |
+| --- | --- |
+| ADR-001 | ISIN as the canonical instrument key; validity-period mapping tables |
+| ADR-002 | One TypeScript codebase: `web` (SSR + API + operator console), `live` (SSE), `worker`; hand-written SQL migrations; PRD compliance criteria as automated tests |
+| ADR-003 | Two VPSs in an Indian region; Docker Compose; off-site backups with monthly restore drill; deploy freeze 08:45–15:45 IST on trading days |
+| ADR-004 | PostgreSQL for data, job queue, LISTEN/NOTIFY fan-out, instrument search and append-only audit log; no Redis/Kafka/search engine |
+| ADR-005 | Broadcast shared events over SSE; personal state fetched over HTTP — justified on personalisation per RE §30.7 |
+| ADR-006 | Claude API: structured outputs for classification, citations for summaries, local PDF text extraction, server-side refusal fallback, spend cap. **Model tier pending founder decision** |
+
+**Consequences**
+
+- AI usage (ADR-006 §3: ≈ ₹16k–1.8 lakh/month depending on tier) is likely to exceed infrastructure cost.
+- Open before sign-off: ADR-006 model tier and spend ceiling; ADR-006 §3.4 summary-scope clarification to PRD-004.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

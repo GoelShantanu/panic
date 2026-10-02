@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 3 — PRD: complete** (2026-10-02, D-023). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`. **Next: Architecture** on founder go-ahead.
+**Phase 4 — Architecture** (opened 2026-10-02, D-024). Approved inputs: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`. Drafts: `docs/architecture/`.
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 

@@ -77,7 +77,7 @@ Raised in Phase 1 §13. Each cascades into schema, IA, and roadmap. Producing a 
 
 **Question text is owned by `phase-01-product-research.md` §13.** This table tracks status only (GUARDRAILS §1.3). CTO recommendations live in the per-question briefs (`docs/qN.md`).
 
-**Next action:** Founder answers OQ-5 (brief to be prepared).
+**Next action:** Founder answers OQ-5. Brief prepared: `docs/q5.md` (recommends API-first architecture now; commercial B2B gated on counsel, redistribution rights and traction).
 
 ### 🟡 B-4 — Six errata pending against approved research. *(new, 2026-07-15)*
 
@@ -118,7 +118,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder resolves **OQ-5** (B-1) — the last gate before product definition. Brief not yet prepared.
+**Single next action:** Founder resolves **OQ-5** (B-1) — the last gate before product definition. Brief prepared: `docs/q5.md`.
 
 **Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion.
 
@@ -173,3 +173,4 @@ OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope 
 | 2026-10-02 | GUARDRAILS §4.3/§4.4 amendment approved and applied, new §4.13 counsel gate → **D-012**. **OQ-3 resolved → D-013**: desktop-only web for MVP, mobile deferred until traffic. Erratum E-5 recorded. | B-1 3/5; B-4 now 5 errata |
 | 2026-10-02 | OQ-4 brief prepared (`docs/q4.md`). Recommends Option E: no AI tone at MVP, event classification + neutral summaries; article tone revisited after counsel. Raises candidate erratum E-6 ("structurally unrepresentable" unachievable as specified). | No state change; awaiting founder |
 | 2026-10-02 | **OQ-4 resolved → D-014**: no AI tone at MVP; AI does event classification + neutral summaries; article tone revisited after counsel. Erratum E-6 recorded. | B-1 4/5; B-4 now 6 errata |
+| 2026-10-02 | OQ-5 brief prepared (`docs/q5.md`). Recommends Option C: API-first now, sell only after counsel (association risk from D-011), redistribution rights and traction; separate entity held as fallback. Flags unresearched B2B redistribution rights. | No state change; awaiting founder |

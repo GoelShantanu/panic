@@ -39,6 +39,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | `q1.md` | OQ-1 decision brief | CTO | Research §3, §13 | D-009 | *Nothing* — decision lives in DECISION_LOG D-009. **Retained for the sourced funnel in §3 and the errata in §2.** | High (sourced) | ✅ Resolved → D-009 |
 | `q2.md` | OQ-2 decision brief | CTO | Research §6, RE §4.4/§29.2 | D-011, D-012 | *Nothing* — decision lives in D-011. **Retained for the compliance analysis and the §F.3 abuse mitigations carried forward.** | Medium (regulatory reading `[INFERRED]`) | ✅ Resolved → D-011 |
 | `q4.md` | OQ-4 decision brief | CTO | Research §6.2/E3, RE §4.4/§5.2, D-011/D-012 | D-014 | *Nothing* — decision lives in D-014. **Retained for erratum E-6 (§2.1) and the CryptoPanic AI-surface finding (§2.2).** | Medium (regulatory reading `[INFERRED]`) | ✅ Resolved → D-014 |
+| `q5.md` | OQ-5 decision brief | CTO | Research §3.3/§7.2/§11, `q1.md` §2 (E-3), D-009/D-011/D-014 | Pending decision | *Nothing* — pending decision. First flags B2B redistribution-rights question (§2.3) | Medium (sizing illustrative; legal `[INFERRED]`; rights `[ASSUMPTION]`) | 🔴 Awaiting founder |
 
 ### 1.3 Gated — not yet created
 

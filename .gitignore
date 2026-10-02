@@ -22,3 +22,8 @@ desktop.ini
 !.env.example
 *.pem
 *.key
+
+# Node
+node_modules/
+coverage/
+*.tsbuildinfo

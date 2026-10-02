@@ -1,0 +1,12 @@
+{
+  "name": "@stockpanic/db",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@stockpanic/core": "*",
+    "pg": "^8.23.1"
+  }
+}

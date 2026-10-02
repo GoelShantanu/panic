@@ -76,6 +76,13 @@ Not research, not foundation. Historical context once their decision is recorded
 | `migrations/0001_initial.sql` | Initial DDL | Architect | schema.md | Backend | **The schema itself** | High (applied on PG 17.11) | ✅ v1.0 frozen — D-028 |
 | `tests/0001_constraints_test.sql` | Constraint tests against real Postgres | Architect | 0001 | CI | **Proof the constraints hold** | High | ✅ 56/56 pass |
 
+### 1.2g Source — `src/`
+
+| Path | Purpose | Owner | Depends on | Status |
+| --- | --- | --- | --- | --- |
+| `src/packages/core` | Shared domain rules: ISIN, public IDs, event taxonomy, entitlements, vote display | CTO | PRD-004, 005, 007; ADR-001 | ✅ B1 — 23 unit tests |
+| `src/packages/db` | Migration runner; DB access (grows with each milestone) | CTO | `docs/database/` | ✅ B1 — 6 integration tests |
+
 ### 1.3 Gated — not yet created
 
 | Layer | Path | Gate |

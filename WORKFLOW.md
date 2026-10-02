@@ -122,6 +122,8 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | CTO |
 | **DoD** | Universal + tests pass + **behaviour observed end-to-end, not just green tests** + no `[ASSUMPTION]` in load-bearing logic |
 
+**Status:** ◐ Opened 2026-10-02. Milestones: PROJECT_STATE → Backend plan.
+
 ---
 
 ## 7. Frontend

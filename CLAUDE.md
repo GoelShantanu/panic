@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Next: Backend** on founder go-ahead.
+**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend** opened 2026-10-02 (milestones in PROJECT_STATE).
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -71,15 +71,17 @@ In order. Do not skip.
 
 ## Important Commands
 
-*Placeholder — no toolchain exists yet. Populate when the stack is chosen (gated on architecture).*
+Node ≥ 24 (TypeScript runs natively; no build step). npm workspaces under `src/` (ADR-002).
 
 ```bash
-# Build       — TBD
-# Test        — TBD
-# Lint        — TBD
-# Typecheck   — TBD
-# Run local   — TBD
+npm install                      # install workspace dependencies
+npm run typecheck                # tsc, strict
+npm test                         # unit tests; DB integration tests skip without TEST_DATABASE_URL
+TEST_DATABASE_URL=postgres://postgres:test@127.0.0.1:55432/postgres npm test   # + integration (PostgreSQL 17+)
+DATABASE_URL=postgres://… npm run db:migrate                                 # apply pending migrations
 ```
+
+Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=test -p 127.0.0.1:55432:5432 postgres:17`. Schema constraint tests: run `docs/database/tests/0001_constraints_test.sql` with `psql` inside that container.
 
 ---
 

@@ -11,11 +11,26 @@
 
 ## Current Phase
 
-**Phase 5 — Database: ✅ complete** *(2026-10-02 — D-028)*. **Next: Phase 6 — Backend**, on founder go-ahead.
+**Phase 6 — Backend** *(opened 2026-10-02 on founder go-ahead)*
 
-Schema v1.0 approved and verified on PostgreSQL 17.11 (56/56 constraint tests). Migration 0001 frozen. No application code written.
+Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26. Built in milestones, each verified end-to-end before the next.
 
-**Phase gate status:** 🟢 **Backend entry criteria met** (WORKFLOW §6: schema approved).
+**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §6 — contracts implemented as specified; error paths handled; per-source health and circuit breakers; audit logging live; tests pass; behaviour observed end-to-end.
+
+### Backend plan
+
+| # | Milestone | Covers | Status |
+| --- | --- | --- | --- |
+| B1 | Foundation: workspace, `core` domain package, `db` package with migration runner | ADR-002; schema 0001 | ✅ Done — typecheck clean; 29/29 tests (23 unit, 6 integration on PG 17); migrate CLI observed end-to-end |
+| B2 | Ingestion framework: adapter contract, RSS adapter, source health, circuit breaker, scheduler | ingestion.md; PRD-002 US-002.5 | ☐ Next |
+| B3 | Pipeline: rule classification, rule-only entity resolution, clustering, story events | deduplication.md, entity-resolution.md; PRD-002 | ☐ |
+| B4 | Read API + live channel: stream, story, company, instruments; SSE broadcast | PRD-001, PRD-004; ADR-005 | ☐ |
+| B5 | Accounts, sessions, entitlements | PRD-007 | ☐ |
+| B6 | Watchlist and alerts | PRD-003 | ☐ |
+| B7 | Votes and comments, grievances | PRD-005, PRD-006 | ☐ |
+| B8 | AI layer: classification, summaries, safeguards, spend cap | ai-layer.md; D-025 | ☐ — needs Haiku feature check |
+| B9 | Filings adapter | ingestion.md §3 | ☐ — **blocked on feed vendor (OQ-6)** |
+| B10 | Billing | PRD-007 §2.2 | ☐ — needs payment-provider ADR |
 
 ### Database plan
 
@@ -85,7 +100,7 @@ Ordered by dependency. Nothing below the gate may start.
 | 4 | PRD | ✅ **v1.0 approved** — D-023 |
 | 5 | Architecture | ✅ **v1.0 approved** — D-026 |
 | 6 | Database schema | ✅ **v1.0 approved** — D-028 |
-| 7 | Backend | ✅ Unblocked — founder go-ahead |
+| 7 | Backend | ◐ **In progress** — see Backend plan |
 | 8 | Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
 
 ---
@@ -151,7 +166,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder go-ahead to start **Backend** (WORKFLOW §6). Before ingestion code can run against real data: exchange feed vendor (OQ-6) and RSS feed list with terms checks.
+**Single next action:** CTO builds B2 (ingestion framework + RSS adapter + source health). Founder, in parallel: exchange feed vendor (OQ-6) and RSS feed list with terms checks.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -232,3 +247,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Database phase opened.** Migration 0001 (≈ 50 tables, tone-column event trigger, temporal exclusion constraints, append-only audit), ~60 constraint tests, schema.md and partitioning.md drafted. Not yet executed: Docker Desktop not running. | Phase 5 in progress |
 | 2026-10-02 | **Schema verified** on PostgreSQL 17.11 (throwaway container, since removed): migration clean; 56/56 constraint tests pass; app-role smoke test passes. One defect found (NULL-passing `wrong_stock` check) and fixed. | Phase 5: awaiting sign-off |
 | 2026-10-02 | **Database v1.0 approved → D-028.** Exit check passed; migration 0001 frozen. Pushed to GitHub. | **Phase 5 complete**; Backend unblocked |
+| 2026-10-02 | **Backend opened; B1 done.** npm-workspace monorepo (Node 26 native TS, TypeScript 7, Vitest 5, pg 8). `core`: ISIN with check digit, ULID public IDs, taxonomy, entitlements, PRD-005 vote display. `db`: forward-only migration runner with advisory lock, self-transaction check, rollback on failure. 29/29 tests incl. integration on PG 17; seeds proven identical to core constants. | Phase 6 in progress |

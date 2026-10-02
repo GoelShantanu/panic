@@ -339,6 +339,48 @@ Founder direction: focus build effort on one surface until the product shows tra
 
 ---
 
+## D-014 — No AI tone at MVP; article tone after counsel *(resolves OQ-4)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product · Architecture · Legal |
+| **Decided by** | Founder |
+| **Brief** | [`docs/q4.md`](docs/q4.md) — Option E |
+
+**Decision**
+
+1. **No AI-generated tone or sentiment at MVP.** No `tone` attribute exists in any datastore, API or UI.
+2. The AI layer does **factual classification** (event type, materiality category) and **attributed, tone-neutral summaries** only.
+3. **Article-level AI tone (Option B) is deferred, not rejected.** It is to be put to counsel (OQ-8) alongside the GUARDRAILS §4.13 voting question, and added later only if counsel and the product case both support it.
+4. **Erratum E-6 acknowledged** (brief §2.1): Research §6.2/E3's "structurally unrepresentable" aggregate is unachievable while tone and instrument tags coexist in one database. Recorded in PROJECT_STATE B-4, not applied.
+
+**Reason**
+
+D-011's directional voting is defensible because it is user speech, labelled as such (D-012). AI tone is the platform's own voice, and on the same screen it would weaken that framing. CryptoPanic's public product shows the same split: crowd supplies direction, machine supplies activity and summaries (brief §2.2). Leaving tone out means the rule is enforced by absence, with no join, separation service or CI test to maintain. Event types have ground truth and serve D-009's promise better than tone. Adding article tone later is additive, so deferral is cheap.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| A — AI sentiment per security | Research §6.2 Landmine 1; our voice on a security; likely forecloses B2B. |
+| B — AI tone on articles, now | Weakens D-011's user-speech framing; enforcement only by separation and review. Deferred to post-counsel. |
+| C alone — no AI tone, permanently | Closes off B without counsel input; E keeps it open at little cost. |
+| D — AI tone internal only | B's model cost for almost no benefit; still stored and discoverable. |
+
+**Consequences**
+
+- **GUARDRAILS §4.3 holds trivially** for AI tone: nothing exists to aggregate. §4.3's text still *permits* article-level AI tone; D-014 is what keeps it out of MVP. Adding tone later requires a new decision superseding this one.
+- **No sentiment model in the MVP AI scope.** The AI layer is classification + summarisation; the counsel question for §3.5 narrows accordingly.
+- **Event taxonomy becomes PRD work**, ideally anchored to exchange filing categories.
+- **Partner feed (OQ-5) carries no AI directional signal.** The only directional data on the platform is user votes (D-011).
+- **Accepted cost:** no AI-tone feature at launch, against stockinsights.ai which ships one; low early vote volume means many stories show no directional signal at all.
+- **stockinsights.ai research** remains the cheapest evidence for revisiting B.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -348,7 +390,7 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | ~~OQ-1~~ | Strategy | ~~Re-base beachhead to swing/positional investors?~~ | — | ✅ **Resolved — see D-009** |
 | ~~OQ-2~~ | Product | ~~Quality voting instead of directional?~~ | — | ✅ **Resolved — see D-011** (directional, CryptoPanic parity) |
 | ~~OQ-3~~ | Product | ~~Desktop-only, or + separate mobile surface?~~ | — | ✅ **Resolved — see D-013** (desktop-only; mobile deferred) |
-| **OQ-4** | Architecture · Legal | Tone-on-articles-only, enforced in schema? | Yes — **narrowed by D-011 to AI tone only** | 🔴 Blocking |
+| ~~OQ-4~~ | Architecture · Legal | ~~Tone-on-articles-only, enforced in schema?~~ | — | ✅ **Resolved — see D-014** (no AI tone at MVP; article tone after counsel) |
 | **OQ-5** | Strategy | Promote B2B API into core roadmap? | Yes — **at risk under D-011** (§2.2 of `docs/q2.md`) | 🔴 Blocking |
 | **OQ-6** | Process | Budget for authorised exchange feeds (~₹3L/yr)? | Authorised | 🟠 Soon |
 | **OQ-7** | Product | Vernacular sources in MVP? | Open | 🟠 Soon |

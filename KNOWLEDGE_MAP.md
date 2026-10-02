@@ -38,7 +38,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | `foundation-v1.0-review.md` | CTO architecture review of Foundation v1.0 | CTO | All foundation docs | Foundation v1.1 work | **The v1.1 roadmap and its priority matrix** | High (measured) / Medium (scaling extrapolations) | ✅ Verdict B, awaiting approval |
 | `q1.md` | OQ-1 decision brief | CTO | Research §3, §13 | D-009 | *Nothing* — decision lives in DECISION_LOG D-009. **Retained for the sourced funnel in §3 and the errata in §2.** | High (sourced) | ✅ Resolved → D-009 |
 | `q2.md` | OQ-2 decision brief | CTO | Research §6, RE §4.4/§29.2 | D-011, D-012 | *Nothing* — decision lives in D-011. **Retained for the compliance analysis and the §F.3 abuse mitigations carried forward.** | Medium (regulatory reading `[INFERRED]`) | ✅ Resolved → D-011 |
-| `q4.md` | OQ-4 decision brief | CTO | Research §6.2/E3, RE §4.4/§5.2, D-011/D-012 | Pending decision | *Nothing* — pending decision. Raises candidate erratum E-6 (§2.1) | Medium (regulatory reading `[INFERRED]`) | 🔴 Awaiting founder |
+| `q4.md` | OQ-4 decision brief | CTO | Research §6.2/E3, RE §4.4/§5.2, D-011/D-012 | D-014 | *Nothing* — decision lives in D-014. **Retained for erratum E-6 (§2.1) and the CryptoPanic AI-surface finding (§2.2).** | Medium (regulatory reading `[INFERRED]`) | ✅ Resolved → D-014 |
 
 ### 1.3 Gated — not yet created
 

@@ -48,10 +48,10 @@ Ordered by dependency. Nothing below the gate may start.
 
 | # | Item | Depends on |
 | --- | --- | --- |
-| 1 | Resolve OQ-4, OQ-5 *(OQ-1 ✅ D-009, OQ-2 ✅ D-011, OQ-3 ✅ D-013)* | Founder decision |
+| 1 | Resolve OQ-5 *(OQ-1 ✅ D-009, OQ-2 ✅ D-011, OQ-3 ✅ D-013, OQ-4 ✅ D-014)* | Founder decision |
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
-| 4 | Product definition | OQ-4, OQ-5 |
+| 4 | Product definition | OQ-5 |
 | 4 | PRD | Product definition |
 | 5 | Architecture | Approved PRD |
 | 6 | Database schema | Approved architecture |
@@ -61,27 +61,27 @@ Ordered by dependency. Nothing below the gate may start.
 
 ## Blockers
 
-### 🟠 B-1 — OQ-4, OQ-5 unresolved. **Blocks all product work.** *(OQ-1 resolved 2026-07-15; OQ-2, OQ-3 resolved 2026-10-02)*
+### 🟠 B-1 — OQ-5 unresolved. **Blocks all product work.** *(OQ-1 resolved 2026-07-15; OQ-2, OQ-3, OQ-4 resolved 2026-10-02)*
 
 Raised in Phase 1 §13. Each cascades into schema, IA, and roadmap. Producing a PRD without them would encode guesses as requirements.
 
-**Progress: 3 of 5 resolved.**
+**Progress: 4 of 5 resolved.**
 
 | ID | Question | Status |
 | --- | --- | --- |
 | ~~OQ-1~~ | ~~Primary user / default information architecture~~ | ✅ **Resolved — [DECISION_LOG](DECISION_LOG.md) D-009.** Brief: `docs/q1.md` |
 | ~~OQ-2~~ | ~~Replace directional (bullish/bearish) voting with quality voting?~~ | ✅ **Resolved — [DECISION_LOG](DECISION_LOG.md) D-011.** No: directional voting at CryptoPanic parity. Brief: `docs/q2.md` Part III |
 | ~~OQ-3~~ | ~~Desktop-only, or desktop + separate mobile surface?~~ | ✅ **Resolved — D-013.** Desktop-only web for MVP; mobile deferred until traffic justifies it |
-| **OQ-4** | Tone-on-articles-only, enforced in schema? | 🔴 **Next** — narrowed by D-011 to AI tone only |
-| **OQ-5** | Promote the B2B API into the core roadmap? | 🔴 Pending — at risk under D-011 (`docs/q2.md` §2.2) |
+| ~~OQ-4~~ | ~~Tone-on-articles-only, enforced in schema?~~ | ✅ **Resolved — D-014.** No AI tone at MVP; event classification + neutral summaries; article tone after counsel. Brief: `docs/q4.md` |
+| **OQ-5** | Promote the B2B API into the core roadmap? | 🔴 **Next** — at risk under D-011 (`docs/q2.md` §2.2) |
 
 **Question text is owned by `phase-01-product-research.md` §13.** This table tracks status only (GUARDRAILS §1.3). CTO recommendations live in the per-question briefs (`docs/qN.md`).
 
-**Next action:** Founder answers OQ-4. Brief prepared: `docs/q4.md` (recommends no AI tone at MVP; article tone revisited after counsel).
+**Next action:** Founder answers OQ-5 (brief to be prepared).
 
-### 🟡 B-4 — Five errata pending against approved research. *(new, 2026-07-15)*
+### 🟡 B-4 — Six errata pending against approved research. *(new, 2026-07-15)*
 
-D-009, D-011 and D-013 superseded or corrected five claims in `phase-01-product-research.md`. That document is approved and immutable, so corrections require an erratum pass per GUARDRAILS §1.2 (erratum section + banner at the error site + version bump). **Recorded, not applied.**
+D-009, D-011, D-013 and D-014 superseded or corrected six claims in `phase-01-product-research.md`. That document is approved and immutable, so corrections require an erratum pass per GUARDRAILS §1.2 (erratum section + banner at the error site + version bump). **Recorded, not applied.**
 
 | # | Target | Correction | Origin |
 | --- | --- | --- | --- |
@@ -90,6 +90,7 @@ D-009, D-011 and D-013 superseded or corrected five claims in `phase-01-product-
 | **E-3** | §3.3 — "RAs & IAs ~10k+ entities" | Wrong ~4×. ≈2,500 → ceiling ≈₹15 cr/yr | CTO error, `docs/q1.md` §2 |
 | **E-4** | §13 OQ-2 recommendation; §6.3 sentiment-ranking rule | Superseded. Directional voting at CryptoPanic parity adopted | Founder, D-011 |
 | **E-5** | §13 OQ-3 recommendation (desktop + separate mobile surface) | Superseded. Desktop-only for MVP; mobile deferred | Founder, D-013 |
+| **E-6** | §6.2, E3, §13 OQ-4 — tone→security aggregate "structurally unrepresentable" in schema | Unachievable as specified: one JOIN away while tone and instrument tags coexist. Achievable forms: don't store tone, or physically separate it | CTO error, `docs/q2.md` §F.2, `docs/q4.md` §2.1; acknowledged D-014 |
 
 **Next action:** apply during Foundation v1.1 (roadmap step 6 already touches these files). Not blocking.
 
@@ -117,7 +118,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder resolves **OQ-4** (B-1). Brief prepared: `docs/q4.md`.
+**Single next action:** Founder resolves **OQ-5** (B-1) — the last gate before product definition. Brief not yet prepared.
 
 **Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion.
 
@@ -133,7 +134,7 @@ Everything else waits.
 
 OQ-1 is resolved (D-009): the product is a **live reverse-chronological news stream** for active Indian market participants, arbitrated by the promise *"never miss high-signal, trustworthy news that matters to you, with minimal effort."* Dedup and entity resolution are enabling capabilities, not the differentiation. Pull comprehensive; push conservative. Information quality over engagement.
 
-OQ-2 is resolved (D-011): directional voting at CryptoPanic parity, raw counts, live at launch. Two decisions remain (OQ-3 resolved by D-013: desktop-only, mobile deferred). OQ-4 is narrowed to AI tone, and OQ-5 must be weighed against D-011's intermediary-association risk.
+OQ-2 is resolved (D-011): directional voting at CryptoPanic parity, raw counts, live at launch. One decision remains (OQ-3 → D-013 desktop-only; OQ-4 → D-014 no AI tone at MVP). OQ-4 is narrowed to AI tone, and OQ-5 must be weighed against D-011's intermediary-association risk.
 
 ---
 
@@ -141,7 +142,7 @@ OQ-2 is resolved (D-011): directional voting at CryptoPanic parity, raw counts, 
 
 ### Strategic — blocking (founder)
 
-OQ-4, OQ-5. See B-1.
+OQ-5. See B-1.
 
 ### Strategic — non-blocking (founder)
 
@@ -171,3 +172,4 @@ OQ-6 procurement · OQ-7 vernacular scope · OQ-8 counsel · OQ-9 Part IV scope 
 | 2026-10-02 | **OQ-2 resolved → D-011.** Founder chose Option A: directional voting at CryptoPanic parity (aggregated, may drive ranking), raw uncapped counts, live at MVP launch. Supersedes Option F. GUARDRAILS §4.3/§4.4 flagged as conflicting; rewrite drafted for approval. Erratum E-4 recorded. OQ-8 now launch-blocking. | B-1 2/5; B-4 now 4 errata |
 | 2026-10-02 | GUARDRAILS §4.3/§4.4 amendment approved and applied, new §4.13 counsel gate → **D-012**. **OQ-3 resolved → D-013**: desktop-only web for MVP, mobile deferred until traffic. Erratum E-5 recorded. | B-1 3/5; B-4 now 5 errata |
 | 2026-10-02 | OQ-4 brief prepared (`docs/q4.md`). Recommends Option E: no AI tone at MVP, event classification + neutral summaries; article tone revisited after counsel. Raises candidate erratum E-6 ("structurally unrepresentable" unachievable as specified). | No state change; awaiting founder |
+| 2026-10-02 | **OQ-4 resolved → D-014**: no AI tone at MVP; AI does event classification + neutral summaries; article tone revisited after counsel. Erratum E-6 recorded. | B-1 4/5; B-4 now 6 errata |

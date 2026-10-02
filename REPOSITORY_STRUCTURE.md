@@ -71,7 +71,7 @@ C:\backup_15th June 2026\StockPanic\
 │   │   ├── ingestion.md
 │   │   ├── entity-resolution.md      ← the moat (Research §4.2)
 │   │   ├── deduplication.md          ← the moat (Research §4.1)
-│   │   ├── ai-layer.md               ← blocked on OQ-8 counsel
+│   │   ├── ai-layer.md               ← unblocked: no counsel (D-018)
 │   │   └── adr/
 │   │       └── adr-NNN-<slug>.md
 │   │

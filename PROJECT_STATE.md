@@ -24,7 +24,7 @@ PRD-001…007 v1.0 approved (D-023). Founder constraints: built with AI coding a
 | `system-overview.md` — components, data flow, requirement map, market-session assumptions, failure modes, scaling | ◐ Draft v0.1 |
 | `adr/adr-001…005` — ISIN key, TypeScript stack, two VPSs, Postgres-only, SSE broadcast | ◐ Proposed |
 | `adr/adr-006-claude-ai-layer.md` | ◐ Proposed — tier decided: Haiku 4.5, ₹50k cap (D-025) |
-| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` (component designs) | ☐ Next |
+| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` (component designs) | ◐ Draft v0.1 |
 
 ### PRD plan
 
@@ -141,7 +141,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO drafts component designs (`ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md`), then Architecture sign-off.
+**Single next action:** Founder go-ahead for Architecture sign-off (WORKFLOW §4 exit check; ADRs Proposed → Accepted).
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -216,3 +216,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | PRD-007 resolved (free history 30 days). **Cross-PRD consistency check: 9 findings fixed. All seven PRDs approved v1.0 → D-023.** Product Definition §6.3 metric amended. | **Phase 3 complete**; Architecture unblocked |
 | 2026-10-02 | **Architecture opened → D-024.** Founder constraints recorded. System overview v0.1 + ADR-001…006 proposed. ADR-006 shows AI cost ≈ ₹16k–1.8 lakh/month by tier; founder decision pending. | Phase 4 in progress |
 | 2026-10-02 | **ADR-006 resolved → D-025**: Claude Haiku 4.5 for all AI tasks, ₹50k/month cap, summaries for alert-worthy filings only (PRD-004 amended). Quality risk and revisit triggers recorded. | Phase 4 in progress |
+| 2026-10-02 | **Component designs drafted**: ingestion, deduplication, entity resolution, AI layer. Pipeline order corrected in system overview (classify + resolve before clustering). | Phase 4: awaiting sign-off |

@@ -87,9 +87,9 @@ C1 and C3 run as the `web` process; C2 runs as a separate small `live` process o
 | Step | Component | What happens | Target (PRD) |
 | --- | --- | --- | --- |
 | 1 | C4 | Filings adapter polls the exchange feed (or receives push, depending on vendor). New announcement → **item** row, deduplicated on exchange announcement ID. | |
-| 2 | C5 | **Cluster**: NSE/BSE twin check, then candidate stories in the 48 h window; attach or create story (PRD-002 §4). | |
-| 3 | C5 | **Resolve**: scrip code → ISIN, confidence 1.0 (PRD-002 US-002.8 AC-1). | |
-| 4 | C5 | **Classify**: rules over exchange category/subject; Claude only if no rule matches (PRD-004 US-004.1). | |
+| 2 | C5 | **Classify (rules)**: exchange category/subject → event types (PRD-004 US-004.1 AC-2). | |
+| 3 | C5 | **Resolve**: scrip code → ISIN, confidence 1.0 (PRD-002 US-002.8 AC-1). For articles: alias candidates, then one Claude call that both classifies and scores candidates (ai-layer.md §2, entity-resolution.md §4). | |
+| 4 | C5 | **Cluster**: NSE/BSE twin check, filing anchoring, candidate stories in the 48 h window; attach or create story (deduplication.md). | |
 | 5 | C5 | Commit story; `NOTIFY story_events`. | **≤ 30 s median / ≤ 2 min p95 from exchange publication** (PRD-002 US-002.1 AC-2) |
 | 6 | C2 | Live channel relays the event to every connected client; clients filter to their view. | **≤ 5 s p95** to open clients (PRD-001 US-001.2) |
 | 7 | C6 | Alert evaluation for users whose watchlist holds the ISIN; deliver or hold for digest. | **push ≤ 60 s / email ≤ 2 min p95** (PRD-003 US-003.6) |

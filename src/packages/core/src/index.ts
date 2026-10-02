@@ -4,3 +4,7 @@ export * from './event-types.ts';
 export * from './entitlements.ts';
 export * from './vote-display.ts';
 export * from './ingestion.ts';
+export * from './text.ts';
+export * from './classification.ts';
+export * from './resolution.ts';
+export * from './clustering.ts';

@@ -131,7 +131,7 @@ Listed so they are not mistaken for structural guarantees. Each has a PRD test.
 | Platform | `setting`, `live_event` (partitioned), `audit_log` (partitioned), `ip_log` (partitioned), `schema_migrations` |
 | Views | `story_tag_display`, `user_tier`, `ai_spend_month` |
 
-**Migration 0002** (Backend B2) adds `job` (Postgres queue, ADR-004), `source_fetch_state` (conditional-request validators, next fetch, last new item), `source.adapter` (adapter config; enabled sources must have one) and `source_health.tracking_since`. Indexes: Q24 `job_runnable (queue, priority DESC, run_after, id)` for the next runnable job; Q25 `job_locked` for the stuck-lock sweep.
+**Migration 0002** (Backend B2) adds `job` (Postgres queue, ADR-004), `source_fetch_state` (conditional-request validators, next fetch, last new item), `source.adapter` (adapter config; enabled sources must have one) and `source_health.tracking_since`. Indexes: Q24 `job_runnable (queue, priority DESC, run_after, id)` for the next runnable job; Q25 `job_locked` for the stuck-lock sweep. **Migration 0003** (Backend B3) adds `tag_method` value `rule` (exact-name / curated-alias tags, confidence 1) and `item_analysis` (per-item event types, tags, unresolved mentions, numbers, shingles, rules version) — the input to story recomputation and an audit record.
 
 ---
 
@@ -223,4 +223,5 @@ WORKFLOW DoD item 9 ("verified, not asserted") is met for the schema. Query plan
 | **Sizing assumed** | Index choices follow the query patterns; no query plan has been measured on real volumes. |
 | **Queue tables deferred** | Owned by the queue library (Backend phase). |
 | **Grievance contact retention unset** | To be decided in the Security phase. |
+| **Cluster-wide role creation** | Migration 0001 creates the `stockpanic_app` role, which is cluster-wide, while the runner's advisory lock is per database. **Never migrate two databases on one PostgreSQL server concurrently** (e.g. staging and production sharing a server). Found in Backend B3 when parallel test suites raced; tests now run serially. 0001 is frozen (D-028), so this is handled operationally rather than by editing it. |
 | **Event-trigger scope** | Catches names, not meaning: a column called `mood` would pass. Migration review remains a control. |

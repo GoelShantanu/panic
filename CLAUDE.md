@@ -80,6 +80,7 @@ npm test                         # unit tests; DB integration tests skip without
 TEST_DATABASE_URL=postgres://postgres:test@127.0.0.1:55432/postgres npm test   # + integration (PostgreSQL 17+)
 DATABASE_URL=postgres://… npm run db:migrate                                 # apply pending migrations
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/ingest.ts [--once]     # run ingestion (loop, or one pass)
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/pipeline.ts [--once]   # process items into stories
 ```
 
 Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=test -p 127.0.0.1:55432:5432 postgres:17`. Schema constraint tests: run `docs/database/tests/0001_constraints_test.sql` with `psql` inside that container.

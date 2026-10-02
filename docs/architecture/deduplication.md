@@ -47,6 +47,8 @@ Event types come from the classification stage, which runs *before* clustering f
 
 ## 4. Scoring Article Pairs (S5)
 
+> *Amended by [D-030](../../DECISION_LOG.md): when neither item names a company, the instrument weight is dropped and the other weights rescaled; the numbers veto ignores labels such as "Q2".*
+
 For a new item *n* and a candidate story *s* (compared against the story's items):
 
 | Signal | Computation | Weight `[ASSUMPTION]` |

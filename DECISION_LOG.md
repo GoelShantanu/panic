@@ -911,6 +911,33 @@ PRD-002 AC-9 and ingestion.md §5 conflict. Read literally, AC-9 marks a 60 s-ca
 
 ---
 
+## D-030 — Clustering score when neither headline names a company; numbers ignore labels *(amends deduplication.md §4)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture |
+| **Decided by** | CTO, during Backend B3. Founder may override |
+
+**Decision**
+
+1. When **neither** item has a resolved company, the instrument weight (0.3) is removed and the remaining signals (headline 0.5, event type 0.1, time 0.1) are rescaled to sum to 1. When only one side has companies, the missing overlap still counts against the pair. Thresholds unchanged (merge 0.75).
+2. The conflicting-numbers veto ignores digits attached to letters ("Q2", "FY27", "H1"): they are labels, not figures.
+
+**Reason**
+
+Found while tracing B3 test scenarios. As written, two **identical** syndicated headlines about a company not yet in the registry (the common case at launch, with an empty curated alias list) scored about 0.7, under 0.75, so the core duplicate case would never merge. Separately, "Q2" in both headlines made different profit figures look like shared numbers, disabling the veto. The weights were `[ASSUMPTION]`s in deduplication.md, to be tuned.
+
+**Consequences**
+
+- Identical headlines merge whether or not the company is recognised; differently worded ones still stay separate (verified in tests and end to end).
+- Weights and thresholds remain assumptions until the labelled evaluation set exists (deduplication.md §9).
+- deduplication.md §4 carries an amendment note pointing here.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

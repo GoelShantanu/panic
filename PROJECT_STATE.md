@@ -23,8 +23,8 @@ Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26.
 | --- | --- | --- | --- |
 | B1 | Foundation: workspace, `core` domain package, `db` package with migration runner | ADR-002; schema 0001 | ✅ Done — typecheck clean; 29/29 tests (23 unit, 6 integration on PG 17); migrate CLI observed end-to-end |
 | B2 | Ingestion framework: adapter contract, RSS adapter, source health, circuit breaker, scheduler | ingestion.md; PRD-002 US-002.5 | ✅ Done — migration 0002; 68/68 tests (10 end-to-end ingestion on PG 17); `ingest` CLI observed end-to-end; staleness rule recorded as D-029 |
-| B3 | Pipeline: rule classification, rule-only entity resolution, clustering, story events | deduplication.md, entity-resolution.md; PRD-002 | ☐ Next |
-| B4 | Read API + live channel: stream, story, company, instruments; SSE broadcast | PRD-001, PRD-004; ADR-005 | ☐ |
+| B3 | Pipeline: rule classification, rule-only entity resolution, clustering, story events | deduplication.md, entity-resolution.md; PRD-002 | ✅ Done — migration 0003; 98/98 tests (9 end-to-end pipeline); ingest → pipeline observed end-to-end; D-030. Classification rules live in code for now (operator-editable table: with operator console) |
+| B4 | Read API + live channel: stream, story, company, instruments; SSE broadcast | PRD-001, PRD-004; ADR-005 | ☐ Next |
 | B5 | Accounts, sessions, entitlements | PRD-007 | ☐ |
 | B6 | Watchlist and alerts | PRD-003 | ☐ |
 | B7 | Votes and comments, grievances | PRD-005, PRD-006 | ☐ |
@@ -166,7 +166,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO builds B3 (pipeline: rule classification, rule-only entity resolution, clustering, story events). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, trading-calendar source.
+**Single next action:** CTO builds B4 (read API + SSE live channel). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, trading-calendar source, first curated aliases.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -249,3 +249,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Database v1.0 approved → D-028.** Exit check passed; migration 0001 frozen. Pushed to GitHub. | **Phase 5 complete**; Backend unblocked |
 | 2026-10-02 | **Backend opened; B1 done.** npm-workspace monorepo (Node 26 native TS, TypeScript 7, Vitest 5, pg 8). `core`: ISIN with check digit, ULID public IDs, taxonomy, entitlements, PRD-005 vote display. `db`: forward-only migration runner with advisory lock, self-transaction check, rollback on failure. 29/29 tests incl. integration on PG 17; seeds proven identical to core constants. | Phase 6 in progress |
 | 2026-10-02 | **B2 done.** Migration 0002 (job queue, fetch state, adapter config, tracking_since). Ingestion: adapter contract, conditional GET, RSS 2.0/Atom parser, English-only filter, canonical URLs, per-item transaction with job, health (stale/down) with live event + audit, circuit breaker, scheduler, `ingest` CLI. 68/68 tests; CLI observed end-to-end. **D-029**: staleness = failed fetches (PRD-002 AC-9 amended). | Phase 6 in progress |
+| 2026-10-03 | **B3 done.** Migration 0003 (rule tag method, item_analysis). Pipeline: job queue with SKIP LOCKED, retries with backoff, stuck-lock release; rule classification (20 types, exclusive routine rules); rule-only tagging (exact names, curated aliases, ambiguity → unresolved, common-word casing); clustering S2–S6 with MinHash LSH candidates; story recompute; live events. 98/98 tests; ingest → pipeline observed end-to-end (6 syndicated items → 3 stories). **D-030** (clustering score fix). Found: concurrent migrations on one server race on role creation — tests serialised, limitation recorded in schema.md. | Phase 6 in progress |

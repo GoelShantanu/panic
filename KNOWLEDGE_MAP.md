@@ -51,7 +51,8 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `prd-001-live-stream.md` | Stream, filters, unread, keyboard, source health, market session, phone view | CTO | Product Definition v1.0 | Architecture, QA | **Testable requirements for the stream** | Medium (targets `[ASSUMPTION]`) | 🟡 v0.1 draft |
+| `prd-001-live-stream.md` | Stream, filters, unread, keyboard, source health, market session, phone view | CTO | Product Definition v1.0 | Architecture, QA | **Testable requirements for the stream** | Medium (targets `[ASSUMPTION]`) | 🟡 v0.2 draft |
+| `prd-002-filings-and-tagging.md` | Filings first, story clustering, ISIN tagging, corrections | CTO | Product Definition v1.0, Research §4.1–4.4 | PRD-001, 003, 004, 005; Architecture | **What an item, story and tag are, and how correct they must be** | Medium (targets `[ASSUMPTION]`; no labelled data) | 🟡 v0.1 draft |
 
 ### 1.3 Gated — not yet created
 

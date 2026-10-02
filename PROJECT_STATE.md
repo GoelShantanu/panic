@@ -21,8 +21,8 @@ Product Definition v1.0 approved. PRD work splits into numbered documents (below
 
 | PRD | Covers (Product Definition §4) | Status |
 | --- | --- | --- |
-| `prd-001-live-stream.md` | S1 stream, S9 filters, S11 unread, S12 keyboard, S13 source health, S14 market session, S18 phone view | ◐ Draft v0.1 |
-| `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging | ☐ |
+| `prd-001-live-stream.md` | S1 stream, S9 filters, S11 unread, S12 keyboard, S13 source health, S14 market session, S18 phone view | ◐ Draft v0.2 — format accepted; OQs resolved (defaults) |
+| `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging, story clustering | ◐ Draft v0.1 — 5 OQs awaiting founder |
 | `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ☐ |
 | `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ☐ |
 | `prd-005-voting.md` | S8 voting | ☐ |
@@ -132,7 +132,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO reviews `docs/prd/prd-001-live-stream.md` v0.1 with founder (format and open questions), then drafts PRD-002…007.
+**Single next action:** Founder answers PRD-002 open questions (§10, incl. OQ-002.1 = Research OQ-10); then CTO drafts PRD-003.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -195,3 +195,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **D-017**: comments unrestricted, no counsel gate for comments; legal-minimum moderation (reports, grievance officer, takedown on order) retained. Product Definition → v0.3. Scope of "no lawyer" for §3.5/§4.13 unconfirmed. | Product Definition awaiting approval |
 | 2026-10-02 | **D-018**: no legal counsel; GUARDRAILS §3.5 and §4.13 removed, §4.4 counsel clause dropped; OQ-8 closed as not pursued. Erratum E-8 recorded. Product Definition → v0.4. | OQ-8 closed; B-4 now 8 errata |
 | 2026-10-02 | **Product Definition v1.0 approved → D-019.** PRD phase opened; 7-document PRD plan set; PRD-001 (live stream) drafted. | **Phase 3 — PRD** |
+| 2026-10-02 | PRD-001 defaults adopted (v0.2). **PRD-002 drafted** (filings, clustering, tagging, user corrections); OQ-002.1 = Research OQ-10. | Phase 3 in progress |

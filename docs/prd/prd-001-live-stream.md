@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | 0.2 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | CTO (WORKFLOW §3 reviewer) |
-| **Status** | 🟡 Draft. Awaiting CTO review with founder. |
+| **Status** | 🟡 Draft. Format accepted by founder 2026-10-02; open questions resolved (§8). Final CTO sign-off when PRD-002…007 are drafted, so cross-references can be checked. |
 | **Implements** | [Product Definition v1.0](../product/product-definition.md) S1, S9, S11, S12, S13, S14, S18 |
 | **Depends on** | PRD-002 (filings, tagging), PRD-003 (watchlist), PRD-004 (event types), PRD-005 (vote display, Important), PRD-007 (tiers). Those define the objects this PRD displays. |
 
@@ -278,14 +278,16 @@ Server stores `max(existing, submitted)`, so `last_seen_at` never moves backward
 
 ---
 
-## 8. Open Questions
+## 8. Resolved Questions
 
-| ID | Question | Default if unanswered |
+All four defaults adopted by the founder on 2026-10-02.
+
+| ID | Question | Resolution |
 | --- | --- | --- |
-| **OQ-001.1** | Should a story move back to the top when a significant new item joins (e.g. the filing arrives after the articles)? | No. Rows don't move (US-001.1 AC-4). A materially new development is a new story (PRD-002). |
-| **OQ-001.2** | Retention window for the stream: how far back can a free user scroll? | Set in PRD-007 with tiers. |
-| **OQ-001.3** | Trending window length and minimum activity for a story to qualify | 2 h window, ≥ 3 sources `[ASSUMPTION]`; tune on real data. |
-| **OQ-001.4** | Is the stream available to anonymous users? | Yes, read-only, all views except Watchlist. |
+| **OQ-001.1** | Does a story move back to the top when a significant new item joins? | **No.** Rows don't move (US-001.1 AC-4). A materially new development is a new story (PRD-002). |
+| **OQ-001.2** | How far back can a free user scroll? | **Set in PRD-007** with the tiers. |
+| **OQ-001.3** | Trending window and qualifying threshold | **2 h window, ≥ 3 sources** `[ASSUMPTION]`; tune on real data. |
+| **OQ-001.4** | Is the stream available to anonymous users? | **Yes**, read-only, all views except Watchlist. |
 
 ---
 

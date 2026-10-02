@@ -536,6 +536,33 @@ Founder view: "no need of lawyer here in India." Extends D-017 (comments) to the
 
 ---
 
+## D-019 — Product Definition v1.0 approved; PRD phase opens
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Process · Product |
+| **Decided by** | Founder (approval); CTO (drafter and co-reviewer) |
+
+**Decision**
+
+1. `docs/product/product-definition.md` v0.4 approved as **v1.0**. WORKFLOW §2 exits.
+2. WORKFLOW §3 (PRD) opens. The PRD is split into numbered documents by capability area (REPOSITORY_STRUCTURE §5: `prd-NNN-<slug>.md`), planned in PROJECT_STATE.
+
+**Reason**
+
+All OQ-1…OQ-5 and PD-1…PD-7 resolved; non-goals list exists; every scope item traces to research or a decision (WORKFLOW §2 DoD).
+
+**Consequences**
+
+- Product Definition is now an **approved** document: changes require a new decision, not an edit (GUARDRAILS §1.1 applies by analogy to approved artefacts).
+- `docs/prd/` is created.
+- WORKFLOW §2 DoD item 9 ("verified, not asserted") is satisfied only in the document sense; no user research exists (Product Definition §8).
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

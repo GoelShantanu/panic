@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.4 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | Founder (REPOSITORY_STRUCTURE §4) · drafted by CTO |
-| **Status** | 🟡 **Awaiting founder + CTO approval** (WORKFLOW §2). Open choices PD-1…PD-7 resolved in [D-016](../../DECISION_LOG.md); comments policy in [D-017](../../DECISION_LOG.md); no counsel in [D-018](../../DECISION_LOG.md). Nothing here binds until approved. |
+| **Status** | ✅ **Approved 2026-10-02 — [D-019](../../DECISION_LOG.md).** Changes require a new decision. |
 | **Inputs** | `docs/research/phase-01-product-research.md` (Research) · `docs/research/cryptopanic-product-reverse-engineering.md` (RE) · [D-009](../../DECISION_LOG.md), [D-011](../../DECISION_LOG.md)…[D-018](../../DECISION_LOG.md) · [GUARDRAILS.md](../../GUARDRAILS.md) |
 | **Next phase** | PRD (`docs/prd/`), which turns each scope item below into testable requirements |
 

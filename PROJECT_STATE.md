@@ -11,11 +11,23 @@
 
 ## Current Phase
 
-**Phase 2 — Product Definition** *(started 2026-10-02 on founder go-ahead)*
+**Phase 3 — PRD** *(opened 2026-10-02 — D-019)*
 
-Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No PRD, architecture, or code work has begun.
+Product Definition v1.0 approved. PRD work splits into numbered documents (below). Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No architecture or code work has begun.
 
-**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.4 — D-016, D-017, D-018; awaiting founder + CTO approval. Exit criteria: WORKFLOW §2.
+**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §3 — every story has testable acceptance criteria, contracts as payloads, failure and empty states defined; compliance constraints as explicit criteria.
+
+### PRD plan
+
+| PRD | Covers (Product Definition §4) | Status |
+| --- | --- | --- |
+| `prd-001-live-stream.md` | S1 stream, S9 filters, S11 unread, S12 keyboard, S13 source health, S14 market session, S18 phone view | ◐ Draft v0.1 |
+| `prd-002-filings-and-tagging.md` | S2 filings first, S3 company tagging | ☐ |
+| `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ☐ |
+| `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ☐ |
+| `prd-005-voting.md` | S8 voting | ☐ |
+| `prd-006-comments.md` | S16 comments | ☐ |
+| `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ☐ |
 
 ---
 
@@ -51,8 +63,8 @@ Ordered by dependency. Nothing below the gate may start.
 | ~~1~~ | ~~Resolve OQ-1…OQ-5~~ | ✅ **Done 2026-10-02** — D-009, D-011, D-013, D-014, D-015 |
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
-| 4 | Product definition | ◐ **Draft v0.4** — D-016…D-018; awaiting approval |
-| 4 | PRD | Product definition |
+| 4 | Product definition | ✅ **v1.0 approved** — D-019 |
+| 4 | PRD | ◐ **In progress** — see PRD plan |
 | 5 | Architecture | Approved PRD |
 | 6 | Database schema | Approved architecture |
 | 7 | Backend / Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
@@ -120,7 +132,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder approves `docs/product/product-definition.md` v0.4 (or requests changes). Approval exits WORKFLOW §2 and opens the PRD phase.
+**Single next action:** CTO reviews `docs/prd/prd-001-live-stream.md` v0.1 with founder (format and open questions), then drafts PRD-002…007.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -182,3 +194,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **PD-1…PD-7 resolved → D-016** (freemium; comments at launch; polls never; no price at MVP; broker import if feasible; English first, resolving OQ-7; read-only phone view). Product Definition → v0.2. | Product Definition awaiting approval |
 | 2026-10-02 | **D-017**: comments unrestricted, no counsel gate for comments; legal-minimum moderation (reports, grievance officer, takedown on order) retained. Product Definition → v0.3. Scope of "no lawyer" for §3.5/§4.13 unconfirmed. | Product Definition awaiting approval |
 | 2026-10-02 | **D-018**: no legal counsel; GUARDRAILS §3.5 and §4.13 removed, §4.4 counsel clause dropped; OQ-8 closed as not pursued. Erratum E-8 recorded. Product Definition → v0.4. | OQ-8 closed; B-4 now 8 errata |
+| 2026-10-02 | **Product Definition v1.0 approved → D-019.** PRD phase opened; 7-document PRD plan set; PRD-001 (live stream) drafted. | **Phase 3 — PRD** |

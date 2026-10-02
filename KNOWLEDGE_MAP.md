@@ -45,13 +45,18 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `product-definition.md` | Target user, jobs, MVP scope, non-goals, success metrics | Founder (drafted by CTO) | Research, RE, D-009, D-011…D-015, GUARDRAILS | PRD | **Who the product is for and what it will not do** | Medium (no user research; targets `[ASSUMPTION]`) | 🟡 v0.4 draft (D-016…D-018), awaiting approval |
+| `product-definition.md` | Target user, jobs, MVP scope, non-goals, success metrics | Founder (drafted by CTO) | Research, RE, D-009, D-011…D-015, GUARDRAILS | PRD | **Who the product is for and what it will not do** | Medium (no user research; targets `[ASSUMPTION]`) | ✅ v1.0 approved — D-019 |
+
+### 1.2d PRD — `docs/prd/`
+
+| File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `prd-001-live-stream.md` | Stream, filters, unread, keyboard, source health, market session, phone view | CTO | Product Definition v1.0 | Architecture, QA | **Testable requirements for the stream** | Medium (targets `[ASSUMPTION]`) | 🟡 v0.1 draft |
 
 ### 1.3 Gated — not yet created
 
 | Layer | Path | Gate |
 | --- | --- | --- |
-| PRD | `docs/prd/` | Product approved |
 | Architecture | `docs/architecture/` | PRD approved |
 | Database | `docs/database/` | Architecture approved |
 | API | `docs/api/` | Architecture approved |

@@ -56,7 +56,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | Founder + CTO |
 | **DoD** | Universal + every scope item traces to a research finding + **non-goals list exists** |
 
-**Status:** ◐ Started 2026-10-02. Draft v0.4 awaiting approval.
+**Status:** ✅ Exited 2026-10-02 — Product Definition v1.0 approved (D-019).
 
 **Why the gate is hard:** OQ-1 changes the target user. OQ-2 changes the data model. OQ-3 changes the entire frontend. OQ-4 changes the schema. Answering them after this phase means redoing it.
 
@@ -74,6 +74,8 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **DoD** | Universal + acceptance criteria are machine-checkable + **compliance constraints from Research §6 appear as explicit criteria, not prose** |
 
 **Constraint:** GUARDRAILS §4.3/§4.4 (tone on articles, no cross-security sentiment ranking) must appear as acceptance criteria here, or they will not survive to the schema.
+
+**Status:** ◐ Opened 2026-10-02 (D-019). Plan and progress: PROJECT_STATE → PRD plan.
 
 ---
 

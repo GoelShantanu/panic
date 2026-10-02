@@ -849,6 +849,42 @@ Founder instruction. Resolves the B-2 residual: the repository now has an off-ma
 
 ---
 
+## D-028 — Database v1.0 approved; Database phase exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Architecture · Process |
+| **Decided by** | Architect / CTO (WORKFLOW §5 reviewer), on founder instruction |
+
+**Decision**
+
+1. `docs/database/schema.md`, `partitioning.md`, `migrations/0001_initial.sql` and `tests/0001_constraints_test.sql` approved as v1.0.
+2. WORKFLOW §5 exits; Backend (WORKFLOW §6) entry criteria are met.
+3. Migration 0001 is now **frozen**: from here on, every schema change is a new forward-only migration (schema.md §7).
+
+**Exit check (WORKFLOW §5)**
+
+| Criterion | Result | Evidence |
+| --- | --- | --- |
+| Schema enforces domain constraints structurally | ✅ | schema.md §2: ~40 rules by FK, CHECK, EXCLUDE, unique index, trigger or grant; §3 lists the rules left to application code |
+| Indexes justified by named query patterns | ✅ | schema.md §5: Q1–Q23, every index tied to a PRD or design query |
+| Partitioning strategy stated | ✅ | partitioning.md: 4 partitioned tables with retention; non-partitioned tables justified |
+| Migration path exists | ✅ | schema.md §7: numbered, forward-only, expand/contract, outside deploy freeze, backup first, CI against real Postgres |
+| **GUARDRAILS §4.1/§4.2/§4.3 enforced by constraints, not convention** | ✅ | §4.1: ISIN domain + FKs. §4.2: GiST exclusion on validity periods, as-of lookups tested. §4.3: `no_tone_columns` event trigger blocks any tone/sentiment table, column or view (closes E-6 in its strongest available form) |
+| Verified, not asserted (DoD 9) | ✅ | PostgreSQL 17.11: migration clean; 56/56 constraint tests; app-role smoke test. One defect found and fixed before freeze |
+| Registered, labelled, limits sections | ✅ | KNOWLEDGE_MAP §1.2f; both documents end with Limits |
+
+**Consequences**
+
+- Backend may begin on founder go-ahead. It implements the rules in schema.md §3 that the database does not enforce (tier limits, eligibility, kill-switch effects, spend cap, merge rules) and the partition lifecycle jobs.
+- Still unmeasured: query plans on real volumes; queue tables (owned by the Backend's queue library).
+- Carried items unchanged from D-026 (feed vendor, RSS terms, alias seed, Haiku feature check, labelled sets, payment/email ADRs, live-channel load test).
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

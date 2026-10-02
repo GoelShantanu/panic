@@ -11,18 +11,18 @@
 
 ## Current Phase
 
-**Phase 5 — Database** *(opened 2026-10-02 on founder go-ahead)*
+**Phase 5 — Database: ✅ complete** *(2026-10-02 — D-028)*. **Next: Phase 6 — Backend**, on founder go-ahead.
 
-Architecture v1.0 approved (D-026). Output: `docs/database/` — schema, partitioning, migrations, constraint tests. No application code written.
+Schema v1.0 approved and verified on PostgreSQL 17.11 (56/56 constraint tests). Migration 0001 frozen. No application code written.
 
-**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §5 — domain constraints enforced structurally; indexes justified by named query patterns; partitioning stated; migration path exists; GUARDRAILS §4.1–4.3 enforced by constraints.
+**Phase gate status:** 🟢 **Backend entry criteria met** (WORKFLOW §6: schema approved).
 
 ### Database plan
 
 | Document | Status |
 | --- | --- |
-| `schema.md` — tables, constraint map, query patterns → indexes, roles, migration path | ◐ Draft v0.1 — verified, awaiting sign-off |
-| `partitioning.md` | ◐ Draft v0.1 — verified, awaiting sign-off |
+| `schema.md` — tables, constraint map, query patterns → indexes, roles, migration path | ✅ v1.0 approved (D-028) |
+| `partitioning.md` | ✅ v1.0 approved (D-028) |
 | `migrations/0001_initial.sql` | ✅ Verified on PostgreSQL 17.11 (1 defect found and fixed) |
 | `tests/0001_constraints_test.sql` — constraint tests against real Postgres | ✅ 56/56 pass |
 
@@ -84,8 +84,9 @@ Ordered by dependency. Nothing below the gate may start.
 | 4 | Product definition | ✅ **v1.0 approved** — D-019 |
 | 4 | PRD | ✅ **v1.0 approved** — D-023 |
 | 5 | Architecture | ✅ **v1.0 approved** — D-026 |
-| 6 | Database schema | ◐ **In progress** — see Database plan |
-| 7 | Backend / Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
+| 6 | Database schema | ✅ **v1.0 approved** — D-028 |
+| 7 | Backend | ✅ Unblocked — founder go-ahead |
+| 8 | Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
 
 ---
 
@@ -150,7 +151,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder go-ahead for Database sign-off (WORKFLOW §5 exit check).
+**Single next action:** Founder go-ahead to start **Backend** (WORKFLOW §6). Before ingestion code can run against real data: exchange feed vendor (OQ-6) and RSS feed list with terms checks.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -230,3 +231,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Pushed to public GitHub remote → D-027** (`GoelShantanu/panic`, main at f25a996). B-2 residual closed. | Off-machine backup exists |
 | 2026-10-02 | **Database phase opened.** Migration 0001 (≈ 50 tables, tone-column event trigger, temporal exclusion constraints, append-only audit), ~60 constraint tests, schema.md and partitioning.md drafted. Not yet executed: Docker Desktop not running. | Phase 5 in progress |
 | 2026-10-02 | **Schema verified** on PostgreSQL 17.11 (throwaway container, since removed): migration clean; 56/56 constraint tests pass; app-role smoke test passes. One defect found (NULL-passing `wrong_stock` check) and fixed. | Phase 5: awaiting sign-off |
+| 2026-10-02 | **Database v1.0 approved → D-028.** Exit check passed; migration 0001 frozen. Pushed to GitHub. | **Phase 5 complete**; Backend unblocked |

@@ -105,7 +105,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | Architect |
 | **DoD** | Universal + **GUARDRAILS §4.1/§4.2/§4.3 are enforced by constraints, not convention** |
 
-**Status:** ◐ Opened 2026-10-02. Plan: PROJECT_STATE → Database plan.
+**Status:** ✅ Exited 2026-10-02 — schema v1.0 approved, verified on PostgreSQL 17.11 (D-028).
 
 **Non-negotiable:** ISIN-keyed, temporally versioned, and **no schema path from tone to ticker**. A rule enforced by a foreign key survives engineers who never read this repository. A rule enforced by a comment does not.
 

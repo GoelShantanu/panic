@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database** opened 2026-10-02: `docs/database/` (migration 0001 + constraint tests, not yet executed).
+**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Next: Backend** on founder go-ahead.
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -63,7 +63,7 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 
 In order. Do not skip.
 
-1. **Database** — WORKFLOW §5: run migration 0001 + constraint tests on real PostgreSQL, then sign off. See [PROJECT_STATE.md](PROJECT_STATE.md).
+1. **Backend** — WORKFLOW §6, from the approved schema and architecture. See [PROJECT_STATE.md](PROJECT_STATE.md). See [PROJECT_STATE.md](PROJECT_STATE.md).
 2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
 3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
 

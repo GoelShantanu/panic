@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect (WORKFLOW §5) |
-| **Status** | 🟡 Draft. **Verified 2026-10-02** on PostgreSQL 17.11: migration applies cleanly; 56/56 constraint tests pass (§8). Awaiting sign-off. |
+| **Status** | ✅ **Approved 2026-10-02 — [D-028](../../DECISION_LOG.md).** Verified on PostgreSQL 17.11 (schema.md §8). Changes require a new migration and decision. |
 | **DDL** | [`migrations/0001_initial.sql`](migrations/0001_initial.sql) |
 | **Tests** | [`tests/0001_constraints_test.sql`](tests/0001_constraints_test.sql) |
 | **Partitioning** | [`partitioning.md`](partitioning.md) |

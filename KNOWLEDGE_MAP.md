@@ -56,6 +56,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | `prd-003-watchlist-and-alerts.md` | Watchlist building/import; alert rules, budget, digest, corrections | CTO | Product Definition v1.0, PRD-002, Research §4.6, §5.3 | PRD-004, 007; Architecture | **When a user is alerted, and when they are not** | Medium (targets `[ASSUMPTION]`; broker APIs unresearched) | 🟡 v0.2 draft |
 | `prd-004-company-and-story-pages.md` | Event-type taxonomy, story page, company page, AI filing summaries | CTO | Product Definition v1.0, PRD-002, D-014, D-018 | PRD-001, 003; Architecture | **The event taxonomy and the AI-summary safeguards** | Medium (taxonomy untested; targets `[ASSUMPTION]`) | 🟡 v0.2 draft |
 | `prd-005-voting.md` | Directional and quality votes, display, eligibility, abuse handling, kill switch | CTO | Product Definition v1.0, D-011, D-012, D-018, D-020, `q2.md` §F.3–F.4 | PRD-001, 004; Architecture | **The vote display object and view thresholds** | Medium (thresholds `[ASSUMPTION]`) | 🟡 v0.2 draft (D-021) |
+| `prd-006-comments.md` | Comments, reports, grievance handling, takedowns, kill switch | CTO | Product Definition v1.0, D-016, D-017, D-018, PRD-005 | Architecture | **How comments work and the legal-minimum moderation process** | Medium (IT Rules duties `[INFERRED]`, unreviewed) | 🟡 v0.1 draft |
 
 ### 1.3 Gated — not yet created
 

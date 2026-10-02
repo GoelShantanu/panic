@@ -26,7 +26,7 @@ Product Definition v1.0 approved. PRD work splits into numbered documents (below
 | `prd-003-watchlist-and-alerts.md` | S4 watchlist, S10 alerts | ◐ Draft v0.2 — OQs resolved (defaults) |
 | `prd-004-company-and-story-pages.md` | S5 company page, S6 post detail, S7 event types | ◐ Draft v0.2 — OQs resolved (defaults; summary cap 100 words) |
 | `prd-005-voting.md` | S8 voting | ◐ Draft v0.2 — OQs resolved (defaults; votes anonymous, D-021) |
-| `prd-006-comments.md` | S16 comments | ☐ |
+| `prd-006-comments.md` | S16 comments | ◐ Draft v0.1 — 6 OQs awaiting founder (OQ-006.4 extends D-017) |
 | `prd-007-accounts-and-tiers.md` | S15 accounts, S17 free/paid tiers | ☐ |
 
 ---
@@ -132,7 +132,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder answers PRD-005 open questions (§10); then CTO drafts PRD-006.
+**Single next action:** Founder answers PRD-006 open questions (§10; OQ-006.4 spam removal needs an explicit answer); then CTO drafts PRD-007, the last PRD.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -201,3 +201,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | PRD-003 defaults adopted (v0.2). **PRD-004 drafted** (20-type event taxonomy with alert defaults; story and company pages; filing-only AI summaries with grounding, number, tone and advice checks). | Phase 3 in progress |
 | 2026-10-02 | PRD-004 resolved (v0.2; summary cap 100 words). **PRD-005 drafted** (directional + quality votes, progressive display, voter lists, eligibility, abuse handling, kill switch; defines vote display object and view thresholds). | Phase 3 in progress |
 | 2026-10-02 | **PRD-005 resolved → D-021**: votes publicly anonymous (Product Definition S15 amended); other defaults adopted. | Phase 3 in progress |
+| 2026-10-02 | **PRD-006 drafted** (unrestricted comments, 3-level threads, author edit/delete, in-app reply notices only, comment kill switch, grievance officer + IT Rules takedown timelines). OQ-006.4 asks whether spam removal may extend D-017. | Phase 3 in progress |

@@ -269,6 +269,76 @@ Founder direction: match the reference product. Directional voting is the proven
 
 ---
 
+## D-012 — Amend GUARDRAILS §4.3/§4.4; add §4.13 *(implements D-011)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Legal · Process |
+| **Decided by** | Founder (approved the draft in `docs/q2.md` §III.3) |
+
+**Decision**
+
+1. §4.3 narrowed: the ticker-aggregation ban applies to **AI-generated tone**; user directional votes may aggregate to a security, labelled as user opinion.
+2. §4.4 narrowed: the cross-security ranking ban applies to **AI-derived sentiment**; vote-driven ranking is allowed behind a kill switch and after counsel.
+3. New §4.13: no directional voting in production without a written counsel opinion. Drafted as "4.11"; **renumbered to 4.13** because 4.11 and 4.12 already existed.
+
+**Reason**
+
+D-011 adopted directional voting at CryptoPanic parity, which the original §4.3/§4.4 forbade. A rule the product is designed to break is decorative; amending it explicitly keeps GUARDRAILS truthful. §4.13 makes the counsel dependency D-011 created binding rather than advisory.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Leave §4.3/§4.4 unchanged | They would contradict an active decision. |
+| Delete §4.3/§4.4 | Discards the still-valid constraint on AI tone. |
+| No counsel rule | D-011 makes counsel launch-blocking; unenforced, that is lost. |
+
+**Consequences**
+
+- The conflict banners from D-011 are removed. §4.5 and §4.7 tensions noted in `docs/q2.md` §III.3 remain live and should be revisited with counsel.
+- OQ-8 is now a hard gate on enabling directional voting.
+
+**Status** — Active
+
+---
+
+## D-013 — Desktop-only web for MVP; mobile deferred *(resolves OQ-3)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product |
+| **Decided by** | Founder |
+
+**Decision**
+
+1. MVP is a **desktop web** product. The dense, keyboard-driven multi-pane layout is designed for desktop only.
+2. **No mobile app** and no separate mobile surface in MVP.
+3. Mobile is **deferred, not rejected**: revisit once the website has enough traffic.
+
+**Reason**
+
+Founder direction: focus build effort on one surface until the product shows traction. Consistent with D-009's active-participant stream, and with Research §13's view that the 3-pane `J`/`K` model does not port to mobile, so a mobile product would be separate work anyway.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Desktop + separate mobile "alerts + digest" surface in MVP *(Research §13 recommendation)* | Deferred by founder until traffic justifies it. |
+| Responsive single codebase across devices | Not chosen; the desktop density model is the priority. |
+
+**Consequences**
+
+- Frontend scope narrows to one surface for MVP (WORKFLOW notes OQ-3 changes the entire frontend).
+- **Open for the PRD, not blocking:** what mobile-browser visitors see (degraded view vs. "best on desktop" notice), and the traffic threshold that reopens mobile. `[ASSUMPTION]` A meaningful share of Indian retail traffic will arrive on phones; the PRD should size this.
+- Research erratum E-5 recorded against §13 OQ-3 recommendation (superseded by founder decision). Not applied.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.
@@ -277,7 +347,7 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | --- | --- | --- | --- | --- |
 | ~~OQ-1~~ | Strategy | ~~Re-base beachhead to swing/positional investors?~~ | — | ✅ **Resolved — see D-009** |
 | ~~OQ-2~~ | Product | ~~Quality voting instead of directional?~~ | — | ✅ **Resolved — see D-011** (directional, CryptoPanic parity) |
-| **OQ-3** | Product | Desktop-only, or + separate mobile surface? | Desktop-first; mobile as distinct surface | 🔴 Blocking |
+| ~~OQ-3~~ | Product | ~~Desktop-only, or + separate mobile surface?~~ | — | ✅ **Resolved — see D-013** (desktop-only; mobile deferred) |
 | **OQ-4** | Architecture · Legal | Tone-on-articles-only, enforced in schema? | Yes — **narrowed by D-011 to AI tone only** | 🔴 Blocking |
 | **OQ-5** | Strategy | Promote B2B API into core roadmap? | Yes — **at risk under D-011** (§2.2 of `docs/q2.md`) | 🔴 Blocking |
 | **OQ-6** | Process | Budget for authorised exchange feeds (~₹3L/yr)? | Authorised | 🟠 Soon |

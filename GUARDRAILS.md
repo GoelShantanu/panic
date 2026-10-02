@@ -50,8 +50,8 @@ Derived from approved research. These are **product-defining**, not preferences.
 | --- | --- | --- |
 | 4.1 | **ISIN is the canonical instrument key.** Ticker is a display projection, never a primary key. | `[Research E1]` |
 | 4.2 | **All instrument mappings are temporally versioned.** Corporate actions rewrite symbol→entity relations; a flat table cannot express that. | `[Research §4.2]` |
-| 4.3 | ⚠ **Conflicts with [D-011](DECISION_LOG.md); rewrite pending founder approval — draft in `docs/q2.md` §III.3.** **Tone attaches to `articles`, never to `tickers`.** No schema path may aggregate sentiment to a security. Make it **structurally unrepresentable**. | `[Research §6.2, E3]` |
-| 4.4 | ⚠ **Conflicts with [D-011](DECISION_LOG.md); rewrite pending — see `docs/q2.md` §III.3.** **No cross-security ranking by any sentiment-derived metric.** "Most discussed" (volume fact) is permitted; "most bullish" (directional claim) is not. | `[Research §6.3]` |
+| 4.3 | **AI-generated tone attaches to `articles`, never to `tickers`.** No schema path may aggregate *AI* tone to a security. **User directional votes** may aggregate to a security; every such display is labelled as user opinion, never as the product's assessment. *(Amended 2026-10-02 — [D-012](DECISION_LOG.md).)* | `[Research §6.2, E3]`, D-011 |
+| 4.4 | **No cross-security ranking by *AI*-derived sentiment.** Ranking by user directional votes is permitted only behind a server-side kill switch and only after a counsel opinion (4.13). "Most discussed" (volume fact) remains permitted. *(Amended 2026-10-02 — [D-012](DECISION_LOG.md).)* | `[Research §6.3]`, D-011 |
 | 4.5 | **Every claim is attributed** to a source with URL and timestamp. The product never speaks in its own voice about a security. | `[Research §6.3]` |
 | 4.6 | **Show unresolved rather than guess.** Below the entity-resolution confidence threshold, display unresolved. A mis-tagged instrument is a trust-extinction event. | `[Research R2]` |
 | 4.7 | **A disclaimer does not cure a recommendation.** Disclaimers are a backstop, never a primary control. The control is not saying it. | `[Research §6.3]` |
@@ -60,6 +60,7 @@ Derived from approved research. These are **product-defining**, not preferences.
 | 4.10 | **No engagement mechanics that measurably increase trading frequency.** No streaks, loss-aversion nudges, manufactured urgency, or volume-maximising push. Speed is a feature; urgency is a manipulation. **This is a red line, not a tunable.** | `[Research §5.1, R9]` |
 | 4.11 | **Never assume a continuously-open market.** Sessions, holidays, halts, pre/post-market and settlement cycles are real. The reference product has no concept of them and its patterns are silently parameterised on "always open". | `[RE §31.2]` |
 | 4.12 | **TAM uses 13.1 crore unique investors, never 26 crore accounts.** The 2:1 ratio is multi-broker holding. | `[Research §3.1]` |
+| 4.13 | **Directional voting does not go live in production without a written counsel opinion** (OQ-8) covering aggregated, ranking-active crowd sentiment on listed securities. | D-011, D-012 |
 
 ## 5. Third-Party Interaction
 

@@ -11,20 +11,20 @@
 
 ## Current Phase
 
-**Phase 4 — Architecture** *(opened 2026-10-02 — D-024)*
+**Phase 4 — Architecture: ✅ complete** *(2026-10-02 — D-026)*. **Next: Phase 5 — Database**, on founder go-ahead.
 
-PRD-001…007 v1.0 approved (D-023). Founder constraints: built with AI coding agents, VPS hosting, infrastructure < ₹15k/month, AI provider delegated. Phase 0 foundation work continues in parallel. No code written.
+Architecture v1.0 approved; ADR-001…006 accepted. Phase 0 foundation work continues in parallel. No code written.
 
-**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §4.
+**Phase gate status:** 🟢 **Database entry criteria met** (WORKFLOW §5: architecture approved).
 
 ### Architecture plan
 
 | Document | Status |
 | --- | --- |
-| `system-overview.md` — components, data flow, requirement map, market-session assumptions, failure modes, scaling | ◐ Draft v0.1 |
-| `adr/adr-001…005` — ISIN key, TypeScript stack, two VPSs, Postgres-only, SSE broadcast | ◐ Proposed |
-| `adr/adr-006-claude-ai-layer.md` | ◐ Proposed — tier decided: Haiku 4.5, ₹50k cap (D-025) |
-| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` (component designs) | ◐ Draft v0.1 |
+| `system-overview.md` — components, data flow, requirement map, market-session assumptions, failure modes, scaling | ✅ v1.0 approved (D-026) |
+| `adr/adr-001…005` — ISIN key, TypeScript stack, two VPSs, Postgres-only, SSE broadcast | ✅ Accepted (D-026) |
+| `adr/adr-006-claude-ai-layer.md` | ✅ Accepted (D-025, D-026) |
+| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` (component designs) | ✅ v1.0 approved (D-026) |
 
 ### PRD plan
 
@@ -74,8 +74,8 @@ Ordered by dependency. Nothing below the gate may start.
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
 | 4 | Product definition | ✅ **v1.0 approved** — D-019 |
 | 4 | PRD | ✅ **v1.0 approved** — D-023 |
-| 5 | Architecture | ◐ **In progress** — see Architecture plan |
-| 6 | Database schema | Approved architecture |
+| 5 | Architecture | ✅ **v1.0 approved** — D-026 |
+| 6 | Database schema | ✅ Unblocked — founder go-ahead |
 | 7 | Backend / Frontend / QA / Security / Release | See [WORKFLOW.md](WORKFLOW.md) |
 
 ---
@@ -141,7 +141,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder go-ahead for Architecture sign-off (WORKFLOW §4 exit check; ADRs Proposed → Accepted).
+**Single next action:** Founder go-ahead to start **Database** (WORKFLOW §5): DDL, indexes, partitioning, migrations, with GUARDRAILS §4.1–4.3 enforced by constraints.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -217,3 +217,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Architecture opened → D-024.** Founder constraints recorded. System overview v0.1 + ADR-001…006 proposed. ADR-006 shows AI cost ≈ ₹16k–1.8 lakh/month by tier; founder decision pending. | Phase 4 in progress |
 | 2026-10-02 | **ADR-006 resolved → D-025**: Claude Haiku 4.5 for all AI tasks, ₹50k/month cap, summaries for alert-worthy filings only (PRD-004 amended). Quality risk and revisit triggers recorded. | Phase 4 in progress |
 | 2026-10-02 | **Component designs drafted**: ingestion, deduplication, entity resolution, AI layer. Pipeline order corrected in system overview (classify + resolve before clustering). | Phase 4: awaiting sign-off |
+| 2026-10-02 | **Architecture v1.0 approved → D-026.** Exit check passed (payment/email ADRs and feed vendor deferred); ADR-001…006 accepted; F3 corrected. | **Phase 4 complete**; Database unblocked |

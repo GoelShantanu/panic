@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Proposed (2026-10-02) |
+| **Status** | ✅ **Accepted 2026-10-02 — [D-026](../../../DECISION_LOG.md)** |
 | **Deciders** | Architect / CTO |
 | **Constraints** | Built by the founder with multiple AI coding agents; one person operates it |
 

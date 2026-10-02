@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Proposed (2026-10-02) — records a constraint already fixed by GUARDRAILS §4.1/§4.2 |
+| **Status** | ✅ **Accepted 2026-10-02 — [D-026](../../../DECISION_LOG.md)** — records a constraint already fixed by GUARDRAILS §4.1/§4.2 |
 | **Deciders** | Architect / CTO |
 | **Implements** | GUARDRAILS §4.1, §4.2; PRD-002 §5, C-002.4, C-002.5 |
 

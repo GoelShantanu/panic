@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect / CTO (WORKFLOW §4) |
-| **Status** | 🟡 Draft. All founder inputs received; AI tier = Claude Haiku 4.5 (D-025). |
+| **Status** | ✅ **Approved 2026-10-02 — [D-026](../../DECISION_LOG.md).** Changes require a new decision. |
 | **Inputs** | PRD-001…007 v1.0 (D-023); founder constraints 2026-10-02: built by founder with AI coding agents, simple VPS/PaaS hosting, infrastructure **< ₹15k/month** (excluding exchange feed and AI usage), AI provider chosen by CTO |
 | **ADRs** | [ADR-001](adr/adr-001-isin-canonical-key.md) ISIN key · [ADR-002](adr/adr-002-typescript-modular-monolith.md) stack · [ADR-003](adr/adr-003-hosting-two-vps.md) hosting · [ADR-004](adr/adr-004-postgres-only.md) Postgres for everything · [ADR-005](adr/adr-005-sse-broadcast-transport.md) live transport · [ADR-006](adr/adr-006-claude-ai-layer.md) AI layer |
 
@@ -156,7 +156,7 @@ Required explicitly by WORKFLOW §4 DoD and GUARDRAILS §4.11.
 | --- | --- | --- | --- | --- |
 | F1 | Exchange feed down or slow | Adapter health; no new filings for 3× cadence in session | Tier-1 stale banner (PRD-001); alerts unaffected for other sources | Auto-retry with backoff; reconciliation (C7) back-fills gaps with original timestamps |
 | F2 | An RSS feed breaks or changes format | Malformed XML / no items for 3× cadence | Source marked stale on status page; others continue (adapters isolated) | Operator fixes adapter; no data loss beyond that feed |
-| F3 | Claude API errors, slow, or rate-limited | Job failures, latency metrics | Classification falls back to `other` + rules only; summaries withheld (stories still publish); `refusal` handled via server-side fallback (ADR-006) | Jobs retried from queue; nothing blocks steps 1–7 of §2 |
+| F3 | Claude API errors, slow, or rate-limited | Job failures, latency metrics | Classification falls back to `other` + rules only; summaries withheld (stories still publish); `refusal` stop reasons treated as failed checks (ADR-006 §2 item 5) | Jobs retried from queue; nothing blocks steps 1–7 of §2 |
 | F4 | Model output fails safeguards | Safeguard checker | Summary withheld (PRD-004 §5.2) | Operator alert if withhold rate > 20% |
 | F5 | PostgreSQL down | Health check | Web serves an error page; workers pause and retry | Restart; worst case restore from backup + WAL (RPO ≤ 5 min `[ASSUMPTION]`) |
 | F6 | VPS A down | External uptime check | Site unavailable; ingestion and alerts continue on VPS B | Redeploy `web` onto VPS B (same image) as a degraded fallback |

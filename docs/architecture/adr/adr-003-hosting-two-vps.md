@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Proposed (2026-10-02) |
+| **Status** | ✅ **Accepted 2026-10-02 — [D-026](../../../DECISION_LOG.md)** |
 | **Deciders** | Architect / CTO |
 | **Constraints** | Founder chose simple VPS / PaaS hosting; infrastructure budget < ₹15k/month excluding exchange feed and AI usage |
 

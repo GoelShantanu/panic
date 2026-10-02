@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Proposed (2026-10-02). Provider decided by CTO (founder delegated). **Model tier decided by founder: Claude Haiku 4.5 for all tasks, ₹50k/month cap, summaries for alert-worthy filings only — [D-025](../../../DECISION_LOG.md).** |
+| **Status** | ✅ **Accepted 2026-10-02 — [D-026](../../../DECISION_LOG.md).** Provider by CTO (founder delegated); model tier Claude Haiku 4.5, ₹50k/month cap, alert-worthy summaries only by founder ([D-025](../../../DECISION_LOG.md)). |
 | **Deciders** | CTO (provider, design); Founder (model tier and monthly AI spend) |
 | **Implements** | PRD-002 US-002.8 AC-2 (article tagging), PRD-004 US-004.1 (event classification), US-004.4–004.5 (filing summaries and safeguards); D-014 (no AI tone) |
 | **Pricing source** | Anthropic first-party API rates as published 2026-09-25 (via the Claude API reference). Re-check before committing spend. |

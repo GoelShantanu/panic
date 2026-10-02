@@ -2,7 +2,8 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.1 — **DRAFT** |
+| **Version** | **1.0 — APPROVED** |
+| **Status** | ✅ **Approved 2026-10-02 — [D-026](../../DECISION_LOG.md).** Changes require a new decision. |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect / CTO |
 | **Component** | C5 pipeline (system overview §2 step 3); instrument registry in C8 |

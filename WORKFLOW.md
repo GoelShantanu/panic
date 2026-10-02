@@ -90,7 +90,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Reviewer** | Architect + CTO |
 | **DoD** | Universal + each significant choice is an ADR in DECISION_LOG + **market-session assumptions explicit** (GUARDRAILS §4.11) |
 
-**Status:** ◐ Opened 2026-10-02 (D-024). Plan: PROJECT_STATE → Architecture plan.
+**Status:** ✅ Exited 2026-10-02 — Architecture v1.0 approved, ADR-001…006 accepted (D-026).
 
 ---
 

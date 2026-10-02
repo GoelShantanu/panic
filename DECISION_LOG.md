@@ -775,6 +775,47 @@ Lowest cost (≈ ₹16k–38k/month in normal months, ADR-006 §3.2), inside the
 
 ---
 
+## D-026 — Architecture v1.0 approved; ADR-001…006 accepted; Architecture phase exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Architecture · Process |
+| **Decided by** | CTO (Architect + CTO reviewer, WORKFLOW §4), on founder instruction |
+
+**Decision**
+
+1. `docs/architecture/` approved as v1.0: system overview, ingestion, deduplication, entity resolution, AI layer.
+2. ADR-001…006 move from Proposed to **Accepted** (choices listed in D-024; ADR-006 tier per D-025).
+3. WORKFLOW §4 exits; Database (WORKFLOW §5) entry criteria are met.
+
+**Exit check (WORKFLOW §4)**
+
+| Criterion | Result | Where |
+| --- | --- | --- |
+| Every PRD requirement maps to a component | ✅ | System overview §3 (PRD-001…007, including amendments D-021, D-022, D-025) |
+| Failure modes enumerated | ✅ | System overview §5 (F1–F14); per-component failure sections |
+| Transport justified on personalisation, not freshness `[RE §30.7]` | ✅ | ADR-005 |
+| Scaling assumptions stated | ✅ | System overview §6, with the trigger for each next step |
+| Each significant choice is an ADR in DECISION_LOG | ✅ with deferrals | ADR-001…006 via D-024/D-025. **Deferred**: payment aggregator and email provider (ADRs at Backend phase start); exchange feed vendor (OQ-6, founder) |
+| Market-session assumptions explicit (GUARDRAILS §4.11) | ✅ | System overview §4 (M1–M7); ingestion §7 |
+| Universal DoD: registered, labelled, limits sections | ✅ | KNOWLEDGE_MAP §1.2e; every document ends with Limits |
+
+**Fixes applied at sign-off**
+
+- System overview F3 still referred to server-side refusal fallback, which the Haiku 4.5 tier doesn't use (D-025). Corrected.
+- Pipeline order (classify and resolve before clustering) was corrected when the component designs were written (commit 126b28c).
+
+**Consequences**
+
+- Database phase may begin on founder go-ahead. Its non-negotiables come from WORKFLOW §5 and ADR-001/004: ISIN keys, validity periods, constraint-enforced vote uniqueness, append-only audit log, no AI tone field.
+- Carried to later phases: feed vendor (OQ-6), RSS feed list and terms checks, curated alias seed, Haiku 4.5 feature verification (ADR-006 §2 item 10), labelled evaluation sets, payment and email ADRs, load test of the live channel (system overview §9).
+- Unchanged risk posture: no legal review (D-018); Haiku 4.5 quality risk (D-025).
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

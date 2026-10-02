@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Proposed (2026-10-02) |
+| **Status** | ✅ **Accepted 2026-10-02 — [D-026](../../../DECISION_LOG.md)** |
 | **Deciders** | Architect / CTO |
 | **Implements** | PRD-001 US-001.2, US-001.6, US-001.7; WORKFLOW §4 exit ("transport decisions justified on personalisation, not freshness") |
 

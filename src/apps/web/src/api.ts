@@ -20,6 +20,22 @@ import {
   streamPage,
 } from '@stockpanic/db';
 import type { StoryCard, StreamView } from '@stockpanic/db';
+import {
+  getExportStatus,
+  getMe,
+  getPlans,
+  patchMe,
+  postDelete,
+  postEmailStart,
+  postEmailVerify,
+  postExport,
+  postGoogle,
+  postSignout,
+  postSignupComplete,
+  postTrial,
+  viewerFromToken,
+} from './auth.ts';
+import type { AuthDeps } from './auth.ts';
 
 export interface ApiResponse {
   status: number;
@@ -32,7 +48,7 @@ export interface Viewer {
   userId: string | null;
 }
 
-// Anonymous until accounts exist (Backend B5); anonymous visitors get the free tier (PRD-007 §2.1).
+// Signed-out visitors get the free tier (PRD-007 §2.1).
 export const ANONYMOUS: Viewer = { tier: 'free', userId: null };
 
 const VIEWS = ['latest', 'watchlist', 'important', 'bullish', 'bearish', 'trending'] as const;
@@ -127,7 +143,7 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
 
   if (view === 'watchlist' && viewer.userId === null) return { status: 401, body: { error: 'auth_required' } };
   if ((view === 'bullish' || view === 'bearish') && !(await directionalVotingEnabled(db))) return notFound(); // C-001.3
-  if (view === 'trending' || view === 'watchlist') return notFound(); // Trending: Backend B4b; watchlist: B5–B6
+  if (view === 'trending' || view === 'watchlist') return notFound(); // Trending: Backend B4b; watchlist view: B6
 
   const { stories, next_cursor } = await page(db, view as StreamView, null, p, viewer, now);
   return ok({
@@ -235,16 +251,52 @@ export async function getEventTypes(db: pg.ClientBase): Promise<ApiResponse> {
   return ok(await eventTypeList(db));
 }
 
-export async function route(db: pg.ClientBase, method: string, url: URL, now: Date = new Date()): Promise<ApiResponse> {
-  if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
+export interface RequestCtx {
+  body: unknown;
+  sessionToken: string | null;
+}
+
+const NO_REQUEST: RequestCtx = { body: null, sessionToken: null };
+
+export async function route(
+  db: pg.ClientBase,
+  method: string,
+  url: URL,
+  now: Date = new Date(),
+  req: RequestCtx = NO_REQUEST,
+  deps: AuthDeps | null = null,
+): Promise<ApiResponse> {
   const parts = url.pathname.replace(/\/+$/, '').split('/').slice(1).map(decodeURIComponent);
   const [v1, resource, id, sub] = parts;
   if (v1 !== 'v1') return notFound();
-  if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now);
+  const path = parts.slice(1).join('/');
+
+  const user = await viewerFromToken(db, req.sessionToken, now);
+  const viewer: Viewer = user ? { tier: user.tier, userId: user.id } : ANONYMOUS;
+
+  if (method === 'POST' && resource === 'auth') {
+    if (!deps) return { status: 503, body: { error: 'auth_unavailable' } };
+    if (path === 'auth/email/start') return postEmailStart(db, req.body, deps, now);
+    if (path === 'auth/email/verify') return postEmailVerify(db, req.body, deps, now);
+    if (path === 'auth/google') return postGoogle(db, req.body, deps, now);
+    if (path === 'auth/signup/complete') return postSignupComplete(db, req.body, req.sessionToken, now);
+    if (path === 'auth/signout') return postSignout(db, req.body, req.sessionToken, user, now);
+    return notFound();
+  }
+  if (path === 'me' && method === 'GET') return getMe(db, user);
+  if (path === 'me' && method === 'PATCH') return patchMe(db, req.body, user, now);
+  if (path === 'me/export' && method === 'POST') return postExport(db, user, now);
+  if (resource === 'me' && id === 'export' && sub && parts.length === 4 && method === 'GET') return getExportStatus(db, user, sub, now);
+  if (path === 'me/delete' && method === 'POST') return postDelete(db, req.body, user, now);
+  if (path === 'billing/trial' && method === 'POST') return postTrial(db, user, now);
+
+  if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
+  if (path === 'plans') return getPlans();
+  if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now, viewer);
   if (resource === 'event-types' && parts.length === 2) return getEventTypes(db);
   if (resource === 'stories' && id && parts.length === 3) return getStory(db, id);
   if (resource === 'companies' && id && parts.length === 3) return getCompany(db, id, now);
-  if (resource === 'companies' && id && sub === 'timeline' && parts.length === 4) return getCompanyTimeline(db, id, url.searchParams, now);
+  if (resource === 'companies' && id && sub === 'timeline' && parts.length === 4) return getCompanyTimeline(db, id, url.searchParams, now, viewer);
   if (resource === 'instruments' && id === 'search' && parts.length === 3) return getInstrumentSearch(db, url.searchParams);
   if (resource === 'instruments' && id && parts.length === 3) return getInstrument(db, id, url.searchParams);
   return notFound();

@@ -938,6 +938,33 @@ Found while tracing B3 test scenarios. As written, two **identical** syndicated 
 
 ---
 
+## D-031 — Email provider: Google — free Gmail or Workspace (ADR-007)
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture |
+| **Decided by** | Founder (provider); CTO (integration) |
+| **Document** | [`docs/architecture/adr/adr-007-google-workspace-email.md`](docs/architecture/adr/adr-007-google-workspace-email.md) |
+
+**Decision**
+
+Transactional email (sign-in codes, alerts, digests, account notices) is sent through **Google**: a **free Gmail** account (SMTP with an app password) or **Google Workspace** (SMTP relay on the product domain), chosen by configuration, behind a provider-independent `Mailer` interface.
+
+**Reason**
+
+Founder preference for Google, and confirmation that free Gmail is acceptable. Free Gmail costs nothing and suits launch volume; Workspace adds a domain sender, SPF/DKIM/DMARC and higher limits when needed.
+
+**Consequences**
+
+- Free Gmail: ~500 recipients/day `[INFERRED]`, Gmail address as sender (weaker deliverability). Founder creates an app password and places it in the server environment.
+- Revisit when daily volume nears 70% of the current option's limit (ADR-007); moving to Workspace or a dedicated provider is a configuration change.
+- Closes the email-provider item carried from D-026.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

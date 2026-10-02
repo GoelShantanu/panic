@@ -26,8 +26,8 @@ Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26.
 | B3 | Pipeline: rule classification, rule-only entity resolution, clustering, story events | deduplication.md, entity-resolution.md; PRD-002 | ✅ Done — migration 0003; 98/98 tests (9 end-to-end pipeline); ingest → pipeline observed end-to-end; D-030. Classification rules live in code for now (operator-editable table: with operator console) |
 | B4 | Read API + live channel: stream, story, company, instruments; SSE broadcast | PRD-001, PRD-004; ADR-005 | ✅ Done — 126/126 tests (18 API, 7 live); feed → ingest → pipeline → API + SSE observed end-to-end as separate processes. API handlers are framework-independent (served by a small Node server; Next.js pages arrive with Frontend). Anonymous viewer until B5 |
 | B4b | Trending view (activity vs per-company baseline in the same session type) | PRD-001 US-001.3 AC-7, OQ-001.3 | ☐ — **blocked on trading-calendar source**; returns 404 until then |
-| B5 | Accounts, sessions, entitlements | PRD-007 | ☐ Next |
-| B6 | Watchlist and alerts | PRD-003 | ☐ |
+| B5 | Accounts, sessions, entitlements | PRD-007 | ✅ Done — migration 0004; 160/160 tests (16 account-flow, 7 Google verifier); sign-up → trial → export → deletion observed end-to-end through the real server. Email via ADR-007 (free Gmail or Workspace). Deferred: operator 2FA (with operator console), IP-level rate limiting, email-address change |
+| B6 | Watchlist and alerts | PRD-003 | ☐ Next |
 | B7 | Votes and comments, grievances | PRD-005, PRD-006 | ☐ |
 | B8 | AI layer: classification, summaries, safeguards, spend cap | ai-layer.md; D-025 | ☐ — needs Haiku feature check |
 | B9 | Filings adapter | ingestion.md §3 | ☐ — **blocked on feed vendor (OQ-6)** |
@@ -167,7 +167,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO builds B5 (accounts, sessions, entitlements). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, **trading-calendar source** (now blocks B4b Trending), first curated aliases, email-provider preference (B6).
+**Single next action:** CTO builds B6 (watchlist and alerts). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, trading-calendar source (blocks B4b), first curated aliases; before launch: Gmail app password (or Workspace) and a Google sign-in client ID.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -252,3 +252,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **B2 done.** Migration 0002 (job queue, fetch state, adapter config, tracking_since). Ingestion: adapter contract, conditional GET, RSS 2.0/Atom parser, English-only filter, canonical URLs, per-item transaction with job, health (stale/down) with live event + audit, circuit breaker, scheduler, `ingest` CLI. 68/68 tests; CLI observed end-to-end. **D-029**: staleness = failed fetches (PRD-002 AC-9 amended). | Phase 6 in progress |
 | 2026-10-03 | **B3 done.** Migration 0003 (rule tag method, item_analysis). Pipeline: job queue with SKIP LOCKED, retries with backoff, stuck-lock release; rule classification (20 types, exclusive routine rules); rule-only tagging (exact names, curated aliases, ambiguity → unresolved, common-word casing); clustering S2–S6 with MinHash LSH candidates; story recompute; live events. 98/98 tests; ingest → pipeline observed end-to-end (6 syndicated items → 3 stories). **D-030** (clustering score fix). Found: concurrent migrations on one server race on role creation — tests serialised, limitation recorded in schema.md. | Phase 6 in progress |
 | 2026-10-03 | **B4 done.** Read API: stream (views, filters, keyset cursor, free-tier depth and 402 rules, session, stale tier-1 sources), story detail (301 for merged), company + community opinion, company timeline, instrument as-of, search, event types. Live channel: SSE broadcast via LISTEN/NOTIFY, heartbeat, Last-Event-ID replay, resync. 126/126 tests; end-to-end SSE delivery observed (705 ms incl. process start-up). Trending split to B4b (needs trading calendar). | Phase 6 in progress |
+| 2026-10-03 | **B5 done; D-031 / ADR-007** (Google email: free Gmail or Workspace by config, per founder). Migration 0004 (pending sign-up, data export, deletion choice). Email-code sign-in (hashed codes, 5-attempt lock, 5/hour per email), Google sign-in (RS256 verification, account linking), pending sign-up → account with age/consent, hashed sessions (cookie or bearer, 30-day idle), sign-out everywhere, /v1/me with entitlements, trial, username change with holds, data export and account deletion as jobs, JSON-only writes. 160/160 tests; observed end-to-end. | Phase 6 in progress |

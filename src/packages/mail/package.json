@@ -1,0 +1,11 @@
+{
+  "name": "@stockpanic/mail",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "nodemailer": "^10.0.13"
+  }
+}

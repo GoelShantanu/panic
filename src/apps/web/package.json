@@ -5,6 +5,7 @@
   "dependencies": {
     "@stockpanic/core": "*",
     "@stockpanic/db": "*",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "@stockpanic/mail": "*"
   }
 }

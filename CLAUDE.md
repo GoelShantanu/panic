@@ -81,8 +81,9 @@ TEST_DATABASE_URL=postgres://postgres:test@127.0.0.1:55432/postgres npm test   #
 DATABASE_URL=postgres://… npm run db:migrate                                 # apply pending migrations
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/ingest.ts [--once]     # run ingestion (loop, or one pass)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/pipeline.ts [--once]   # process items into stories
-DATABASE_URL=postgres://… PORT=3000 node src/apps/web/src/cli/serve.ts       # read API
+DATABASE_URL=postgres://… AUTH_SECRET=<32+ chars> MAILER=log PORT=3000 node src/apps/web/src/cli/serve.ts   # API (GOOGLE_CLIENT_ID enables Google sign-in; MAILER=smtp + SMTP_USER/SMTP_PASS/MAIL_FROM for Gmail)
 DATABASE_URL=postgres://… PORT=3001 node src/apps/live/src/cli/serve.ts      # SSE live channel (/v1/live)
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/account.ts [--once]    # data export and account deletion jobs
 ```
 
 Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=test -p 127.0.0.1:55432:5432 postgres:17`. Schema constraint tests: run `docs/database/tests/0001_constraints_test.sql` with `psql` inside that container.

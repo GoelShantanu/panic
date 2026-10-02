@@ -65,6 +65,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `system-overview.md` | Components, data flow, PRD→component map, market-session assumptions, failure modes, scaling | Architect/CTO | PRD-001…007, D-024 | Database, Backend, Ops | **What runs where, and how it fails** | Medium (volumes `[ASSUMPTION]`) | ✅ v1.0 approved — D-026 |
 | `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` | Component designs for C4 and C5 | Architect/CTO | system overview, PRD-002, PRD-004, ADR-004/006, D-025 | Database, Backend | **How items, stories, tags and AI outputs are produced** | Medium (thresholds and volumes `[ASSUMPTION]`) | ✅ v1.0 approved — D-026 |
+| `adr/adr-007-google-workspace-email.md` | Email through Google: free Gmail or Workspace | Founder/CTO | PRD-003, PRD-007 | Backend | **Email provider and limits** | Medium (limits `[INFERRED]`) | ✅ Accepted — D-031 |
 | `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | ✅ Accepted — D-026 |
 
 ### 1.2f Database — `docs/database/`
@@ -82,9 +83,10 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- |
 | `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, text features, classification, tagging, clustering | CTO | PRD-002, 004, 005, 007; ADR-001; D-030 | ✅ B1–B3 — 62 unit tests |
 | `src/packages/db` | Migration runner; ingestion data access (grows with each milestone) | CTO | `docs/database/` | ✅ B1–B2 |
-| `src/apps/web` | Read API handlers (PRD-001, 002, 003, 004) + Node server | CTO | read side of `db`; PRD contracts | ✅ B4 — 18 integration tests |
+| `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007), Google sign-in verifier, Node server with sessions | CTO | `db`, `mail`; PRD contracts; ADR-007 | ✅ B4–B5 — 41 tests |
+| `src/packages/mail` | Mailer interface: smtp (free Gmail / Workspace), log, memory | CTO | ADR-007 | ✅ B5 — 3 tests |
 | `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |
-| `src/apps/worker` | Ingestion (RSS, health, scheduler) and pipeline (classify, tag, cluster, recompute); `ingest` and `pipeline` CLIs | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030 | ✅ B2–B3 — 37 tests incl. 19 end-to-end |
+| `src/apps/worker` | Ingestion (RSS, health, scheduler), pipeline (classify, tag, cluster, recompute), account jobs (export, deletion); `ingest`, `pipeline`, `account` CLIs | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030 | ✅ B2–B3 — 37 tests incl. 19 end-to-end |
 
 ### 1.3 Gated — not yet created
 

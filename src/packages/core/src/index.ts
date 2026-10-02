@@ -8,3 +8,4 @@ export * from './text.ts';
 export * from './classification.ts';
 export * from './resolution.ts';
 export * from './clustering.ts';
+export * from './auth.ts';

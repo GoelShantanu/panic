@@ -5,7 +5,7 @@
 | **Version** | 0.1 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect (WORKFLOW §5) |
-| **Status** | 🟡 Draft. Not yet executed (schema.md §8). |
+| **Status** | 🟡 Draft. Partition functions verified on PostgreSQL 17.11 (schema.md §8). Awaiting sign-off. |
 | **DDL** | [`migrations/0001_initial.sql`](migrations/0001_initial.sql) §13–§15 |
 
 ---
@@ -66,4 +66,4 @@ The application role reads and writes partitioned tables **only through the pare
 | --- | --- |
 | **`ai_call` retention is an assumption** | 24 months chosen for spend history and evaluation; revisit with the Security phase. |
 | **No archive tier yet** | Old `audit_log` partitions stay in the primary database; an archive (e.g. detach + dump to object storage) is future work, needing its own decision. |
-| **Unexecuted** | Partition functions have not been run (schema.md §8). |
+| **Lifecycle jobs not yet built** | Creation functions are verified; the scheduler jobs that call them and drop expired partitions are Backend work. |

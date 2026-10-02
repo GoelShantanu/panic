@@ -711,7 +711,7 @@ CREATE TABLE vote_quality (
   cast_at       timestamptz NOT NULL DEFAULT now(),
   discounted_at timestamptz,
   PRIMARY KEY (story_id, user_id, kind),
-  CHECK (kind <> 'wrong_stock' OR (detail ? 'isin'))           -- PRD-005 §9.2
+  CHECK (kind <> 'wrong_stock' OR coalesce(detail ? 'isin', false))   -- PRD-005 §9.2; NULL detail must fail
 );
 CREATE INDEX vote_quality_reports ON vote_quality (kind, cast_at DESC) WHERE kind IN ('duplicate', 'wrong_stock', 'spam');
 

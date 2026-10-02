@@ -5,7 +5,7 @@
 | **Version** | 0.1 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect (WORKFLOW §5) |
-| **Status** | 🟡 Draft. Constraint tests written; **not yet executed** against PostgreSQL (§8). |
+| **Status** | 🟡 Draft. **Verified 2026-10-02** on PostgreSQL 17.11: migration applies cleanly; 56/56 constraint tests pass (§8). Awaiting sign-off. |
 | **DDL** | [`migrations/0001_initial.sql`](migrations/0001_initial.sql) |
 | **Tests** | [`tests/0001_constraints_test.sql`](tests/0001_constraints_test.sql) |
 | **Partitioning** | [`partitioning.md`](partitioning.md) |
@@ -203,10 +203,15 @@ WORKFLOW §5: every index is justified by a named query.
 
 | Item | Status |
 | --- | --- |
-| `0001_initial.sql` applied to PostgreSQL 17 | ☐ **Not yet run.** Docker Desktop was not running on 2026-10-02 |
-| `0001_constraints_test.sql` (≈ 60 tests) | ☐ **Not yet run** |
+| Check | Result (2026-10-02, throwaway `postgres:17` container, PostgreSQL 17.11) |
+| --- | --- |
+| `0001_initial.sql` applied to an empty database | ✅ Exit 0; 75 tables (including partitions), 3 views, event trigger `no_tone_columns` enabled |
+| `0001_constraints_test.sql` | ✅ **56 passed, 0 failed** on a fresh database |
+| App-role smoke test (writes through partitioned parents; vote upsert; kill-switch setting update; spend view) | ✅ |
 
-WORKFLOW DoD item 9 ("verified, not asserted") is **not met** until both run clean. This document must not be approved before then.
+**Defect found by the tests and fixed before any real deployment:** the `vote_quality` check for `wrong_stock` reports passed when `detail` was NULL (a NULL `CHECK` counts as satisfied), so a report could omit the disputed ISIN. Fixed with `coalesce(detail ? 'isin', false)`; all other `CHECK`s were re-scanned for the same pattern. Because 0001 had never been applied to any real database, it was corrected in place; once applied anywhere real, the forward-only rule (§7) applies.
+
+WORKFLOW DoD item 9 ("verified, not asserted") is met for the schema. Query plans on real volumes remain unmeasured (§9).
 
 ---
 
@@ -214,7 +219,7 @@ WORKFLOW DoD item 9 ("verified, not asserted") is **not met** until both run cle
 
 | Limit | Detail |
 | --- | --- |
-| **Unexecuted** | See §8. The SQL has been reviewed by reading, not run. |
+| **Plans unmeasured** | Constraints are verified by execution (§8); index effectiveness is not, until real data exists. |
 | **Sizing assumed** | Index choices follow the query patterns; no query plan has been measured on real volumes. |
 | **Queue tables deferred** | Owned by the queue library (Backend phase). |
 | **Grievance contact retention unset** | To be decided in the Security phase. |

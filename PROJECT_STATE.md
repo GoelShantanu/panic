@@ -21,10 +21,10 @@ Architecture v1.0 approved (D-026). Output: `docs/database/` — schema, partiti
 
 | Document | Status |
 | --- | --- |
-| `schema.md` — tables, constraint map, query patterns → indexes, roles, migration path | ◐ Draft v0.1 |
-| `partitioning.md` | ◐ Draft v0.1 |
-| `migrations/0001_initial.sql` | ◐ Written, reviewed by reading; **not yet executed** |
-| `tests/0001_constraints_test.sql` — ~60 tests against real Postgres | ◐ Written; **not yet executed** — needs Docker Desktop running |
+| `schema.md` — tables, constraint map, query patterns → indexes, roles, migration path | ◐ Draft v0.1 — verified, awaiting sign-off |
+| `partitioning.md` | ◐ Draft v0.1 — verified, awaiting sign-off |
+| `migrations/0001_initial.sql` | ✅ Verified on PostgreSQL 17.11 (1 defect found and fixed) |
+| `tests/0001_constraints_test.sql` — constraint tests against real Postgres | ✅ 56/56 pass |
 
 ### Architecture plan
 
@@ -150,7 +150,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder starts Docker Desktop; CTO runs `0001_initial.sql` + constraint tests on a throwaway PostgreSQL 17 container, fixes failures, then Database sign-off.
+**Single next action:** Founder go-ahead for Database sign-off (WORKFLOW §5 exit check).
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -229,3 +229,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-02 | **Architecture v1.0 approved → D-026.** Exit check passed (payment/email ADRs and feed vendor deferred); ADR-001…006 accepted; F3 corrected. | **Phase 4 complete**; Database unblocked |
 | 2026-10-02 | **Pushed to public GitHub remote → D-027** (`GoelShantanu/panic`, main at f25a996). B-2 residual closed. | Off-machine backup exists |
 | 2026-10-02 | **Database phase opened.** Migration 0001 (≈ 50 tables, tone-column event trigger, temporal exclusion constraints, append-only audit), ~60 constraint tests, schema.md and partitioning.md drafted. Not yet executed: Docker Desktop not running. | Phase 5 in progress |
+| 2026-10-02 | **Schema verified** on PostgreSQL 17.11 (throwaway container, since removed): migration clean; 56/56 constraint tests pass; app-role smoke test passes. One defect found (NULL-passing `wrong_stock` check) and fixed. | Phase 5: awaiting sign-off |

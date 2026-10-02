@@ -71,10 +71,10 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path | Architect | Architecture v1.0, PRD-001…007 | Backend | **Which rules the database guarantees** | Medium (unexecuted) | 🟡 v0.1 draft |
-| `partitioning.md` | Partitioned tables, retention, lifecycle | Architect | schema.md | Ops | **Retention by partition** | Medium (unexecuted) | 🟡 v0.1 draft |
-| `migrations/0001_initial.sql` | Initial DDL | Architect | schema.md | Backend | **The schema itself** | Unverified until run | 🟡 Not yet executed |
-| `tests/0001_constraints_test.sql` | Constraint tests against real Postgres | Architect | 0001 | CI | **Proof the constraints hold** | Unverified until run | 🟡 Not yet executed |
+| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path | Architect | Architecture v1.0, PRD-001…007 | Backend | **Which rules the database guarantees** | High (verified by execution) | 🟡 v0.1 — verified, awaiting sign-off |
+| `partitioning.md` | Partitioned tables, retention, lifecycle | Architect | schema.md | Ops | **Retention by partition** | Medium (functions verified; jobs not built) | 🟡 v0.1 — verified, awaiting sign-off |
+| `migrations/0001_initial.sql` | Initial DDL | Architect | schema.md | Backend | **The schema itself** | High (applied on PG 17.11) | ✅ Verified |
+| `tests/0001_constraints_test.sql` | Constraint tests against real Postgres | Architect | 0001 | CI | **Proof the constraints hold** | High | ✅ 56/56 pass |
 
 ### 1.3 Gated — not yet created
 

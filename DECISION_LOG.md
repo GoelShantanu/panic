@@ -462,6 +462,42 @@ Founder choices on the open items in Product Definition v0.1. Freemium keeps a r
 
 ---
 
+## D-017 — Comments are unrestricted; no counsel gate for comments *(amends D-016 consequences)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-02 |
+| **Category** | Product · Legal |
+| **Decided by** | Founder |
+
+**Decision**
+
+1. **Users may comment what they want**, including buy/sell calls and target prices. No content rules on opinion.
+2. **No counsel review of comments** before launch, and **no GUARDRAILS rule** for comments equivalent to §4.13.
+3. Moderation is limited to what the law requires of a host: user reports, a grievance officer, and takedown of unlawful content on court or government order (IT Rules 2021). Retained by CTO as the legal minimum for intermediary safe harbour; founder may override.
+
+**Reason**
+
+Founder direction: open community discussion, and founder view that a lawyer is not needed in India for this.
+
+**Alternatives**
+
+| Option | Rejected because |
+| --- | --- |
+| Comments rule equivalent to §4.13 *(CTO lean)* | Founder declined. |
+| Removing buy/sell calls from comments | Founder declined. |
+| No moderation at all | `[INFERRED]` Would forfeit IT Act §79 safe harbour, which the D-011 voting design also relies on (`docs/q2.md` §F.2). |
+
+**Consequences**
+
+- **CTO risk note, recorded per CLAUDE.md evidence discipline.** `[VERIFIED, Research §6.1]` SEBI bars unregistered persons from giving specific buy/sell/hold calls; enforcement reached ₹546 crore against one finfluencer. `[INFERRED]` A platform hosting such calls unmoderated relies entirely on intermediary safe harbour; whether that holds for a financial-news platform is untested. This is an engineer's reading, not legal advice.
+- **GUARDRAILS §3.5 and §4.13 are unchanged.** "No lawyer needed" was stated in the context of comments; whether it extends to the AI layer and voting is open (PROJECT_STATE).
+- Product Definition: S16 and §4.1 updated; the "comments removed for buy/sell calls" guardrail metric is dropped.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

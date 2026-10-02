@@ -15,7 +15,7 @@
 
 Phase 0 foundation work (v1.1 roadmap) continues in parallel and is not blocking. No PRD, architecture, or code work has begun.
 
-**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.2 — PD-1…PD-7 resolved (D-016); awaiting founder + CTO approval. Exit criteria: WORKFLOW §2.
+**Phase gate status:** 🟡 **In progress.** Draft `docs/product/product-definition.md` v0.3 — PD-1…PD-7 resolved (D-016), comments policy (D-017); awaiting founder + CTO approval. Exit criteria: WORKFLOW §2.
 
 ---
 
@@ -51,7 +51,7 @@ Ordered by dependency. Nothing below the gate may start.
 | ~~1~~ | ~~Resolve OQ-1…OQ-5~~ | ✅ **Done 2026-10-02** — D-009, D-011, D-013, D-014, D-015 |
 | ~~2~~ | ~~Initialise git~~ | ✅ **Done 2026-08-05 — D-010** |
 | 3 | Foundation v1.1 — steps 3,4,5,7,8,9,10 *(1 and part of 6 done)* | Review approved (`docs/foundation-v1.0-review.md`) |
-| 4 | Product definition | ◐ **Draft v0.2** — PD-1…PD-7 resolved (D-016); awaiting approval |
+| 4 | Product definition | ◐ **Draft v0.3** — D-016, D-017; awaiting approval |
 | 4 | PRD | Product definition |
 | 5 | Architecture | Approved PRD |
 | 6 | Database schema | Approved architecture |
@@ -119,9 +119,9 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Founder approves `docs/product/product-definition.md` v0.2 (or requests changes). Approval exits WORKFLOW §2 and opens the PRD phase.
+**Single next action:** Founder approves `docs/product/product-definition.md` v0.3 (or requests changes). Approval exits WORKFLOW §2 and opens the PRD phase.
 
-**Open from D-016:** comments at launch are a second user-generated surface on listed stocks. Decide whether GUARDRAILS gets a comments rule equivalent to §4.13 (counsel opinion before going live). CTO lean: yes.
+**Open from D-017:** founder stated "no need of lawyer here in India" when deciding comments. Whether that extends to GUARDRAILS §3.5 (counsel before AI layer) and §4.13 (counsel before directional voting) is **unconfirmed**; both rules stand until the founder decides.
 
 **Carried from D-011/D-012:** **OQ-8 counsel is launch-blocking** — GUARDRAILS §4.13 bars directional voting in production without a written counsel opinion. Scope narrowed by D-015 to consumer voting + AI layer.
 
@@ -180,3 +180,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · OQ-8 counsel · OQ-9 Part IV scope · 
 | 2026-10-02 | **OQ-5 resolved → D-015**: consumer only, no B2B API. **B-1 closed** — all OQ-1…OQ-5 resolved; Product Definition entry criteria met. Erratum E-7 recorded. | **B-1 closed**; B-4 now 7 errata |
 | 2026-10-02 | **Product Definition started.** Draft v0.1 written (`docs/product/product-definition.md`): 2 usage modes, 9 jobs, 15 MVP scope items, 11 non-goals, promise-mapped metrics, 7 open founder choices (PD-1…PD-7). | Phase 2 in progress |
 | 2026-10-02 | **PD-1…PD-7 resolved → D-016** (freemium; comments at launch; polls never; no price at MVP; broker import if feasible; English first, resolving OQ-7; read-only phone view). Product Definition → v0.2. | Product Definition awaiting approval |
+| 2026-10-02 | **D-017**: comments unrestricted, no counsel gate for comments; legal-minimum moderation (reports, grievance officer, takedown on order) retained. Product Definition → v0.3. Scope of "no lawyer" for §3.5/§4.13 unconfirmed. | Product Definition awaiting approval |

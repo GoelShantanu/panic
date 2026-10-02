@@ -45,7 +45,7 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `product-definition.md` | Target user, jobs, MVP scope, non-goals, success metrics | Founder (drafted by CTO) | Research, RE, D-009, D-011…D-015, GUARDRAILS | PRD | **Who the product is for and what it will not do** | Medium (no user research; targets `[ASSUMPTION]`) | 🟡 v0.2 draft (PD-1…PD-7 resolved, D-016), awaiting approval |
+| `product-definition.md` | Target user, jobs, MVP scope, non-goals, success metrics | Founder (drafted by CTO) | Research, RE, D-009, D-011…D-015, GUARDRAILS | PRD | **Who the product is for and what it will not do** | Medium (no user research; targets `[ASSUMPTION]`) | 🟡 v0.3 draft (D-016, D-017), awaiting approval |
 
 ### 1.3 Gated — not yet created
 

@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| **Version** | 0.2 — **DRAFT** |
+| **Version** | 0.3 — **DRAFT** |
 | **Date** | 2026-10-02 |
 | **Owner** | Founder (REPOSITORY_STRUCTURE §4) · drafted by CTO |
-| **Status** | 🟡 **Awaiting founder + CTO approval** (WORKFLOW §2). Open choices PD-1…PD-7 resolved in [D-016](../../DECISION_LOG.md). Nothing here binds until approved. |
-| **Inputs** | `docs/research/phase-01-product-research.md` (Research) · `docs/research/cryptopanic-product-reverse-engineering.md` (RE) · [D-009](../../DECISION_LOG.md), [D-011](../../DECISION_LOG.md)…[D-016](../../DECISION_LOG.md) · [GUARDRAILS.md](../../GUARDRAILS.md) |
+| **Status** | 🟡 **Awaiting founder + CTO approval** (WORKFLOW §2). Open choices PD-1…PD-7 resolved in [D-016](../../DECISION_LOG.md); comments policy in [D-017](../../DECISION_LOG.md). Nothing here binds until approved. |
+| **Inputs** | `docs/research/phase-01-product-research.md` (Research) · `docs/research/cryptopanic-product-reverse-engineering.md` (RE) · [D-009](../../DECISION_LOG.md), [D-011](../../DECISION_LOG.md)…[D-017](../../DECISION_LOG.md) · [GUARDRAILS.md](../../GUARDRAILS.md) |
 | **Next phase** | PRD (`docs/prd/`), which turns each scope item below into testable requirements |
 
 > This document says **who** the product is for, **what** it must do for them, what it will **not** do, and **how we will know it works**. It does not say how it is built (Architecture) or specify behaviour precisely (PRD). Where a fact already lives elsewhere, this document links to it rather than restating it (GUARDRAILS §1.3).
@@ -84,7 +84,7 @@ What the user is trying to get done. Every MVP scope item in §4 serves at least
 | **S13** | **Source health.** User-visible indicator when a source is stale or down | J9 | Research §4.3, R11 | ➖ |
 | **S14** | **Market-session awareness.** Stream, Trending and alerts know about trading hours, holidays and halts | J1, J2 | GUARDRAILS §4.11 | ❌ Reference assumes 24/7 `[RE §31.2]` |
 | **S15** | **Accounts.** Sign-up, public voter identity, eligibility gate before directional voting and commenting | J8 | `docs/q2.md` §F.3.6–F.3.7 | ✅ Accounts; reputation gate `[RE Part IV research]` |
-| **S16** | **Comments.** Threaded comments on stories, under the user's public identity. Moderation: report, review queue, removal, audit log, kill switch. Comments never affect ranking | J8 | D-016 PD-2 | ✅ Comments `[RE §29.4]` |
+| **S16** | **Comments.** Threaded comments on stories, under the user's public identity. **No content rules on opinion**, including buy/sell calls. Moderation limited to the legal minimum: user reports, grievance officer, takedown on court or government order, audit log. Comments never affect ranking | J8 | D-016 PD-2; D-017 | ✅ Comments `[RE §29.4]` |
 | **S17** | **Free and paid tiers.** Free: stream, company pages, voting, comments, basic alerts. Paid: higher alert budget, longer history, advanced filters. Exact split and price in PRD | — (business) | D-016 PD-1; Research §11 (₹199–499/month) | ✅ Free/PRO split `[RE §3]` |
 | **S18** | **Phone view.** Read-only stream and story pages with a "best on desktop" notice, so shared links work | J2 | D-013; D-016 PD-7 | ➖ |
 
@@ -95,7 +95,7 @@ These are not features. They are conditions the scope above cannot ship without.
 | Condition | Applies to | Source |
 | --- | --- | --- |
 | Written counsel opinion on directional voting | S8 directional, S9 Bullish/Bearish | GUARDRAILS §4.13 |
-| Counsel review of comments; moderation tooling live | S16 | D-016 consequences |
+| Grievance officer appointed; report and takedown-on-order process live | S16 | D-017 (IT Rules 2021) |
 | Counsel retained before AI-layer implementation | S6 summaries, S7 event types | GUARDRAILS §3.5 |
 | Server-side kill switch for directional voting | S8, S9 | GUARDRAILS §4.4 (as amended) |
 | Immutable audit log of AI outputs and votes | S6, S7, S8 | GUARDRAILS §4.8; `docs/q2.md` §F.3.8 |
@@ -154,7 +154,7 @@ Things the MVP explicitly does **not** do. Each is a decision, not an omission.
 | **Source freshness** | Market-hours minutes with any tier-1 source stale |
 | **Voting participation** | % of stories reaching the 3-vote display threshold (tests the cold-start risk in `docs/q2.md` §F.5) |
 | **Paid conversion** | % of weekly active free users who upgrade within 30 days; paid churn per month (D-016 PD-1) |
-| **Moderation load** | Comments reported and removed per 1,000 comments; median time to review a report (D-016 PD-2) |
+| **Moderation load** | Comments reported per 1,000 comments; takedown orders received; median time to act on an order (D-017) |
 
 ### 6.3 Guardrail metrics — must not move the wrong way
 
@@ -163,7 +163,6 @@ Things the MVP explicitly does **not** do. Each is a decision, not an omission.
 | Sessions per user per market day | A rise driven by product mechanics, not news volume, signals urgency creep (GUARDRAILS §4.10) |
 | Share of Trending occupied by small caps with high Bullish counts | Early warning of vote brigading or pump use (`docs/q2.md` §2.3) |
 | Count of AI outputs containing tone language | Must stay at zero (D-014) |
-| Comments removed for buy/sell calls or target prices | Measures how often comments cross into advice (D-016 consequences) |
 
 ---
 
@@ -174,7 +173,7 @@ All seven open choices from v0.1 were answered on 2026-10-02 and recorded in [D-
 | ID | Question | Decision | Reflected in |
 | --- | --- | --- | --- |
 | **PD-1** | Monetisation | Freemium | S17; §6.2 paid conversion |
-| **PD-2** | Comments | Yes, at launch | S16; §4.1; §6.2–6.3 |
+| **PD-2** | Comments | Yes, at launch; unrestricted (D-017) | S16; §4.1; §6.2 |
 | **PD-3** | Polls | Never | N12 |
 | **PD-4** | Price on company pages | No price at MVP | S5; N13; §4.1 |
 | **PD-5** | Broker watchlist import | Yes if feasible; else manual + CSV | S4 |
@@ -190,6 +189,6 @@ All seven open choices from v0.1 were answered on 2026-10-02 and recorded in [D-
 | **No user research** | Jobs (§3), modes (§2.1) and metric targets (§6) are `[INFERRED]` from research and decisions, not from talking to users. |
 | **Targets are placeholders** | Every number in §6 is an `[ASSUMPTION]` pending founder input and a baseline. |
 | **Feasibility unchecked** | Filing latency (§6.1), broker import (S4) and source coverage depend on procurement (OQ-6) and have not been tested. |
-| **Legal scope unconfirmed** | S6–S9 and S16 depend on counsel (§4.1). Counsel may narrow scope. |
+| **Legal scope unconfirmed** | S6–S9 depend on counsel (§4.1). S16 ships without counsel review by founder decision (D-017); its risk is recorded there. |
 | **CryptoPanic parity is from public artefacts** | Logged-in features (alerts detail, API, reputation rules) are partly unverified (PROJECT_STATE B-3). |
 | **Seven research errata unapplied** | E-1…E-7 (PROJECT_STATE B-4). This document follows the decisions, not the superseded research text. |

@@ -20,8 +20,8 @@ Next.js (ADR-002) inside `apps/web`, one process with the API. Each milestone dr
 | # | Milestone | Covers | Status |
 | --- | --- | --- | --- |
 | F1 | Foundation: Next.js in `apps/web` behind the existing server, design tokens (light/dark), shell with session state, API client, component tests | ADR-002 | ✅ Done — Next.js 16 + React 19 in-process; `/v1/session`; light/dark tokens with no-flash boot; header with live session label; error/empty/not-found states; demo seeder; 326/326 tests (7 component); driven in the browser (hydration, theme persistence); production build serves in 0.3 s cold. D-040 |
-| F2 | Live stream: rows, views, filters, load more, unread divider, live updates without layout shift, keyboard model, loading/empty/error/stale states | PRD-001 | ☐ Next |
-| F3 | Story and company pages (SSR, indexable), sources, summary label, voting, community opinion, timeline, search | PRD-004, PRD-005 | ☐ |
+| F2 | Live stream: rows, views, filters, load more, unread divider, live updates without layout shift, keyboard model, loading/empty/error/stale states | PRD-001 | ✅ Done — rows per US-001.1 AC-2; views and event/filings filters with upgrade prompts; cursor pagination; live insert vs held "N new stories"; in-place updates; reconnect with replay; unread divider; J/K/Enter/O/?/Esc/+/−/0/I; states; 338/338 tests (12 stream component); driven in the browser incl. live insert, zero-shift hold, reconnect replay. D-041 |
+| F3 | Story and company pages (SSR, indexable), sources, summary label, voting, community opinion, timeline, search | PRD-004, PRD-005 | ☐ Next |
 | F4 | Accounts and billing: sign-in, sign-up, settings, trial, upgrade panel, Razorpay checkout, invoices | PRD-007 | ☐ |
 | F5 | Watchlist and alerts: search-add, CSV import, alert settings and history, browser push | PRD-003 | ☐ |
 | F6 | Comments, reports, grievance form, profiles, reply dot and notices | PRD-006 | ☐ |
@@ -184,7 +184,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO builds F2 (the live stream).
+**Single next action:** CTO builds F3 (story and company pages).
 - accountant confirmation of GST treatment (release blocker for billing, D-039);
 - each December, next year's holidays and Muhurat date (D-038);
 - exchange feed vendor (OQ-6);
@@ -288,3 +288,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **B4b done.** Founder: NSE page as the source, Muhurat 18:00–19:00 every year, one calendar for NSE and BSE, reuse for later years (recurring fixed dates automatic; lunar dates entered yearly — Holi etc. move). Migration 0011. Calendar generated 60 days ahead by maintenance with year-end warning; admin calendar commands; session header skips same-state midnights. Trending: ≥ 3 sources in 2 h, tier-weighted activity ÷ company's own expected activity in the current session type over 28 days; no vote input. 315/315 tests; e2e observed (found and fixed an invalid-date crash). **D-038.** | Phase 6 in progress |
 | 2026-10-03 | **Backend exit review — approved (D-039).** Checked every WORKFLOW §6 criterion against evidence. Hostile-input probe (9,427 requests): 0 5xx after fixes. Found and fixed 6 defects (session.changed never broadcast; source changes unaudited; ai_call mutable; stale constraint fixture; AI spend rate 84→96.5; oversized uploads reset). Migration 0012. 319/319 tests, 56/56 constraint tests. Founder accepted 4 launch parameters (rules/clustering, GST with billing held, grievance deadlines, Trending weights). **Phase 6 complete.** | **Phase 6 exited** |
 | 2026-10-03 | **Frontend opened; F1 done.** Next.js 16 / React 19 inside the existing server (pages for non-/v1 paths, live pass-through, dev WebSocket forwarding), pages read the API over loopback, `GET /v1/session`, design tokens with light/dark and no-flash theme, header with live market state, states, demo seeder (fictional, guarded). Found while driving it: pages never hydrated (dev WebSocket not forwarded, then Next 16 blocking 127.0.0.1 as a dev origin) — both fixed. 326/326 tests. **D-040.** | Phase 7 in progress |
+| 2026-10-03 | **F2 done.** Stream client: shared live connection with backoff and replay, live inserts batched at the top or held behind a zero-height "N new stories" control, in-place updates, cursor pagination with error retry, unread divider (server for signed-in, browser for anonymous), keyboard model, vote controls with optimistic update and plain-language refusals, filters with paid prompts, all PRD-001 §5 states. Found in the browser: the new-stories control shifted the list 38 px — fixed (measured 0 px). `/v1/session` gains the kill-switch flag. Saved views need an API → F4. 338/338 tests. **D-041.** | Phase 7 in progress |

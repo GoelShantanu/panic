@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { sessionLabel } from './format.ts';
 import type { SessionInfo } from './format.ts';
+import { SessionStatus } from './LiveStatus.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 
 export interface Viewer {
@@ -18,17 +18,12 @@ export function Header({ session, viewer, current }: { session: SessionInfo | nu
         <Link href="/" aria-current={current === 'stream' ? 'page' : undefined}>
           Stream
         </Link>
-        <Link href="/?view=watchlist" aria-current={current === 'watchlist' ? 'page' : undefined}>
+        <Link href="/watchlist" aria-current={current === 'watchlist' ? 'page' : undefined}>
           Watchlist
         </Link>
       </nav>
       <div className="header-spacer" />
-      {session && (
-        <span className="session" data-state={session.state} title={`Exchange date ${session.exchange_date}`}>
-          <span className="session-dot" aria-hidden="true" />
-          {sessionLabel(session)}
-        </span>
-      )}
+      <SessionStatus initial={session} />
       <ThemeToggle />
       {viewer ? (
         <Link href="/settings" className="button">

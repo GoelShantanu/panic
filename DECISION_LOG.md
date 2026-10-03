@@ -1361,6 +1361,44 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-041 — Stream client behaviour *(implements PRD-001 US-001.1–001.7 in the browser)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Frontend F2. Founder may override |
+
+**Decision**
+
+1. **One live connection per tab.**
+   - It reconnects with backoff (1 s doubling to 60 s), shows "Reconnecting…" after 10 s, and resumes with `last_event_id`. Missed events are replayed, not refetched.
+   - A `resync` from the server refreshes the page data.
+2. **Inserting new stories** (US-001.2 AC-2/AC-3):
+   - Straight in at the top, at most once per second, only while the reader is at the top with nothing selected.
+   - Otherwise they are held behind a "N new stories" control. The control floats in a zero-height sticky anchor, so it never moves the list.
+   - The client decides view membership from the event (§4.2). Vote-based views and Trending never take a brand-new story, since it cannot qualify yet.
+3. **Unread marker:**
+   - Signed-in readers get the server's exact count.
+   - Signed-out readers keep `last_seen_at` in browser storage. Their count covers the stories loaded so far, so it is exact only within the loaded pages.
+   - `last_seen_at` moves only after 10 s visible, when the tab hides or closes.
+4. **Contract addition:** `GET /v1/session` also returns `directional_voting_enabled`, so the Bullish and Bearish tabs disappear when the kill switch is off (C-001.3) without a failed request.
+5. **Trending** is one ranked page with no "load more", matching D-038.
+6. **Saved views** (PRD-001 AC-2b, paid) have a table but no API. They move to F4, which adds `GET/POST/DELETE /v1/saved-views` with the other paid features.
+
+**Reason**
+
+1. PRD-001 US-001.2 AC-4 asks for gap-free catch-up after a dropped connection, and replay delivers it.
+2. A list that moves under the reader is a defect, and no layout shift on insert is a Frontend exit criterion (WORKFLOW §7).
+3. The spec asks for an exact count. A signed-out browser holds only the pages it has loaded.
+4. The client needs the kill-switch state to decide which tabs to render.
+5. A ranked list has no stable keyset to page through.
+6. Building saved views needs new endpoints, which fit with the other paid features in F4.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

@@ -4,6 +4,7 @@ import { api } from '../site/api.ts';
 import type { SessionInfo } from '../site/format.ts';
 import { Header } from '../site/Header.tsx';
 import type { Viewer } from '../site/Header.tsx';
+import { LiveProvider } from '../site/live.tsx';
 import { THEME_BOOT } from '../site/ThemeToggle.tsx';
 import './globals.css';
 
@@ -27,16 +28,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
       <body>
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
-        <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
-        <main id="main" className="main">
-          {children}
-        </main>
-        <footer className="footer">
-          Stories link to their original sources. Vote counts and comments are user opinion, not StockPanic&apos;s assessment, and not investment advice.
-        </footer>
+        <LiveProvider>
+          <a href="#main" className="skip-link">
+            Skip to content
+          </a>
+          <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
+          <main id="main" className="main">
+            {children}
+          </main>
+          <footer className="footer">
+            Stories link to their original sources. Vote counts and comments are user opinion, not StockPanic&apos;s assessment, and not investment advice.
+          </footer>
+        </LiveProvider>
       </body>
     </html>
   );

@@ -6,6 +6,8 @@
     "@stockpanic/core": "*",
     "@stockpanic/db": "*",
     "fast-xml-parser": "^5.11.2",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "@stockpanic/mail": "*",
+    "@stockpanic/push": "*"
   }
 }

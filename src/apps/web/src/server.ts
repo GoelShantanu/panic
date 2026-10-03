@@ -6,6 +6,8 @@ import { route } from './api.ts';
 import type { AuthDeps } from './auth.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
+const MAX_IMPORT_BODY_BYTES = 1536 * 1024; // CSV text (≤ 1 MB) inside JSON
+const UNSUBSCRIBE_PATH = '/v1/alerts/unsubscribe';
 
 class HttpError extends Error {
   readonly status: number;
@@ -27,16 +29,23 @@ export function sessionTokenFrom(req: IncomingMessage): string | null {
 
 // State-changing requests must be JSON: browsers cannot send cross-site JSON without a CORS
 // preflight, which together with SameSite=Lax cookies blocks cross-site request forgery.
-async function readJson(req: IncomingMessage): Promise<unknown> {
+// The token-authenticated one-click unsubscribe is the one exception (RFC 8058 posts a form).
+async function readJson(req: IncomingMessage, pathname: string): Promise<unknown> {
   if (req.method === 'GET' || req.method === 'HEAD') return null;
-  if (!(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
+  const type = (req.headers['content-type'] ?? '').toLowerCase();
+  if (pathname === UNSUBSCRIBE_PATH && type.startsWith('application/x-www-form-urlencoded')) {
+    for await (const _ of req) void _;
+    return null;
+  }
+  if (!type.startsWith('application/json')) {
     throw new HttpError(415, 'unsupported_media_type');
   }
+  const limit = pathname === '/v1/watchlist/import/preview' ? MAX_IMPORT_BODY_BYTES : MAX_BODY_BYTES;
   let size = 0;
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     size += (chunk as Buffer).length;
-    if (size > MAX_BODY_BYTES) throw new HttpError(413, 'payload_too_large');
+    if (size > limit) throw new HttpError(413, 'payload_too_large');
     chunks.push(chunk as Buffer);
   }
   if (size === 0) return {};
@@ -52,7 +61,7 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null): Se
     const url = new URL(req.url ?? '/', 'http://localhost');
     let client: pg.PoolClient | undefined;
     try {
-      const body = await readJson(req);
+      const body = await readJson(req, url.pathname);
       client = await pool.connect();
       const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken: sessionTokenFrom(req) }, deps);
       res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(r.headers ?? {}) });

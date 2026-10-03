@@ -15,11 +15,13 @@ import {
   olderStoriesExist,
   searchInstruments,
   sessionInfo,
+  lastSeen,
   staleTier1Sources,
   storyDetailExtras,
   streamPage,
+  streamUnreadCount,
 } from '@stockpanic/db';
-import type { StoryCard, StreamView } from '@stockpanic/db';
+import type { StoryCard, StreamQuery, StreamView } from '@stockpanic/db';
 import {
   getExportStatus,
   getMe,
@@ -36,6 +38,21 @@ import {
   viewerFromToken,
 } from './auth.ts';
 import type { AuthDeps } from './auth.ts';
+import { decodeCursor, encodeCursor } from './cursor.ts';
+import {
+  deletePushSubscriptionApi,
+  deleteWatchlist,
+  getAlertHistory,
+  getAlertSettings,
+  getWatchlist,
+  postImportConfirm,
+  postImportPreview,
+  postPushSubscription,
+  postStreamSeen,
+  postWatchlist,
+  putAlertSettings,
+  unsubscribe,
+} from './watchlist.ts';
 
 export interface ApiResponse {
   status: number;
@@ -59,20 +76,7 @@ const ok = (body: unknown, headers?: Record<string, string>): ApiResponse => (he
 const invalid = (param: string): ApiResponse => ({ status: 400, body: { error: 'invalid_param', param } });
 const notFound = (): ApiResponse => ({ status: 404, body: { error: 'not_found' } });
 
-export function encodeCursor(at: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ t: at.toISOString(), i: id })).toString('base64url');
-}
-
-export function decodeCursor(cursor: string): { at: Date; id: string } | null {
-  try {
-    const v = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as { t?: unknown; i?: unknown };
-    if (typeof v.t !== 'string' || typeof v.i !== 'string' || !/^\d+$/.test(v.i)) return null;
-    const at = new Date(v.t);
-    return Number.isNaN(at.getTime()) ? null : { at, id: v.i };
-  } catch {
-    return null;
-  }
-}
+export { decodeCursor, encodeCursor };
 
 interface ListParams {
   limit: number;
@@ -114,16 +118,12 @@ function notBefore(viewer: Viewer, now: Date): Date | null {
   return days === null ? null : new Date(now.getTime() - days * 86_400_000);
 }
 
-async function page(db: pg.ClientBase, view: StreamView, isin: string | null, p: ListParams, viewer: Viewer, now: Date) {
-  const rows = await streamPage(db, {
-    view,
-    eventTypes: p.eventTypes,
-    filingsOnly: p.filingsOnly,
-    isin,
-    before: p.before,
-    notBefore: notBefore(viewer, now),
-    limit: p.limit + 1,
-  });
+function streamQuery(view: StreamView, isin: string | null, watchlistUserId: string | null, p: ListParams, viewer: Viewer, now: Date): StreamQuery {
+  return { view, eventTypes: p.eventTypes, filingsOnly: p.filingsOnly, isin, watchlistUserId, before: p.before, notBefore: notBefore(viewer, now), limit: p.limit + 1 };
+}
+
+async function page(db: pg.ClientBase, view: StreamView, isin: string | null, p: ListParams, viewer: Viewer, now: Date, watchlistUserId: string | null = null) {
+  const rows = await streamPage(db, streamQuery(view, isin, watchlistUserId, p, viewer, now));
   const pageRows = rows.slice(0, p.limit);
   const cards = await loadStoryCards(db, pageRows.map((r) => r.id));
   const last = pageRows[pageRows.length - 1];
@@ -143,12 +143,24 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
 
   if (view === 'watchlist' && viewer.userId === null) return { status: 401, body: { error: 'auth_required' } };
   if ((view === 'bullish' || view === 'bearish') && !(await directionalVotingEnabled(db))) return notFound(); // C-001.3
-  if (view === 'trending' || view === 'watchlist') return notFound(); // Trending: Backend B4b; watchlist view: B6
+  if (view === 'trending') return notFound(); // Backend B4b: needs the trading calendar
 
-  const { stories, next_cursor } = await page(db, view as StreamView, null, p, viewer, now);
+  // The Watchlist view is Latest restricted to the viewer's instruments (PRD-001 US-001.3 AC-4).
+  const baseView: StreamView = view === 'watchlist' ? 'latest' : (view as StreamView);
+  const watchlistUserId = view === 'watchlist' ? viewer.userId : null;
+  const { stories, next_cursor } = await page(db, baseView, null, p, viewer, now, watchlistUserId);
+
+  // Unread marker for signed-in viewers (PRD-001 US-001.4); signed-out browsers keep their own.
+  let unread: { is_unread: (s: StoryCard) => boolean; unread_count: number } | null = null;
+  if (viewer.userId !== null) {
+    const since = await lastSeen(db, viewer.userId, view);
+    const count = since ? await streamUnreadCount(db, streamQuery(baseView, null, watchlistUserId, { ...p, before: null }, viewer, now), since) : 0;
+    unread = { is_unread: (s) => since !== null && s.first_seen_at > since, unread_count: count };
+  }
   return ok({
-    stories,
+    stories: unread ? stories.map((s) => ({ ...s, is_unread: unread.is_unread(s) })) : stories,
     next_cursor,
+    ...(unread ? { unread_count: unread.unread_count } : {}),
     session: await sessionInfo(db, now),
     stale_sources: await staleTier1Sources(db),
   });
@@ -289,6 +301,20 @@ export async function route(
   if (resource === 'me' && id === 'export' && sub && parts.length === 4 && method === 'GET') return getExportStatus(db, user, sub, now);
   if (path === 'me/delete' && method === 'POST') return postDelete(db, req.body, user, now);
   if (path === 'billing/trial' && method === 'POST') return postTrial(db, user, now);
+  if (path === 'stream/seen' && method === 'POST') return postStreamSeen(db, req.body, user, now);
+  if (path === 'watchlist' && method === 'GET') return getWatchlist(db, user);
+  if (path === 'watchlist' && method === 'POST') return postWatchlist(db, req.body, user);
+  if (path === 'watchlist/import/preview' && method === 'POST') return postImportPreview(db, req.body, user);
+  if (path === 'watchlist/import/confirm' && method === 'POST') return postImportConfirm(db, req.body, user);
+  if (resource === 'watchlist' && id && parts.length === 3 && method === 'DELETE') return deleteWatchlist(db, id, user);
+  if (path === 'alerts/settings' && method === 'GET') return getAlertSettings(db, user);
+  if (path === 'alerts/settings' && method === 'PUT') return putAlertSettings(db, req.body, user);
+  if (path === 'alerts/history' && method === 'GET') return getAlertHistory(db, url.searchParams, user);
+  if (path === 'alerts/unsubscribe' && (method === 'GET' || method === 'POST')) {
+    return deps ? unsubscribe(db, method, url.searchParams, deps.authSecret) : { status: 503, body: { error: 'unavailable' } };
+  }
+  if (path === 'push/subscriptions' && method === 'POST') return postPushSubscription(db, req.body, user);
+  if (path === 'push/subscriptions' && method === 'DELETE') return deletePushSubscriptionApi(db, req.body, user);
 
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();

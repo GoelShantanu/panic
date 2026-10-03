@@ -128,29 +128,68 @@ export interface StreamQuery {
   eventTypes: string[] | null;
   filingsOnly: boolean;
   isin: string | null; // company timeline
+  watchlistUserId: string | null; // Watchlist view (PRD-001 US-001.3 AC-4)
   before: { at: Date; id: string } | null;
   notBefore: Date | null; // tier history depth
   limit: number;
 }
 
+function streamWhere(q: StreamQuery): { sql: string; params: unknown[] } {
+  return {
+    sql: `s.merged_into IS NULL
+        AND ${VIEW_SQL[q.view]}
+        AND ($1::text[] IS NULL OR EXISTS (SELECT 1 FROM story_event_type e WHERE e.story_id = s.id AND e.code = ANY($1::text[])))
+        AND (NOT $2::boolean OR p.kind = 'filing')
+        AND ($3::text IS NULL OR EXISTS (SELECT 1 FROM story_tag_display d WHERE d.story_id = s.id AND d.isin = $3::text))
+        AND ($4::bigint IS NULL OR EXISTS (SELECT 1 FROM story_tag_display d JOIN watchlist_entry w ON w.isin = d.isin
+                                            WHERE d.story_id = s.id AND w.user_id = $4::bigint))
+        AND ($5::timestamptz IS NULL OR s.first_seen_at >= $5::timestamptz)`,
+    params: [q.eventTypes, q.filingsOnly, q.isin, q.watchlistUserId, q.notBefore],
+  };
+}
+
 export async function streamPage(db: pg.ClientBase, q: StreamQuery): Promise<{ id: string; firstSeenAt: Date }[]> {
+  const w = streamWhere(q);
   const { rows } = await db.query(
     `SELECT s.id, s.first_seen_at
        FROM story s
        JOIN item p ON p.id = s.primary_item_id
        LEFT JOIN story_vote_count v ON v.story_id = s.id
-      WHERE s.merged_into IS NULL
-        AND ${VIEW_SQL[q.view]}
-        AND ($1::text[] IS NULL OR EXISTS (SELECT 1 FROM story_event_type e WHERE e.story_id = s.id AND e.code = ANY($1::text[])))
-        AND (NOT $2::boolean OR p.kind = 'filing')
-        AND ($3::text IS NULL OR EXISTS (SELECT 1 FROM story_tag_display d WHERE d.story_id = s.id AND d.isin = $3::text))
-        AND ($4::timestamptz IS NULL OR (s.first_seen_at, s.id) < ($4::timestamptz, $5::bigint))
-        AND ($6::timestamptz IS NULL OR s.first_seen_at >= $6::timestamptz)
+      WHERE ${w.sql}
+        AND ($6::timestamptz IS NULL OR (s.first_seen_at, s.id) < ($6::timestamptz, $7::bigint))
       ORDER BY s.first_seen_at DESC, s.id DESC
-      LIMIT $7`,
-    [q.eventTypes, q.filingsOnly, q.isin, q.before?.at ?? null, q.before?.id ?? null, q.notBefore, q.limit],
+      LIMIT $8`,
+    [...w.params, q.before?.at ?? null, q.before?.id ?? null, q.limit],
   );
   return rows.map((r) => ({ id: String(r.id), firstSeenAt: r.first_seen_at }));
+}
+
+// PRD-001 US-001.4 AC-2: the unread count is exact.
+export async function streamUnreadCount(db: pg.ClientBase, q: StreamQuery, since: Date): Promise<number> {
+  const w = streamWhere(q);
+  const { rows } = await db.query(
+    `SELECT count(*)::int AS n
+       FROM story s
+       JOIN item p ON p.id = s.primary_item_id
+       LEFT JOIN story_vote_count v ON v.story_id = s.id
+      WHERE ${w.sql} AND s.first_seen_at > $6::timestamptz`,
+    [...w.params, since],
+  );
+  return rows[0].n;
+}
+
+export async function lastSeen(db: pg.ClientBase, userId: string, view: string): Promise<Date | null> {
+  const { rows } = await db.query('SELECT last_seen_at FROM stream_seen WHERE user_id = $1 AND view = $2', [userId, view]);
+  return rows[0]?.last_seen_at ?? null;
+}
+
+// The stream_seen trigger keeps last_seen_at from moving backwards (PRD-001 §4.3).
+export async function markSeen(db: pg.ClientBase, userId: string, view: string, at: Date): Promise<void> {
+  await db.query(
+    `INSERT INTO stream_seen (user_id, view, last_seen_at) VALUES ($1, $2, $3)
+     ON CONFLICT (user_id, view) DO UPDATE SET last_seen_at = EXCLUDED.last_seen_at`,
+    [userId, view, at],
+  );
 }
 
 export async function olderStoriesExist(db: pg.ClientBase, isin: string, before: Date): Promise<boolean> {

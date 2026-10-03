@@ -96,7 +96,7 @@
 | AC-2 | Story becomes alert-worthy → push delivered **≤ 60 s p95**; email sent **≤ 2 min p95** `[ASSUMPTION]`. |
 | AC-3 | Alert content: instrument symbol(s), story headline, primary source name, time, and a link to the story page. Nothing else (C-003.1). |
 | AC-4 | Every email has a one-click unsubscribe that works without signing in, plus a link to alert settings. |
-| AC-5 | Repeated email bounces (3 hard bounces `[ASSUMPTION]`) disable email alerts and show a notice in the app. |
+| AC-5 | *(Amended by [D-032](../../DECISION_LOG.md): counts send-time rejections until a bounce feed exists.)* Repeated email bounces (3 hard bounces `[ASSUMPTION]`) disable email alerts and show a notice in the app. |
 
 ### 3.3 Budget, quiet hours, digest
 
@@ -158,6 +158,8 @@ DELETE /v1/watchlist/{isin}                                → 204 | 404
 ```
 
 ### 5.2 CSV import
+
+> *Amended by [D-032](../../DECISION_LOG.md): the preview takes the CSV text as JSON (`{"csv": "…"}`), not multipart.*
 
 ```
 POST /v1/watchlist/import/preview   (multipart file)

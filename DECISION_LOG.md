@@ -965,6 +965,33 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-032 — CSV import as JSON text; send-time email failures as the bounce signal *(amends PRD-003 §5.2, US-003.6 AC-5)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Backend B6. Founder may override |
+
+**Decision**
+
+1. `POST /v1/watchlist/import/preview` takes the file's text as JSON (`{"csv": "…"}`, ≤ 1 MB) instead of a multipart upload. The browser reads the file and posts its text; the user sees no difference.
+2. "Disable email after 3 hard bounces" (PRD-003 US-003.6 AC-5) counts **send-time rejections** only. Free Gmail (D-031) reports most bounces later by email, which the product cannot read yet.
+
+**Reason**
+
+1. All state-changing requests are JSON-only, which is the cross-site request forgery protection (Backend B5). A multipart endpoint would be another exception; JSON text keeps the rule uniform. The one exception that does exist is the token-authenticated one-click unsubscribe, which RFC 8058 requires to be form-encoded.
+2. No bounce feed exists with free Gmail.
+
+**Consequences**
+
+- PRD-003 carries amendment notes pointing here.
+- Delayed bounces are not counted until a bounce feed exists (Workspace or a dedicated provider, ADR-007 revisit).
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

@@ -21,6 +21,7 @@ import {
   candidateStoryIds,
   createStory,
   emitStoryEvent,
+  enqueueAlertEvaluation,
   loadPipelineItem,
   loadStoryItems,
   resolveExchangeCode,
@@ -173,5 +174,6 @@ export async function processItem(db: pg.ClientBase, itemId: string, ctx: Pipeli
   await recomputeStory(db, storyId);
   await saveStoryBands(db, storyId, bands, new Date(at.getTime() + CLUSTER_WINDOW_MS));
   await emitStoryEvent(db, target ? 'story.updated' : 'story.created', storyId);
+  await enqueueAlertEvaluation(db, storyId); // PRD-003 US-003.5
   return { storyId, created: target === null, skipped: false };
 }

@@ -83,10 +83,11 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- |
 | `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, text features, classification, tagging, clustering | CTO | PRD-002, 004, 005, 007; ADR-001; D-030 | ✅ B1–B3 — 62 unit tests |
 | `src/packages/db` | Migration runner; ingestion data access (grows with each milestone) | CTO | `docs/database/` | ✅ B1–B2 |
-| `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007), Google sign-in verifier, Node server with sessions | CTO | `db`, `mail`; PRD contracts; ADR-007 | ✅ B4–B5 — 41 tests |
+| `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007; watchlist/alerts: PRD-003), Google sign-in verifier, Node server with sessions | CTO | `db`, `mail`; PRD contracts; ADR-007; D-032 | ✅ B4–B6 — 50 tests |
+| `src/packages/push` | Pusher interface: web-push (VAPID), memory | CTO | PRD-003 US-003.6 | ✅ B6 — 2 tests |
 | `src/packages/mail` | Mailer interface: smtp (free Gmail / Workspace), log, memory | CTO | ADR-007 | ✅ B5 — 3 tests |
 | `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |
-| `src/apps/worker` | Ingestion (RSS, health, scheduler), pipeline (classify, tag, cluster, recompute), account jobs (export, deletion); `ingest`, `pipeline`, `account` CLIs | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030 | ✅ B2–B3 — 37 tests incl. 19 end-to-end |
+| `src/apps/worker` | Ingestion (RSS, health, scheduler), pipeline (classify, tag, cluster, recompute), account jobs (export, deletion), alerts (evaluate, deliver, digest, corrections); `ingest`, `pipeline`, `account`, `alerts` CLIs | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030 | ✅ B2–B3 — 37 tests incl. 19 end-to-end |
 
 ### 1.3 Gated — not yet created
 

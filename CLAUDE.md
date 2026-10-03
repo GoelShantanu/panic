@@ -44,15 +44,15 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 /                          Foundation docs (this file and its six siblings)
 ├── docs/
 │   ├── research/          Approved research. IMMUTABLE — see GUARDRAILS §1
-│   ├── product/           Product definition            (gated — empty)
-│   ├── prd/               PRDs                          (gated — empty)
-│   ├── architecture/      System design                 (gated — empty)
-│   ├── database/          Schema and migrations         (gated — empty)
+│   ├── product/           Product definition (approved)
+│   ├── prd/               PRD-001…007 (approved)
+│   ├── architecture/      System design + ADRs (approved)
+│   ├── database/          Schema, migrations, constraint tests
 │   ├── api/               API contracts                 (gated — empty)
 │   ├── qa/                Test strategy                 (gated — empty)
 │   ├── security/          Threat model, reviews         (gated — empty)
 │   └── ops/               Runbooks, infra               (gated — empty)
-└── src/                   Application code              (gated — empty)
+└── src/                   Application code: packages/ (core, db, mail, push), apps/ (web, live, worker)
 ```
 
 **Gated** means: the directory must not be populated until [WORKFLOW.md](WORKFLOW.md) entry criteria for that phase are met.
@@ -63,7 +63,7 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 
 In order. Do not skip.
 
-1. **Backend** — WORKFLOW §6, from the approved schema and architecture. See [PROJECT_STATE.md](PROJECT_STATE.md). See [PROJECT_STATE.md](PROJECT_STATE.md).
+1. **Backend** — WORKFLOW §6, from the approved schema and architecture. See [PROJECT_STATE.md](PROJECT_STATE.md).
 2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
 3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -84,6 +84,7 @@ DATABASE_URL=postgres://… node src/apps/worker/src/cli/pipeline.ts [--once]   
 DATABASE_URL=postgres://… AUTH_SECRET=<32+ chars> MAILER=log PORT=3000 node src/apps/web/src/cli/serve.ts   # API (GOOGLE_CLIENT_ID enables Google sign-in; MAILER=smtp + SMTP_USER/SMTP_PASS/MAIL_FROM for Gmail)
 DATABASE_URL=postgres://… PORT=3001 node src/apps/live/src/cli/serve.ts      # SSE live channel (/v1/live)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/account.ts [--once]    # data export and account deletion jobs
+DATABASE_URL=postgres://… AUTH_SECRET=… PUBLIC_BASE_URL=… node src/apps/worker/src/cli/alerts.ts [--once]   # alerts + digests (PUSH=web + VAPID_* for browser push)
 ```
 
 Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=test -p 127.0.0.1:55432:5432 postgres:17`. Schema constraint tests: run `docs/database/tests/0001_constraints_test.sql` with `psql` inside that container.
@@ -92,7 +93,7 @@ Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=te
 
 ## Coding Philosophy
 
-*No code exists yet. These are the standing constraints that will govern it, derived from approved research.*
+*Standing constraints derived from approved research; they govern all code under `src/`.*
 
 - **ISIN is the canonical instrument key.** Ticker is a display projection, never a primary key. Every mapping is temporally versioned. (Research §4.2, E1)
 - **Make illegal states unrepresentable.** Where a rule matters, encode it in the schema, not in a code comment. A constraint enforced by a foreign key survives engineers who never read the docs. (Research §6.2, E3)

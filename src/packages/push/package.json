@@ -1,0 +1,11 @@
+{
+  "name": "@stockpanic/push",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

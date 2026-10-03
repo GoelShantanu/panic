@@ -1,6 +1,7 @@
 // Account endpoints (PRD-007 §4.1, §4.2, §4.4; trial from §4.3).
 
 import type { BillingDeps } from './billing.ts';
+import { codeRequestsPerIp } from './ratelimit.ts';
 import type pg from 'pg';
 import {
   OTP_MAX_PER_HOUR,
@@ -86,10 +87,12 @@ async function issuePending(db: pg.ClientBase, identity: { email: string | null;
 }
 
 // POST /v1/auth/email/start — always 204, never reveals whether an account exists.
-export async function postEmailStart(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date): Promise<AuthResponse> {
+export async function postEmailStart(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date, ip: string | null = null): Promise<AuthResponse> {
   const raw = field(body, 'email');
   const email = typeof raw === 'string' ? normaliseEmail(raw) : null;
   if (!email) return invalid('email');
+  // Same 204 when throttled: the response never says whether anything was sent.
+  if (ip && !codeRequestsPerIp.allow(ip, now.getTime())) return { status: 204, body: null };
   if ((await recentCodeCount(db, email, new Date(now.getTime() - 3600_000))) >= OTP_MAX_PER_HOUR) return { status: 204, body: null };
   const code = newOtp();
   await createEmailCode(db, email, hashOtp(deps.authSecret, email, code), now, new Date(now.getTime() + OTP_TTL_MS));

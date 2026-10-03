@@ -320,7 +320,7 @@ export async function route(
 
   if (method === 'POST' && resource === 'auth') {
     if (!deps) return { status: 503, body: { error: 'auth_unavailable' } };
-    if (path === 'auth/email/start') return postEmailStart(db, req.body, deps, now);
+    if (path === 'auth/email/start') return postEmailStart(db, req.body, deps, now, req.ip ?? null);
     if (path === 'auth/email/verify') return postEmailVerify(db, req.body, deps, now);
     if (path === 'auth/google') return postGoogle(db, req.body, deps, now);
     if (path === 'auth/signup/complete') return postSignupComplete(db, req.body, req.sessionToken, now);
@@ -385,7 +385,7 @@ export async function route(
   if (resource === 'comments' && id && parts.length === 3 && method === 'PATCH') return community.patchComment(db, id, req.body, user, now);
   if (resource === 'comments' && id && parts.length === 3 && method === 'DELETE') return community.deleteComment(db, id, user, now);
   if (resource === 'comments' && id && sub === 'reports' && parts.length === 4 && method === 'POST') return community.postReport(db, id, req.body, user, now);
-  if (path === 'grievances' && method === 'POST') return community.postGrievance(db, req.body, now);
+  if (path === 'grievances' && method === 'POST') return community.postGrievance(db, req.body, now, req.ip ?? null);
   if (resource === 'stories' && id && sub === 'summary' && parts[4] === 'reports' && parts.length === 5 && method === 'POST') return community.postSummaryReport(db, id, user, now);
   if (path === 'me/replies' && method === 'GET') return community.getReplies(db, user, now);
   if (path === 'me/notifications' && method === 'GET') return community.getNotifications(db, user);

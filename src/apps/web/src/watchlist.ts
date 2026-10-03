@@ -1,7 +1,7 @@
 // Watchlist, alert settings, history, push subscriptions, unsubscribe, unread marker (PRD-003 §5, PRD-001 §4.3).
 
 import type pg from 'pg';
-import { ENTITLEMENTS, isEventTypeCode, parseHoldingsCsv, parseIsin, upgradeRequired, verifyUnsubscribeToken } from '@stockpanic/core';
+import { ENTITLEMENTS, isAllowedPushEndpoint, isEventTypeCode, parseHoldingsCsv, parseIsin, upgradeRequired, verifyUnsubscribeToken } from '@stockpanic/core';
 import {
   addToWatchlist,
   alertHistory,
@@ -177,7 +177,7 @@ export async function postPushSubscription(db: pg.ClientBase, body: unknown, use
   const keys = field(body, 'keys');
   const p256dh = field(keys, 'p256dh');
   const auth = field(keys, 'auth');
-  if (typeof endpoint !== 'string' || !endpoint.startsWith('https://') || endpoint.length > 2048) return invalid('endpoint');
+  if (typeof endpoint !== 'string' || endpoint.length > 2048 || !isAllowedPushEndpoint(endpoint)) return invalid('endpoint');
   if (typeof p256dh !== 'string' || typeof auth !== 'string') return invalid('keys');
   await savePushSubscription(db, user.id, endpoint, { p256dh, auth });
   return { status: 201, body: { endpoint } };

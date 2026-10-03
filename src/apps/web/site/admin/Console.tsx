@@ -56,6 +56,7 @@ export interface Abuse {
   shared_ips: { story_id: string; ip: string; accounts: number }[];
   concentrated_voters: { user_id: string; isin: string; votes: number; total: number }[];
   bullish_view_sme_share: { total: number; sme: number };
+  sme_bullish_stories?: { story_id: string; headline: string; bullish: number; bearish: number; voters_under_90_days: number }[];
 }
 
 export interface Switches {
@@ -704,6 +705,23 @@ function AbusePanel({ abuse }: { abuse: Abuse }) {
         {share.sme} of {share.total}
         {share.total > 0 && ` (${Math.round((share.sme / share.total) * 100)}%)`}
       </p>
+      {(abuse.sme_bullish_stories?.length ?? 0) > 0 && (
+        <>
+          <h3 className="sub-h">SME stories in the Bullish view: read them (patient brigades trip no signal above)</h3>
+          <ul className="plain-list">
+            {abuse.sme_bullish_stories!.map((s) => (
+              <li key={s.story_id}>
+                <Link href={`/s/${s.story_id}`} target="_blank">
+                  {s.headline}
+                </Link>{' '}
+                <span className="faint">
+                  · {s.bullish} bullish / {s.bearish} bearish · {s.voters_under_90_days} bullish voters with accounts under 90 days
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

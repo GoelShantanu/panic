@@ -87,6 +87,8 @@ describe.skipIf(!adminUrl)('operator story corrections (PostgreSQL)', () => {
     await user('carol');
     for (const [u, i] of [['alice', A], ['bob', K]] as const) {
       await db.query(`INSERT INTO watchlist_entry (user_id, isin, added_at) VALUES ($1, $2, now() - interval '1 day')`, [ids[u], i]);
+      // Quiet hours off: the test must not depend on the hour it runs (22:00–08:00 IST holds alerts for the digest).
+      await db.query(`INSERT INTO alert_settings (user_id, daily_budget, quiet_enabled) VALUES ($1, 5, false) ON CONFLICT (user_id) DO UPDATE SET quiet_enabled = false`, [ids[u]]);
     }
   });
 

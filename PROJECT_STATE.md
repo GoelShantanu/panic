@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-**Phase 9 — Security review** *(entry met 2026-10-03)*. Phase 8 — QA: complete *(exited 2026-10-03 — [D-052](DECISION_LOG.md), [docs/qa/test-strategy.md](docs/qa/test-strategy.md))*. Phase 7 — Frontend: complete *(exited 2026-10-03 — [D-048](DECISION_LOG.md))*. Phase 6 — Backend: complete *(D-039)*.
+**Phase 9 — Security review** *(opened 2026-10-03; findings fixed, residual risks await founder acceptance — [docs/security/review.md](docs/security/review.md), D-053)*. Phase 8 — QA: complete *(exited 2026-10-03 — [D-052](DECISION_LOG.md), [docs/qa/test-strategy.md](docs/qa/test-strategy.md))*. Phase 7 — Frontend: complete *(exited 2026-10-03 — [D-048](DECISION_LOG.md))*. Phase 6 — Backend: complete *(D-039)*.
 
 ### Frontend plan
 
@@ -184,7 +184,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO opens the security review (WORKFLOW §9): threat model and review in `docs/security/`. New founder inputs: Grievance Officer name and email; confirm or replace the Terms and Privacy drafts (D-043); VAPID keys for browser push (D-044).
+**Single next action:** Founder accepts (or not) residual risks A1–A8 in `docs/security/review.md` §4; then Phase 9 exits and Release (WORKFLOW §10) opens. New founder inputs: Grievance Officer name and email; confirm or replace the Terms and Privacy drafts (D-043); VAPID keys for browser push (D-044).
 - accountant confirmation of GST treatment (release blocker for billing, D-039);
 - each December, next year's holidays and Muhurat date (D-038);
 - exchange feed vendor (OQ-6);
@@ -300,3 +300,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **API overload fixed (D-050, founder choice).** Anonymous first page of Latest shared for 2 s (coalesced misses); 503 + Retry-After when ≥ 20 requests wait for a DB connection. Measured: cached 300 rps p95 86 ms; uncached 300 rps served p95 311 ms with 48% shed; 150 rps p95 160 ms. Founder: curated aliases decided after the held-out run. | Phase 8 in progress |
 | 2026-10-03 | **Held-out precision measured.** Eight feeds unused in tuning, 300-headline blind-labelled sample (38 company mentions): launch rule 95.5% precision / 55.3% recall (one demerger error); with proposed aliases 100% (30/30) / 78.9% — ≥ 90.5% at 95% confidence, 99.5% not yet demonstrable on this volume. SpiceJet is BSE-only (registry gap). Static UI snapshot generated for the founder (`ui-snapshot/`, not committed). | Phase 8 in progress |
 | 2026-10-03 | **QA exited (D-051, D-052).** Founder approved the curated aliases and "exit now, keep auditing". Built the weekly tag audit (`audit-tags.ts`) and the `article_tags_enabled` switch (migration 0015, console toggle); below 99.5% it switches article tags off automatically — observed end to end (79 displayed article tags → 0 → restored). Related-stories now read the display view. Story-by-story traceability for all 56 stories. 414/414 tests. **Phase 8 complete.** | **Phase 8 exited** |
+| 2026-10-03 | **Security review run (D-053).** Threat model and review record in `docs/security/`. npm audit clean; SQL interpolation traced; hostile probes against localhost passed (CSRF 415, stored payload escaped, operator API needs 2FA, IDOR 404/403, forged unsubscribe 404). Ten findings fixed: SSRF via attachments and push endpoints, no security headers, per-IP limits on sign-in codes and grievances, client IP blind behind the proxy, log mailer default in production, email aliases opening extra accounts (migration 0016), sponsored content entering as news, patient-brigade visibility for operators. Abuse vectors simulated: a fast brigade is caught; a patient brigade evades automatic signals (residual A2). A clock-dependent test fixed. 428/428 tests. Residual risks A1–A8 await the founder. | Phase 9 in progress |

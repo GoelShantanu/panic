@@ -121,6 +121,16 @@ describe.skipIf(!adminUrl)('accounts (PRD-007) against PostgreSQL', () => {
       expect((await call('POST', '/v1/auth/email/verify', { email, code: lastCode(email) })).body).toMatchObject({ is_new: false });
     });
 
+    it('an alias of an existing address signs in to the same account, not a new one (D-053)', async () => {
+      const [local, domain] = email.split('@');
+      const alias = `${local}+second@${domain}`;
+      await call('POST', '/v1/auth/email/start', { email: alias });
+      const r = await call('POST', '/v1/auth/email/verify', { email: alias, code: lastCode(alias) });
+      expect(r.body).toMatchObject({ is_new: false });
+      const me = await call('GET', '/v1/me', null, (r.body as any).session);
+      expect((me.body as any).username).toBe('first_trader');
+    });
+
     it('a taken username is refused (409)', async () => {
       await call('POST', '/v1/auth/email/start', { email: 'second@example.invalid' });
       const v = await call('POST', '/v1/auth/email/verify', { email: 'second@example.invalid', code: lastCode('second@example.invalid') });

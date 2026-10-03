@@ -68,6 +68,7 @@ import {
 } from '@stockpanic/db';
 import type { SessionUser, StoryCard } from '@stockpanic/db';
 import { decodeCursor, encodeCursor } from './cursor.ts';
+import { grievancesPerIp } from './ratelimit.ts';
 
 export interface Res {
   status: number;
@@ -295,7 +296,8 @@ export async function postSummaryReport(db: pg.ClientBase, publicId: string, use
 // Public grievance form; no account needed (PRD-006 US-006.8 AC-1).
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 
-export async function postGrievance(db: pg.ClientBase, body: unknown, now: Date): Promise<Res> {
+export async function postGrievance(db: pg.ClientBase, body: unknown, now: Date, ip: string | null = null): Promise<Res> {
+  if (ip && !grievancesPerIp.allow(ip, now.getTime())) return rateLimited(3600);
   const email = field(body, 'email');
   const details = field(body, 'details');
   const rawComment = field(body, 'comment_id');

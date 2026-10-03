@@ -2,6 +2,7 @@
 // transiently; only the extracted text is kept, for audit (ingestion.md §3 rule 4).
 
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { ATTACHMENT_HOSTS_DEFAULT, isAllowedAttachmentUrl } from '@stockpanic/core';
 import { USER_AGENT } from '../ingestion/http.ts';
 import type { FetchLike } from '../ingestion/http.ts';
 
@@ -43,19 +44,34 @@ const htmlText = (html: string) =>
     .replace(/[ \t]+/g, ' ')
     .trim();
 
+const MAX_REDIRECTS = 3;
+
 export class HttpDocumentFetcher implements DocumentFetcher {
   readonly #fetch: FetchLike;
-  constructor(fetchImpl: FetchLike = fetch) {
+  readonly #hosts: readonly string[];
+  // ATTACHMENT_HOSTS (comma-separated) widens the allowlist when a feed vendor hosts copies (D-053).
+  constructor(fetchImpl: FetchLike = fetch, hosts: readonly string[] = process.env['ATTACHMENT_HOSTS']?.split(',').map((h) => h.trim()).filter(Boolean) ?? ATTACHMENT_HOSTS_DEFAULT) {
     this.#fetch = fetchImpl;
+    this.#hosts = hosts;
   }
 
   async fetchText(url: string): Promise<DocumentText> {
-    let res: Response;
-    try {
-      res = await this.#fetch(url, { headers: { 'user-agent': USER_AGENT }, redirect: 'follow', signal: AbortSignal.timeout(TIMEOUT_MS) });
-    } catch (err) {
-      return { ok: false, error: `request failed: ${(err as Error).message}` };
+    let res: Response | null = null;
+    let target = url;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      // Only exchange hosts, at every hop: a feed URL must not reach the private network (SSRF).
+      if (!isAllowedAttachmentUrl(target, this.#hosts)) return { ok: false, error: `attachment host not allowed: ${new URL(target).hostname}` };
+      try {
+        res = await this.#fetch(target, { headers: { 'user-agent': USER_AGENT }, redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS) });
+      } catch (err) {
+        return { ok: false, error: `request failed: ${(err as Error).message}` };
+      }
+      const next = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
+      if (!next) break;
+      target = new URL(next, target).toString();
+      res = null;
     }
+    if (!res) return { ok: false, error: 'too many redirects' };
     if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
     if (Number(res.headers.get('content-length') ?? '0') > MAX_ATTACHMENT_BYTES) return { ok: false, error: 'attachment too large' };
     const buf = new Uint8Array(await res.arrayBuffer());

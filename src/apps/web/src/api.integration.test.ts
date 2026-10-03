@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { isinCheckDigit, newPublicId, upgradeRequired } from '@stockpanic/core';
 import { addItemToStory, createStory, migrate, setStoryDerived } from '@stockpanic/db';
 import { route } from './api.ts';
-import { createApiServer } from './server.ts';
+import { clientIp, createApiServer } from './server.ts';
 
 // All companies, headlines and ISINs are fictional.
 const adminUrl = process.env['TEST_DATABASE_URL'];
@@ -339,6 +339,13 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     expect(body(await get(`/v1/stories/${ids['S2']!.pub}`)).instruments.map((i: any) => i.isin)).toEqual([K]);
   });
 
+  it('client IP: the socket, or the last X-Forwarded-For hop when our proxy is trusted (D-053)', () => {
+    const req = (fwd: string | undefined, addr: string) => ({ headers: fwd ? { 'x-forwarded-for': fwd } : {}, socket: { remoteAddress: addr } }) as never;
+    expect(clientIp(req('198.51.100.7', '::ffff:127.0.0.1'), false)).toBe('127.0.0.1'); // header ignored unless trusted
+    expect(clientIp(req('spoofed, 198.51.100.7', '127.0.0.1'), true)).toBe('198.51.100.7'); // client-supplied entries ignored
+    expect(clientIp(req(undefined, '203.0.113.9'), true)).toBe('203.0.113.9');
+  });
+
   it('HTTP server: the anonymous first page of Latest is shared for 2 s; past capacity it fails fast (D-050)', async () => {
     const url = new URL(adminUrl!);
     url.pathname = `/${dbName}`;
@@ -352,6 +359,10 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     try {
       const headlines = async (path = '/v1/stream', headers: Record<string, string> = {}) => ((await (await fetch(s.base + path, { headers })).json()) as any).stories.map((x: any) => x.headline);
       const before = await headlines();
+      const h = (await fetch(s.base + '/v1/session')).headers; // security headers on every response (D-053)
+      expect(h.get('x-frame-options')).toBe('DENY');
+      expect(h.get('x-content-type-options')).toBe('nosniff');
+      expect(h.get('content-security-policy')).toContain("frame-ancestors 'none'");
       const a = await item('article', 'src_desk', 'cache-1', 'Fictional cache probe story', new Date());
       await story('C1', [a], new Date(), { primaryItemId: a, sourceCount: 1, eventTypes: ['other'], tags: [], unresolved: [] });
       expect(await headlines()).toEqual(before); // shared copy

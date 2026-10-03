@@ -97,11 +97,46 @@ function proxyLive(req: IncomingMessage, res: ServerResponse, origin: string) {
   upstream.end();
 }
 
+// Behind the reverse proxy (ADR-003) every socket is the proxy's. With TRUST_PROXY=1 the client is the
+// last X-Forwarded-For entry, the one our proxy appended; earlier entries are client-supplied (D-053).
+export function clientIp(req: IncomingMessage, trustProxy = process.env['TRUST_PROXY'] === '1'): string | null {
+  const fwd = req.headers['x-forwarded-for'];
+  const raw = trustProxy && typeof fwd === 'string' && fwd.trim() ? fwd.split(',').at(-1)!.trim() : req.socket.remoteAddress ?? null;
+  return raw ? raw.replace(/^::ffff:/, '') : null;
+}
+
+const PRODUCTION = process.env['NODE_ENV'] === 'production';
+// Third parties the pages load: Google Identity (sign-in) and Razorpay Checkout (D-036). Inline scripts
+// are still allowed because Next.js streams inline payloads; React escapes rendered text (D-053).
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${PRODUCTION ? '' : " 'unsafe-eval'"} https://accounts.google.com https://checkout.razorpay.com`,
+  "style-src 'self' 'unsafe-inline' https://accounts.google.com",
+  "img-src 'self' data: https:",
+  "font-src 'self' data:",
+  `connect-src 'self' https://accounts.google.com https://api.razorpay.com https://lumberjack.razorpay.com${PRODUCTION ? '' : ' ws: wss:'}`,
+  'frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com',
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
+function securityHeaders(res: ServerResponse): void {
+  res.setHeader('content-security-policy', CSP);
+  res.setHeader('x-content-type-options', 'nosniff');
+  res.setHeader('x-frame-options', 'DENY');
+  res.setHeader('referrer-policy', 'strict-origin-when-cross-origin');
+  res.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.razorpay.com")');
+  if (PRODUCTION) res.setHeader('strict-transport-security', 'max-age=31536000; includeSubDomains');
+}
+
 export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, site: SiteOptions = {}): Server {
   let latestCache: { until: number; body: string } | null = null;
   let latestPending: Promise<string | null> | null = null;
   return createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
+    securityHeaders(res);
     if (site.liveOrigin && url.pathname === '/v1/live') return proxyLive(req, res, site.liveOrigin);
     if (site.pages && !url.pathname.startsWith('/v1/')) {
       try {
@@ -158,7 +193,7 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, sit
       if (cacheable) latestPending = new Promise((r) => (settle = r));
       try {
         client = await pool.connect();
-        const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken, ip: req.socket.remoteAddress ?? null }, deps);
+        const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken, ip: clientIp(req) }, deps);
         const text = r.status === 204 || r.status === 302 ? undefined : JSON.stringify(r.body);
         if (cacheable && r.status === 200 && text) latestCache = { until: Date.now() + LATEST_CACHE_MS, body: text };
         settle?.(cacheable && r.status === 200 ? (text ?? null) : null);

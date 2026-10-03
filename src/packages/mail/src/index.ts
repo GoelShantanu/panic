@@ -65,6 +65,8 @@ export const GOOGLE_WORKSPACE_RELAY = { host: 'smtp-relay.gmail.com', port: 587 
 // and its app password (or Workspace SMTP credentials).
 export function mailerFromEnv(env: Record<string, string | undefined> = process.env): Mailer {
   const kind = env['MAILER'] ?? 'log';
+  // The log mailer prints sign-in codes; production must send real mail (D-053).
+  if (env['NODE_ENV'] === 'production' && kind !== 'smtp') throw new Error('MAILER=smtp is required when NODE_ENV=production');
   if (kind === 'memory') return new MemoryMailer();
   if (kind === 'log') return new LogMailer();
   if (kind !== 'smtp') throw new Error(`unknown MAILER: ${kind}`);

@@ -168,7 +168,7 @@ describe.skipIf(!adminUrl)('filings adapter (PostgreSQL, fake vendor)', () => {
       classify: async () => { throw new Error('unexpected'); },
       summarise: async (): Promise<AiOutcome<SummarySentence[]>> => ({ kind: 'ok', value: summary, usage: { inputTokens: 500, outputTokens: 30, cacheReadTokens: 0, cacheWriteTokens: 0 }, modelId: 'claude-haiku-4-5', latencyMs: 10 }),
     };
-    const aiDeps = { client: fake, documents: new HttpDocumentFetcher(attachments), mailer: new MemoryMailer(), opsEmail: null, log: () => undefined };
+    const aiDeps = { client: fake, documents: new HttpDocumentFetcher(attachments, ['exchange.example.in']), mailer: new MemoryMailer(), opsEmail: null, log: () => undefined };
     expect((await drainAi(db, aiDeps, { workerId: 'test' })).counts).toEqual({ accepted: 1 });
     const s1 = await itemByAnn('S-1');
     expect((await db.query('SELECT extracted_text FROM filing_detail WHERE item_id = $1', [s1.id])).rows[0].extracted_text).toContain('Rs 1,250.50 crore');

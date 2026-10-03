@@ -1844,6 +1844,40 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-053 — Security review: findings fixed *(WORKFLOW §9)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture · Security |
+| **Decided by** | CTO (security reviewer). Residual risks A1–A8 await founder acceptance before the phase exits |
+
+**Decision** — fix F1–F10 from `docs/security/review.md`:
+
+1. **SSRF closed.**
+   - Filing attachments are fetched only from exchange hosts (plus `ATTACHMENT_HOSTS`), and every redirect hop is re-checked.
+   - Push endpoints must be real push services.
+2. **Security headers on every response:** CSP (third parties limited to Google sign-in and Razorpay), frame-ancestors none, `X-Frame-Options`, nosniff, Referrer-Policy and Permissions-Policy; HSTS in production.
+3. **Real client IPs behind the proxy:** `TRUST_PROXY=1` takes the last `X-Forwarded-For` hop. Before this, every vote IP and per-IP limit would have seen the proxy.
+4. **Per-IP limits** (in memory, no IPs stored): 20 sign-in code requests and 5 grievance submissions per hour.
+5. **Production requires `MAILER=smtp`,** so sign-in codes can never be logged.
+6. **One account per inbox:**
+   - Canonical email (`+tags` stripped; Gmail dots and `googlemail.com` folded) is used for lookup, with a unique index (migration 0016).
+   - An alias signs in to the existing account.
+7. **Sponsored-section URLs are dropped at ingestion.**
+8. **The abuse report lists SME stories in the Bullish view** with voter account ages, because a patient brigade trips no automatic signal.
+
+**Reason** — WORKFLOW §9: findings are fixed or accepted with a rationale; the abuse vectors were assessed by simulation (`abuse.integration.test.ts`). Evidence: `docs/security/threat-model.md`, `docs/security/review.md`.
+
+**Consequences**
+
+- Deployment needs `TRUST_PROXY=1`, `NODE_ENV=production` with `MAILER=smtp`, and a login role inside `stockpanic_app`.
+- Residual risks A1–A8 (review.md §4) need the founder's acceptance.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

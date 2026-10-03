@@ -531,11 +531,26 @@ export async function abuseReport(db: pg.ClientBase, now: Date) {
       WHERE s.merged_into IS NULL AND v.bullish >= 3 AND v.bullish > v.bearish AND s.first_seen_at > $1::timestamptz - interval '24 hours'`,
     [now],
   );
+  // A patient brigade (old accounts, spread out, distinct addresses) trips no automatic signal, so the
+  // SME stories in the Bullish view are listed for an operator to read (security review, D-053).
+  const smeBullish = await db.query(
+    `SELECT s.public_id AS story_id, p.headline, v.bullish, v.bearish,
+            count(*) FILTER (WHERE u.created_at > $1::timestamptz - interval '90 days')::int AS voters_under_90_days
+       FROM story s JOIN story_vote_count v ON v.story_id = s.id JOIN item p ON p.id = s.primary_item_id
+       JOIN vote_directional d ON d.story_id = s.id AND d.direction = 'bullish' AND d.discounted_at IS NULL
+       JOIN app_user u ON u.id = d.user_id
+      WHERE s.merged_into IS NULL AND v.bullish >= 3 AND v.bullish > v.bearish AND s.first_seen_at > $1::timestamptz - interval '24 hours'
+        AND EXISTS (SELECT 1 FROM story_tag t JOIN instrument i ON i.isin = t.isin WHERE t.story_id = s.id AND i.segment = 'sme')
+      GROUP BY s.public_id, p.headline, v.bullish, v.bearish
+      ORDER BY v.bullish DESC LIMIT 20`,
+    [now],
+  );
   return {
     vote_bursts: bursts.rows,
     shared_ips: sharedIps.rows.map((r) => ({ ...r, story_id: r.story_id })),
     concentrated_voters: concentrated.rows,
     bullish_view_sme_share: smeShare.rows[0],
+    sme_bullish_stories: smeBullish.rows,
   };
 }
 

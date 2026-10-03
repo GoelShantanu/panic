@@ -173,9 +173,10 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
   describe('push subscriptions and unsubscribe', () => {
     it('register and remove a push subscription', async () => {
       const keys = { p256dh: 'p', auth: 'a' };
-      expect((await call('POST', '/v1/push/subscriptions', { endpoint: 'https://push.example.invalid/1', keys })).status).toBe(201);
+      expect((await call('POST', '/v1/push/subscriptions', { endpoint: 'https://fcm.googleapis.com/fcm/send/test-1', keys })).status).toBe(201);
+      expect((await call('POST', '/v1/push/subscriptions', { endpoint: 'https://push.example.invalid/1', keys })).status).toBe(400); // not a push service (SSRF, D-053)
       expect((await call('POST', '/v1/push/subscriptions', { endpoint: 'http://insecure.example', keys })).status).toBe(400);
-      expect((await call('DELETE', '/v1/push/subscriptions', { endpoint: 'https://push.example.invalid/1' })).status).toBe(204);
+      expect((await call('DELETE', '/v1/push/subscriptions', { endpoint: 'https://fcm.googleapis.com/fcm/send/test-1' })).status).toBe(204);
     });
 
     it('one-click unsubscribe works without signing in; GET only describes it', async () => {

@@ -1,5 +1,5 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
-import { canonicalUrl, isProbablyEnglish, normaliseHeadline } from '@stockpanic/core';
+import { canonicalUrl, isProbablyEnglish, isSponsoredUrl, normaliseHeadline } from '@stockpanic/core';
 import type { CandidateRow } from '@stockpanic/db';
 
 export class FeedParseError extends Error {}
@@ -74,6 +74,7 @@ export interface CandidateSummary {
   candidates: CandidateRow[];
   discardedNonEnglish: number;
   discardedInvalid: number;
+  discardedSponsored: number;
 }
 
 // Headline, link and timestamp only (PRD-002 US-002.5 AC-8); dedup by guid, else canonical URL.
@@ -82,11 +83,16 @@ export function toCandidates(entries: readonly FeedEntry[]): CandidateSummary {
   const seen = new Set<string>();
   let discardedNonEnglish = 0;
   let discardedInvalid = 0;
+  let discardedSponsored = 0;
   for (const e of entries) {
     const headline = e.title ? normaliseHeadline(e.title) : '';
     const url = e.link ? canonicalUrl(e.link) : null;
     if (!headline || !url) {
       discardedInvalid++;
+      continue;
+    }
+    if (isSponsoredUrl(url)) {
+      discardedSponsored++;
       continue;
     }
     if (!isProbablyEnglish(headline)) {
@@ -106,5 +112,5 @@ export function toCandidates(entries: readonly FeedEntry[]): CandidateSummary {
       excerpt: null,
     });
   }
-  return { candidates, discardedNonEnglish, discardedInvalid };
+  return { candidates, discardedNonEnglish, discardedInvalid, discardedSponsored };
 }

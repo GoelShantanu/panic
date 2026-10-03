@@ -16,6 +16,12 @@ describe('mailer (ADR-007)', () => {
     expect(() => mailerFromEnv({ MAILER: 'carrier-pigeon' })).toThrow(/unknown MAILER/);
   });
 
+  it('production refuses any mailer that would print sign-in codes (D-053)', () => {
+    expect(() => mailerFromEnv({ NODE_ENV: 'production' })).toThrow(/MAILER=smtp is required/);
+    expect(() => mailerFromEnv({ NODE_ENV: 'production', MAILER: 'log' })).toThrow(/MAILER=smtp is required/);
+    expect(mailerFromEnv({ NODE_ENV: 'production', MAILER: 'smtp', MAIL_FROM: 'sender@example.invalid' })).toBeInstanceOf(SmtpMailer);
+  });
+
   it('the sign-in email states the code and expiry with no urgency language', () => {
     const e = signInCodeEmail('042137');
     expect(e.text).toContain('042137');

@@ -31,7 +31,7 @@ async function tx<T>(db: pg.ClientBase, fn: () => Promise<T>): Promise<T> {
 // ---------------------------------------------------------------- sign-in codes (PRD-007 US-007.1 AC-3)
 
 export async function recentCodeCount(db: pg.ClientBase, email: string, since: Date): Promise<number> {
-  const { rows } = await db.query('SELECT count(*)::int AS n FROM email_code WHERE email = $1 AND created_at > $2', [email, since]);
+  const { rows } = await db.query('SELECT count(*)::int AS n FROM email_code WHERE email_canonical(email::text) = email_canonical($1) AND created_at > $2', [email, since]);
   return rows[0].n;
 }
 
@@ -73,7 +73,7 @@ export interface UserRef {
 const userRef = (r: any): UserRef => ({ id: String(r.id), publicId: r.public_id, username: r.username });
 
 export async function findUserByEmail(db: pg.ClientBase, email: string): Promise<UserRef | null> {
-  const { rows } = await db.query('SELECT id, public_id, username FROM app_user WHERE email = $1 AND deleted_at IS NULL AND deletion_requested_at IS NULL', [email]);
+  const { rows } = await db.query('SELECT id, public_id, username FROM app_user WHERE email IS NOT NULL AND email_canonical(email::text) = email_canonical($1) AND deleted_at IS NULL AND deletion_requested_at IS NULL', [email]);
   return rows[0] ? userRef(rows[0]) : null;
 }
 
@@ -106,7 +106,7 @@ export type UserError = 'username_taken' | 'username_reserved' | 'email_taken';
 function userError(err: unknown): UserError | null {
   const e = err as { code?: string; constraint?: string; message?: string };
   if (e.code === '23505' && e.constraint === 'app_user_username_key') return 'username_taken';
-  if (e.code === '23505' && (e.constraint === 'app_user_email_key' || e.constraint === 'app_user_google_sub_key')) return 'email_taken';
+  if (e.code === '23505' && (e.constraint === 'app_user_email_key' || e.constraint === 'app_user_email_canonical' || e.constraint === 'app_user_google_sub_key')) return 'email_taken';
   if (typeof e.message === 'string' && e.message.startsWith('username_reserved')) return 'username_reserved';
   return null;
 }

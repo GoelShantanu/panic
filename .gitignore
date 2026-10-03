@@ -31,3 +31,4 @@ coverage/
 # Next.js build output (src/apps/web)
 .next/
 next-env.d.ts
+ui-snapshot/

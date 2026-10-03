@@ -4,7 +4,7 @@
 | --- | --- |
 | **Phase** | 8 — QA (WORKFLOW §8) |
 | **Owner** | CTO (QA reviewer role) |
-| **Status** | ◐ In progress — held-out precision measurement and founder approval of curated aliases pending |
+| **Status** | ◐ In progress — founder decision on curated aliases and on how to treat the 99.5% target pending |
 | **Decisions** | D-049 |
 | **Date** | 2026-10-03 |
 
@@ -13,7 +13,7 @@
 | WORKFLOW §8 exit criterion | Status | Evidence (§) |
 | --- | --- | --- |
 | Acceptance criteria exercised | ◐ | §4. Every story has an automated test or was driven in a real browser at its milestone; gaps named |
-| **Entity-resolution precision measured, not assumed** | ◐ | §2. Measured on 263 real headlines; the held-out figure is still to come |
+| **Entity-resolution precision measured, not assumed** | ✅ measured · target not yet demonstrated | §2.3. Held-out: 100% (30/30) with the proposed aliases, ≥ 90.5% at 95% confidence; 99.5% needs about 600 held-out tags |
 | Load profile tested at market-open shape `[Research E5]` | ✅ with limits | §3 |
 | Failures reported faithfully; coverage gaps named | ✅ | §5, §6 |
 
@@ -40,9 +40,24 @@
 
 **These figures are biased upwards.** The fixes and the alias list were made while looking at this corpus. The figure that counts is the held-out one (§2.3).
 
-### 2.3 Held-out measurement — pending
+### 2.3 Held-out measurement
 
-New headlines are being collected after the fixes were frozen. Volume was too low on Saturday evening, so roughly 300 unseen headlines need Monday's market hours. They will be labelled before the resolver is run and reported against the 99.5% target (entity-resolution.md §5). **Until then, precision is not established.**
+- **Corpus.** 2026-10-03: eight feeds the tuning set never used (Economic Times company, industry and IPO; Mint industry; NDTV Profit; The Hindu business; Times of India business; Indian Express business). 484 items; headlines that also appear in the tuning corpus removed; a fixed random sample of 300 (ordered by md5 of the item id).
+- **Labels.** All 300 were labelled blind, before the resolver was run on them, with the same rules as §2.1. 33 headlines name 38 NSE-listed companies.
+- **Database.** A separate one (`sp_qa_holdout`), with the same NSE list and as-of date. The resolver code was frozen before collection.
+
+| Configuration | Tags | Precision | Recall | Wrong tags |
+| --- | --- | --- | --- | --- |
+| Launch rule (legal names only, with the §5 resolver fixes) | 22 | **95.5%** | 55.3% | 1: "Tata Motors PV …" tagged as the commercial-vehicle company |
+| + proposed curated aliases (including the Tata Motors ambiguity) | 30 | **100%** | 78.9% | 0 |
+
+**What this does and does not show** `[VERIFIED]`:
+
+- With the proposed aliases, 0 errors in 30 tags puts precision at **≥ 90.5%** with 95% confidence (exact binomial, one-sided). It does **not** demonstrate the 99.5% target.
+- Demonstrating 99.5% needs about 600 consecutive correct held-out tags (rule of three). At about 10 company tags per 100 headlines, that is about 6,000 headlines. Exchange filings (OQ-6) will supply most launch tags through exchange codes at confidence 1.0, so the article-headline measurement is the harder half.
+- Without curated aliases, the demerger case alone breaks the launch rule (95.5%). The Tata Motors ambiguity entry is needed whatever is decided about the rest of the list.
+- Remaining misses are short or colloquial forms ("Reliance" alone, "RCom", "ICICI Life", "New India Assurance", "Aurobindo arm") and a rename the NSE list does not show yet ("ICICI Life Insurance" is listed as ICICI Prudential Life).
+- One held-out company is BSE-only (SpiceJet). It is absent from an NSE-only registry, so it is not counted; this is the BSE gap noted in §7.
 
 ## 3. Load profile (market-open shape)
 
@@ -115,7 +130,7 @@ A story-by-story matrix is the next QA deliverable. It needs the held-out run an
 
 ## 7. Limits (not verified)
 
-- Held-out precision is not yet measured (§2.3).
+- Held-out sample is small (30 tags); the 99.5% target is not demonstrated (§2.3). Weekend news only.
 - One labeller (the CTO). No inter-annotator agreement.
 - English headlines from three publishers. No exchange filings: the feed is not procured (OQ-6). BSE-only companies are absent from the registry until a BSE list is chosen.
 - Load figures come from a shared development machine. No real-network latency; no PostgreSQL tuning; no multi-host run.

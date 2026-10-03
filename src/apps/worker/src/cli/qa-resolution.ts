@@ -6,8 +6,9 @@ import { loadAliasEntries } from '@stockpanic/db';
 // Entity-resolution precision and recall on a labelled corpus (WORKFLOW §8 mandatory metric; D-049).
 // Runs the same resolver the pipeline uses (AliasIndex over the registry valid on the date) against
 // hand labels: <item id> TAB <NSE symbols, comma-separated>. Unlabelled items are expected to get no
-// tags. Identical headlines (syndication across feeds) are counted once.
-const USAGE = 'usage: qa-resolution.ts <gold.tsv> [--as-of YYYY-MM-DD] [--list]';
+// tags; with --labelled-only, only items listed in the file are scored (a sampled held-out set).
+// Identical headlines (syndication across feeds) are counted once.
+const USAGE = 'usage: qa-resolution.ts <gold.tsv> [--as-of YYYY-MM-DD] [--labelled-only] [--list]';
 
 const url = process.env['DATABASE_URL'];
 const [goldPath, ...flags] = process.argv.slice(2);
@@ -37,7 +38,9 @@ try {
   let headlines = 0;
   let unresolvedMentions = 0;
   const errors: string[] = [];
+  const labelledOnly = flags.includes('--labelled-only');
   for (const it of items) {
+    if (labelledOnly && !gold.has(it.id)) continue;
     const key = normaliseForMatch(it.headline);
     if (seen.has(key)) continue;
     seen.add(key);
@@ -50,7 +53,7 @@ try {
     for (const w of want) if (!got.has(w)) (fn++, errors.push(`FN ${w.padEnd(12)} ${it.headline}`));
   }
   const pct = (n: number, d: number) => (d === 0 ? 'n/a' : `${((100 * n) / d).toFixed(1)}%`);
-  console.log(`registry as of ${asOf}; ${headlines} unique headlines (${items.length} items); ${gold.size} labelled with companies`);
+  console.log(`registry as of ${asOf}; ${headlines} unique headlines (${items.length} items); ${[...gold.values()].filter((g) => g.size > 0).length} labelled with companies`);
   console.log(`tags: ${tp + fp} (correct ${tp}, wrong ${fp}); labelled company mentions: ${tp + fn} (found ${tp}, missed ${fn}); unresolved mentions shown: ${unresolvedMentions}`);
   console.log(`precision ${pct(tp, tp + fp)}   recall ${pct(tp, tp + fn)}`);
   if (flags.includes('--list')) for (const e of errors.sort()) console.log(e);

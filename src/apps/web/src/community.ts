@@ -48,6 +48,7 @@ import {
   oldestUserActionSince,
   recentComments,
   recentUserActions,
+  reportSummary,
   repliesTo,
   reportComment,
   setDirectionalVote,
@@ -280,6 +281,17 @@ export async function postReport(db: pg.ClientBase, commentPublicId: string, bod
   return r.ok ? { status: 201, body: { reference: r.reference } } : { status: 409, body: { error: r.error } };
 }
 
+// POST /v1/stories/{story_id}/summary/reports — "this summary is inaccurate" (PRD-004 US-004.4 AC-5).
+// Same bar as quality votes: a verified email (PRD-005 US-005.5).
+export async function postSummaryReport(db: pg.ClientBase, publicId: string, user: SessionUser | null, now: Date): Promise<Res> {
+  if (!user) return authRequired;
+  const elig = voteEligibility(user, 'quality', now);
+  if (!elig.ok) return blocked(elig);
+  const r = await reportSummary(db, publicId, user.id, now);
+  if (r === 'no_summary') return notFound;
+  return r === 'created' ? { status: 201, body: { reported: true } } : { status: 409, body: { error: 'already_reported' } };
+}
+
 // Public grievance form; no account needed (PRD-006 US-006.8 AC-1).
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 
@@ -456,6 +468,38 @@ export async function adminDirectionalSetting(db: pg.ClientBase, body: unknown, 
   if (typeof enabled !== 'boolean') return invalid('enabled');
   await changeSetting(db, 'directional_voting_enabled', enabled, op.id, reason, now);
   return { status: 200, body: { directional_voting_enabled: enabled } };
+}
+
+// Court orders and government notices arrive by post or email; the operator records them with the
+// time received, which starts the 36-hour clock (US-006.8 AC-4).
+export async function adminCreateGrievance(db: pg.ClientBase, body: unknown, op: SessionUser, now: Date): Promise<Res> {
+  const source = field(body, 'source');
+  if (source !== 'court_order' && source !== 'government_notice') return invalid('source');
+  const details = field(body, 'details');
+  if (typeof details !== 'string' || details.trim().length === 0 || details.length > 5000) return invalid('details');
+  const rawAt = field(body, 'received_at');
+  const receivedAt = rawAt === undefined || rawAt === null ? now : typeof rawAt === 'string' ? new Date(rawAt) : null;
+  if (!receivedAt || Number.isNaN(receivedAt.getTime()) || receivedAt > now || now.getTime() - receivedAt.getTime() > 30 * 86_400_000) return invalid('received_at');
+  const rawComment = field(body, 'comment_id');
+  let commentId: string | null = null;
+  if (rawComment !== undefined && rawComment !== null) {
+    const c = typeof rawComment === 'string' ? await findComment(db, rawComment) : null;
+    if (!c) return invalid('comment_id');
+    commentId = c.id;
+  }
+  const reference = await createGrievance(db, { email: null, details: details.trim(), commentId, urgent: false, source }, receivedAt);
+  await db.query(
+    `INSERT INTO audit_log (at, actor_type, actor_id, action, entity_type, entity_id, after) VALUES ($1, 'operator', $2, 'grievance.recorded', 'grievance', $3, $4)`,
+    [now, op.id, reference, JSON.stringify({ source, received_at: receivedAt.toISOString() })],
+  );
+  return { status: 201, body: { reference } };
+}
+
+// GET /v1/admin/settings — current kill-switch state for the console.
+export async function adminSettings(db: pg.ClientBase): Promise<Res> {
+  const { rows } = await db.query(`SELECT key, value #>> '{}' AS v FROM setting WHERE key IN ('comments_posting_enabled', 'comments_visible', 'directional_voting_enabled')`);
+  const on = (k: string) => rows.find((r) => r.key === k)?.v !== 'false';
+  return { status: 200, body: { comments_posting_enabled: on('comments_posting_enabled'), comments_visible: on('comments_visible'), directional_voting_enabled: on('directional_voting_enabled') } };
 }
 
 export async function adminGrievances(db: pg.ClientBase, now: Date): Promise<Res> {

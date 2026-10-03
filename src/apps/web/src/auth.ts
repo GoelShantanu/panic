@@ -182,6 +182,8 @@ export async function getMe(db: pg.ClientBase, viewer: SessionUser | null): Prom
       subscription: me.subscription,
       marketing_opt_in: me.marketing_opt_in,
       sign_in_methods: me.google_linked ? ['email', 'google'] : ['email'],
+      role: viewer.role,
+      totp_enabled: viewer.totpEnabled,
       entitlements: entitlementsPayload(me.tier),
     },
   };

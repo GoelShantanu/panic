@@ -6,6 +6,7 @@ import { Comments } from '../../../site/comments/Comments.tsx';
 import type { CommentPage } from '../../../site/comments/Comments.tsx';
 import { istDateTime } from '../../../site/format.ts';
 import { StoryVotes } from '../../../site/story/StoryVotes.tsx';
+import { SummaryReport } from '../../../site/story/SummaryReport.tsx';
 import type { EventType, Instrument, VoteDisplay } from '../../../site/types.ts';
 
 interface Item {
@@ -127,6 +128,9 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
             )}
           </p>
           <p className="summary-text">{s.summary.text}</p>
+          <p className="faint summary-report">
+            <SummaryReport storyId={s.story_id} signedIn={me.status === 200} />
+          </p>
         </section>
       )}
 

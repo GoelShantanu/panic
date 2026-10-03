@@ -382,6 +382,7 @@ export async function route(
   if (resource === 'comments' && id && parts.length === 3 && method === 'DELETE') return community.deleteComment(db, id, user, now);
   if (resource === 'comments' && id && sub === 'reports' && parts.length === 4 && method === 'POST') return community.postReport(db, id, req.body, user, now);
   if (path === 'grievances' && method === 'POST') return community.postGrievance(db, req.body, now);
+  if (resource === 'stories' && id && sub === 'summary' && parts[4] === 'reports' && parts.length === 5 && method === 'POST') return community.postSummaryReport(db, id, user, now);
   if (path === 'me/replies' && method === 'GET') return community.getReplies(db, user, now);
   if (path === 'me/notifications' && method === 'GET') return community.getNotifications(db, user);
   if (path === 'me/notices/seen' && method === 'POST') return community.postNoticesSeen(db, req.body, user, now);
@@ -428,6 +429,8 @@ async function adminRoute(db: pg.ClientBase, method: string, parts: string[], ur
   }
   if (kind === 'stories' && id && action === 'reports' && parts[5] === 'dismiss' && n === 6 && method === 'POST') return corrections.postDismiss(db, id, body, op, now);
   if (kind === 'corrections' && n === 3 && method === 'GET') return corrections.getCorrectionQueue(db);
+  if (kind === 'summaries' && n === 3 && method === 'GET') return corrections.getSummaryQueue(db);
+  if (kind === 'stories' && id && action === 'summary' && n === 5 && method === 'POST') return corrections.postSummaryAction(db, id, body, op, now);
   if (kind === 'comments' && id && action === 'takedown' && n === 5 && method === 'POST') return community.adminTakedown(db, id, body, op, now);
   if (kind === 'users' && id && n === 5 && method === 'POST') {
     if (action === 'comment-suspension') return community.adminUserRestriction(db, id, 'commenting', body, op, now);
@@ -437,6 +440,8 @@ async function adminRoute(db: pg.ClientBase, method: string, parts: string[], ur
   if (kind === 'settings' && id === 'comments' && n === 4 && method === 'PUT') return community.adminCommentSettings(db, body, op, now);
   if (kind === 'settings' && id === 'directional-voting' && n === 4 && method === 'PUT') return community.adminDirectionalSetting(db, body, op, now);
   if (kind === 'grievances' && n === 3 && method === 'GET') return community.adminGrievances(db, now);
+  if (kind === 'grievances' && n === 3 && method === 'POST') return community.adminCreateGrievance(db, body, op, now);
+  if (kind === 'settings' && n === 3 && method === 'GET') return community.adminSettings(db);
   if (kind === 'grievances' && id && n === 4 && method === 'POST') return community.adminGrievanceUpdate(db, id, body, op, now);
   if (kind === 'abuse' && n === 3 && method === 'GET') return community.adminAbuse(db, now);
   return notFound();

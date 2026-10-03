@@ -1565,6 +1565,60 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-046 — Operator console, summary reports, court-order intake *(implements PRD-006 §4–§5, PRD-002 US-002.11, PRD-004 US-004.4 AC-5, PRD-005 §8, PRD-007 US-007.5 in the browser)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture · Legal |
+| **Decided by** | CTO, during Frontend F7. Founder may override |
+
+**Decision**
+
+1. **`/admin` is the operator console**, with tabs for Grievances, Corrections, Summaries, Story tools, Abuse and Switches.
+   - Every write asks for a reason before it can be confirmed; the server audits it.
+   - Anyone who is not a signed-in operator gets a 404. This includes signed-out visitors, and the page title does not reveal the console either.
+   - An operator whose 12-hour two-factor check has lapsed is asked for a code first.
+2. **Enrolment comes before the grant.** Granting the operator role requires an enrolled authenticator (D-033), so `/admin/enrol` lets a signed-in user enrol first. It is not linked anywhere.
+   - The admin CLI's refusal now points there.
+   - `/v1/me` gains `role` and `totp_enabled`.
+3. **The grievance queue carries what a decision needs:**
+   - the complaint text and the complainant's email;
+   - the comment as posted, including text kept after removal;
+   - the author's ID and username;
+   - the story, and the reasons reported.
+   Deadlines show time left or time overdue, and overdue counts appear at the top. Take-down defaults to the reported or legal category and cites the grievance.
+4. **Court orders and government notices are recorded by the operator** with the time received: `POST /v1/admin/grievances`. That time starts the 36-hour clock (US-006.8 AC-4). Received times in the future or more than 30 days ago are refused.
+5. **Summary reports** (migration 0014):
+   - Signed-in readers with a verified email report a shown summary once: `POST /v1/stories/{id}/summary/reports`.
+   - Operators review them at `GET /v1/admin/summaries`.
+   - `POST /v1/admin/stories/{id}/summary {action: hide|regenerate|dismiss, reason}` acts on them. Hide keeps the text. Regenerate deletes it, records the old text in the audit row, and queues a new attempt that must pass the same checks.
+   - Reports are included in the data export.
+6. **`GET /v1/admin/settings`** reads the kill switches for the Switches tab. Changes take effect within 60 s.
+7. **Story tools:**
+   - Retag, merge and split for any story. Retag is prefilled from what readers suggested.
+   - Who voted, by vote type. Viewing is audited.
+   - Per-story comment controls.
+   - Suspending commenting, revoking voting, and discounting votes, each with undo.
+
+**Reason**
+
+1. GUARDRAILS §4.8: every moderation act is audited with a reason (PRD-006 §7).
+2. A console that admits to existing invites probing.
+3. Without the complaint and the comment text, an operator cannot decide within the legal deadlines.
+4. Court orders arrive outside the product. Their deadline runs from receipt, not from data entry.
+5. PRD-004 US-004.4 AC-5 was deferred to F7 (D-042).
+6. The operator needs to see the current state before changing it.
+7. PRD-005 §8 signals are for review only; nothing acts automatically (D-020).
+
+**Consequences**
+
+- To make someone an operator, they enrol at `/admin/enrol`; then run `node src/apps/worker/src/cli/admin.ts grant-role <username> operator`.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

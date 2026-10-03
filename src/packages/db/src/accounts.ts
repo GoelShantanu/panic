@@ -349,6 +349,7 @@ export async function processExport(db: pg.ClientBase, exportId: string, now: Da
     votes: await q(`SELECT s.public_id AS story_id, v.direction, v.cast_at FROM vote_directional v JOIN story s ON s.id = v.story_id WHERE v.user_id = $1 ORDER BY v.cast_at`),
     quality_votes: await q(`SELECT s.public_id AS story_id, v.kind, v.cast_at FROM vote_quality v JOIN story s ON s.id = v.story_id WHERE v.user_id = $1 ORDER BY v.cast_at`),
     comments: await q(`SELECT c.public_id, s.public_id AS story_id, c.state, c.body, c.created_at FROM comment c JOIN story s ON s.id = c.story_id WHERE c.user_id = $1 ORDER BY c.created_at`),
+    summary_reports: await q(`SELECT s.public_id AS story_id, r.reported_at FROM summary_report r JOIN story s ON s.id = r.story_id WHERE r.user_id = $1 ORDER BY r.reported_at`),
   };
   await db.query('UPDATE data_export SET data = $2, ready_at = $3, expires_at = $4 WHERE id = $1', [exportId, data, now, daysFrom(now, EXPORT_TTL_DAYS)]);
 }

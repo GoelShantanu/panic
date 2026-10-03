@@ -273,6 +273,73 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
       expect((await call('mod', 'POST', '/v1/admin/grievances/GR-2000-000001', { status: 'acknowledged' })).status).toBe(404);
     });
 
+    it('the queue carries what the operator needs to decide: complaint, comment as posted, author, reasons', async () => {
+      const q = b(await call('mod', 'GET', '/v1/admin/grievances')).grievances;
+      const withComment = q.find((g: any) => g.comment_id);
+      expect(withComment).toMatchObject({ comment_author: expect.any(String), comment_author_id: expect.stringMatching(/^us_/), comment_story_id: expect.stringMatching(/^st_/) });
+      expect(typeof withComment.comment_body).toBe('string'); // kept even after removal
+      expect(Array.isArray(withComment.report_reasons)).toBe(true);
+      expect(q.every((g: any) => 'details' in g && 'complainant_email' in g)).toBe(true);
+    });
+
+    it('court orders are recorded with the time received; the 36-hour clock runs from then (US-006.8 AC-4)', async () => {
+      const received = new Date(Date.now() - 2 * 3600_000).toISOString();
+      expect((await call('mod', 'POST', '/v1/admin/grievances', { source: 'form', details: 'x' })).status).toBe(400);
+      expect((await call('mod', 'POST', '/v1/admin/grievances', { source: 'court_order', details: 'Order', received_at: new Date(Date.now() + 3600_000).toISOString() })).status).toBe(400);
+      expect((await call('veteran', 'POST', '/v1/admin/grievances', { source: 'court_order', details: 'Order' })).status).toBe(403);
+      const r = await call('mod', 'POST', '/v1/admin/grievances', { source: 'court_order', details: 'Order of a fictional court, case 12/2026.', received_at: received });
+      expect(r.status).toBe(201);
+      const g = (await db.query('SELECT received_at, resolve_due_at FROM grievance WHERE reference = $1', [b(r).reference])).rows[0];
+      expect(g.received_at.toISOString()).toBe(received);
+      expect(g.resolve_due_at.getTime() - g.received_at.getTime()).toBe(36 * 3600_000);
+      expect((await db.query(`SELECT count(*)::int AS n FROM audit_log WHERE action = 'grievance.recorded' AND entity_id = $1`, [b(r).reference])).rows[0].n).toBe(1);
+    });
+
+    it('settings read for the console', async () => {
+      expect(b(await call('mod', 'GET', '/v1/admin/settings'))).toEqual({ comments_posting_enabled: true, comments_visible: true, directional_voting_enabled: true });
+      expect((await call(null, 'GET', '/v1/admin/settings')).status).toBe(401);
+    });
+
+    it('summary reports: readers report, operators hide, regenerate or dismiss, audited (PRD-004 US-004.4 AC-5)', async () => {
+      await db.query(`INSERT INTO source (source_id, name, kind, tier, cadence) VALUES ('src_bse_f', 'Example Exchange', 'filing', 1, '{}') ON CONFLICT DO NOTHING`);
+      const it1 = await db.query(
+        `INSERT INTO item (public_id, kind, source_id, dedup_key, headline, url, first_seen_at) VALUES ($1, 'filing', 'src_bse_f', $2, 'Outcome of board meeting', 'https://example.invalid/f', now()) RETURNING id`,
+        [newPublicId('it'), randomBytes(4).toString('hex')],
+      );
+      const itemId = String(it1.rows[0].id);
+      await db.query(`INSERT INTO filing_detail (item_id, exchange, announcement_id, scrip_code, category) VALUES ($1, 'BSE', $2, '500101', 'Board Meeting')`, [itemId, randomBytes(4).toString('hex')]);
+      await db.query('BEGIN');
+      const sid = await createStory(db, itemId, new Date());
+      await setStoryDerived(db, sid, { primaryItemId: itemId, sourceCount: 1, eventTypes: ['board_outcome'], tags: [{ isin: A, method: 'rule' }], unresolved: [] });
+      await db.query('COMMIT');
+      const pub = (await db.query('SELECT public_id FROM story WHERE id = $1', [sid])).rows[0].public_id;
+      const path = `/v1/stories/${pub}/summary/reports`;
+      expect((await call('veteran', 'POST', path)).status).toBe(404); // no summary yet
+      await db.query(
+        `INSERT INTO story_summary (story_id, source_item_id, body, citations, checks, model_id, prompt_version, ai_call_id) VALUES ($1, $2, 'The board approved a fictional dividend.', '[]', '{}', 'm', 'p1', 1)`,
+        [sid, itemId],
+      );
+      expect((await call(null, 'POST', path)).status).toBe(401);
+      expect((await call('veteran', 'POST', path)).status).toBe(201);
+      expect((await call('veteran', 'POST', path)).status).toBe(409);
+      expect((await call('second', 'POST', path)).status).toBe(201);
+      const q = b(await call('mod', 'GET', '/v1/admin/summaries')).queue;
+      expect(q).toEqual([expect.objectContaining({ story_id: pub, reports: 2, summary: 'The board approved a fictional dividend.', status: 'shown' })]);
+      const act = (body: unknown) => call('mod', 'POST', `/v1/admin/stories/${pub}/summary`, body);
+      expect((await act({ action: 'hide' })).status).toBe(400); // reason mandatory
+      expect((await act({ action: 'rewrite', reason: 'x' })).status).toBe(400);
+      expect(b(await act({ action: 'hide', reason: 'Wrong record date.' }))).toMatchObject({ action: 'hide' });
+      expect(b(await call(null, 'GET', `/v1/stories/${pub}`)).summary).toBeNull();
+      expect(b(await call('mod', 'GET', '/v1/admin/summaries')).queue).toEqual([]);
+      expect(b(await act({ action: 'regenerate', reason: 'Try again with the corrected filing.' }))).toMatchObject({ action: 'regenerate' });
+      expect((await db.query('SELECT count(*)::int AS n FROM story_summary WHERE story_id = $1', [sid])).rows[0].n).toBe(0);
+      expect((await db.query(`SELECT count(*)::int AS n FROM job WHERE queue = 'ai' AND payload->>'kind' = 'summarise' AND payload->>'story_id' = $1`, [sid])).rows[0].n).toBe(1);
+      const audits = (await db.query(`SELECT action, before FROM audit_log WHERE entity_id = $1 AND action LIKE 'summary.%' ORDER BY id`, [pub])).rows;
+      expect(audits.map((a) => a.action)).toEqual(['summary.hide', 'summary.regenerate']);
+      expect(audits[1].before).toMatchObject({ body: 'The board approved a fictional dividend.', status: 'hidden_by_operator' });
+      expect((await act({ action: 'hide', reason: 'Nothing to hide now.' })).status).toBe(404);
+    });
+
     it('suspension, revocation, discounting, kill switches; reason mandatory', async () => {
       const second = ids['second']!.publicId;
       expect((await call('mod', 'POST', `/v1/admin/users/${second}/comment-suspension`, { suspended: true })).status).toBe(400);

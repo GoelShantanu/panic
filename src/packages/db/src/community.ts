@@ -281,7 +281,7 @@ export async function reportComment(
 }
 
 // Public grievance form: no account needed (PRD-006 US-006.8 AC-1).
-export async function createGrievance(db: pg.ClientBase, g: { email: string; details: string; commentId: string | null; urgent: boolean; source: 'form' | 'court_order' | 'government_notice' }, now: Date): Promise<string> {
+export async function createGrievance(db: pg.ClientBase, g: { email: string | null; details: string; commentId: string | null; urgent: boolean; source: 'form' | 'court_order' | 'government_notice' }, now: Date): Promise<string> {
   const reference = await nextReference(db, now);
   await db.query(
     `INSERT INTO grievance (reference, source, urgent, comment_id, complainant_email, details, received_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -394,13 +394,23 @@ export async function grievanceByReference(db: pg.ClientBase, reference: string)
 export async function grievanceQueue(db: pg.ClientBase, now: Date) {
   const { rows } = await db.query(
     `SELECT g.reference, g.source, g.urgent, g.status, g.received_at, g.ack_due_at, g.resolve_due_at, g.acknowledged_at,
+            g.details, g.complainant_email,
             c.public_id AS comment_id, (SELECT count(*)::int FROM comment_report r WHERE r.comment_id = g.comment_id) AS reports,
+            ARRAY(SELECT DISTINCT r.reason::text FROM comment_report r WHERE r.comment_id = g.comment_id ORDER BY 1) AS report_reasons,
+            c.state AS comment_state, coalesce(c.body, rc.body) AS comment_body, cs.public_id AS comment_story_id,
+            ca.public_id AS comment_author_id, ca.username AS comment_author,
             g.ack_due_at < $1 AND g.acknowledged_at IS NULL AS ack_overdue, g.resolve_due_at < $1 AS resolve_overdue
-       FROM grievance g LEFT JOIN comment c ON c.id = g.comment_id
+       FROM grievance g
+       LEFT JOIN comment c ON c.id = g.comment_id
+       LEFT JOIN removed_content rc ON rc.comment_id = c.id
+       LEFT JOIN story s0 ON s0.id = c.story_id
+       LEFT JOIN story cs ON cs.id = coalesce(s0.merged_into, s0.id)
+       LEFT JOIN app_user ca ON ca.id = c.user_id
       WHERE g.status IN ('open', 'acknowledged')
       ORDER BY g.resolve_due_at`,
     [now],
   );
+  // The operator reads the comment as posted, including text kept after removal (US-006.8 AC-6).
   return rows;
 }
 

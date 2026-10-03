@@ -35,7 +35,7 @@ try {
       const r = await grantRole(db, a!, b as 'user' | 'operator' | 'admin', now);
       if (r === 'granted') console.log(`${a} is now ${b}`);
       else {
-        console.error(r === 'unknown_user' ? `no user named ${a}` : `${a} must enrol an authenticator app first (POST /v1/me/totp/enrol, then /confirm)`);
+        console.error(r === 'unknown_user' ? `no user named ${a}` : `${a} must enrol an authenticator app first: signed in, open /admin/enrol`);
         process.exitCode = 1;
       }
       break;

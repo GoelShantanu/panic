@@ -2,7 +2,7 @@
 
 import type pg from 'pg';
 import { parseIsin } from '@stockpanic/core';
-import { CorrectionError, correctionQueue, dismissReports, loadStoryCards, mergeStories, retagStory, splitStory } from '@stockpanic/db';
+import { CorrectionError, actOnSummary, correctionQueue, dismissReports, loadStoryCards, mergeStories, retagStory, splitStory, summaryQueue } from '@stockpanic/db';
 import type { SessionUser } from '@stockpanic/db';
 
 export interface Res {
@@ -94,4 +94,19 @@ export function postDismiss(db: pg.ClientBase, storyPublicId: string, body: unkn
     const r = await dismissReports(db, storyPublicId, kind, op.id, reason, now);
     return { status: 200, body: { dismissed: kind, audit_id: r.auditId } };
   });
+}
+
+// GET /v1/admin/summaries — AI summaries readers reported as inaccurate (PRD-004 US-004.4 AC-5).
+export async function getSummaryQueue(db: pg.ClientBase): Promise<Res> {
+  return { status: 200, body: { queue: await summaryQueue(db) } };
+}
+
+// POST /v1/admin/stories/{story_id}/summary { action: hide | regenerate | dismiss, reason }
+export async function postSummaryAction(db: pg.ClientBase, storyPublicId: string, body: unknown, op: SessionUser, now: Date): Promise<Res> {
+  const reason = reasonOf(body);
+  if (!reason) return invalid('reason');
+  const action = field(body, 'action');
+  if (action !== 'hide' && action !== 'regenerate' && action !== 'dismiss') return invalid('action');
+  const auditId = await actOnSummary(db, storyPublicId, action, op.id, reason, now);
+  return auditId ? { status: 200, body: { story_id: storyPublicId, action, audit_id: auditId } } : { status: 404, body: { error: 'not_found' } };
 }

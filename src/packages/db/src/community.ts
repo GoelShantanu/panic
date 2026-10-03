@@ -296,15 +296,15 @@ export async function userProfile(db: pg.ClientBase, username: string) {
   const u = await db.query(`SELECT id, username, created_at FROM app_user WHERE username = $1 AND deleted_at IS NULL`, [username]);
   if (!u.rows[0]) return null;
   const comments = await db.query(
-    `SELECT c.public_id, c.body, c.created_at, c.edited_at, s.public_id AS story_id
-       FROM comment c JOIN story s ON s.id = c.story_id
+    `SELECT c.public_id, c.body, c.created_at, c.edited_at, s.public_id AS story_id, i.headline AS story_headline
+       FROM comment c JOIN story s ON s.id = c.story_id LEFT JOIN item i ON i.id = s.primary_item_id
       WHERE c.user_id = $1 AND c.state = 'visible' ORDER BY c.created_at DESC LIMIT 50`,
     [u.rows[0].id],
   );
   return {
     username: u.rows[0].username as string,
     joined: (u.rows[0].created_at as Date).toISOString().slice(0, 7),
-    comments: comments.rows.map((r) => ({ comment_id: r.public_id, story_id: r.story_id, body: r.body, created_at: r.created_at, edited: r.edited_at !== null })),
+    comments: comments.rows.map((r) => ({ comment_id: r.public_id, story_id: r.story_id, story_headline: r.story_headline ?? null, body: r.body, created_at: r.created_at, edited: r.edited_at !== null })),
   };
 }
 
@@ -334,9 +334,14 @@ export async function markRepliesSeen(db: pg.ClientBase, userId: string, now: Da
 }
 
 export async function unseenNotices(db: pg.ClientBase, userId: string) {
-  const { rows } = await db.query(`SELECT id, kind, payload, created_at FROM user_notice WHERE user_id = $1 AND seen_at IS NULL ORDER BY created_at DESC`, [userId]);
-  await db.query('UPDATE user_notice SET seen_at = now() WHERE user_id = $1 AND seen_at IS NULL', [userId]);
+  const { rows } = await db.query(`SELECT kind, payload, created_at FROM user_notice WHERE user_id = $1 AND seen_at IS NULL ORDER BY created_at DESC`, [userId]);
   return rows.map((r) => ({ kind: r.kind, ...r.payload, created_at: r.created_at }));
+}
+
+// Notices stay until the reader dismisses them, so a page load alone never hides one (D-045).
+export async function markNoticesSeen(db: pg.ClientBase, userId: string, upTo: Date, now: Date): Promise<number> {
+  const r = await db.query("UPDATE user_notice SET seen_at = $3 WHERE user_id = $1 AND seen_at IS NULL AND date_trunc('milliseconds', created_at) <= $2", [userId, upTo, now]);
+  return r.rowCount ?? 0;
 }
 
 // ---------------------------------------------------------------- moderation (operator only)

@@ -108,7 +108,9 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       expect(preview.over_limit).toBe(0);
       expect(b(await call('POST', '/v1/watchlist/import/confirm', { isins: [A, K] }))).toEqual({ added: 2, skipped_existing: 0, skipped_over_limit: 0 });
       expect(b(await call('POST', '/v1/watchlist/import/confirm', { isins: [A] }))).toEqual({ added: 0, skipped_existing: 1, skipped_over_limit: 0 });
-      const dump = JSON.stringify((await db.query(`SELECT * FROM watchlist_entry`)).rows) + JSON.stringify((await db.query(`SELECT * FROM audit_log`)).rows);
+      // Timestamps and ids are left out of the dump: their digits can contain the numbers by chance.
+      const entries = (await db.query(`SELECT * FROM watchlist_entry`)).rows.map((r) => Object.fromEntries(Object.entries(r).filter(([k, v]) => !(v instanceof Date) && !/(^|_)id$/.test(k))));
+      const dump = JSON.stringify(entries) + JSON.stringify((await db.query(`SELECT before, after FROM audit_log`)).rows);
       expect(dump).not.toMatch(/4123|987\.65|\b37\b/);
       expect((await call('POST', '/v1/watchlist/import/preview', { csv: 'Name,Qty\nX,1' })).body).toMatchObject({ error: 'unrecognised_format' });
     });

@@ -200,6 +200,7 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
       const r = await call(null, 'GET', '/v1/users/veteran');
       expect(r.headers?.['x-robots-tag']).toBe('noindex');
       expect(Object.keys(b(r)).sort()).toEqual(['comments', 'joined', 'username']);
+      for (const c of b(r).comments) expect(typeof c.story_headline).toBe('string');
       expect((await call(null, 'GET', '/v1/users/nobody_here')).status).toBe(404);
     });
   });
@@ -253,6 +254,12 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
       expect(t).toMatchObject({ state: 'removed', removed_reason: 'defamation', body: null });
       const notices = b(await call('veteran', 'GET', '/v1/me/notifications')).notices;
       expect(notices[0]).toMatchObject({ kind: 'comment_removed', comment_id: top, reason: 'defamation' });
+      // shown again until dismissed; dismissal covers only notices up to the newest one shown
+      expect(b(await call('veteran', 'GET', '/v1/me/notifications')).notices).toHaveLength(notices.length);
+      expect((await call('veteran', 'POST', '/v1/me/notices/seen', { up_to: 'yesterday' })).status).toBe(400);
+      const before = new Date(new Date(notices[0].created_at).getTime() - 1).toISOString();
+      expect(b(await call('veteran', 'POST', '/v1/me/notices/seen', { up_to: before })).dismissed).toBe(notices.length - 1);
+      expect(b(await call('veteran', 'POST', '/v1/me/notices/seen', { up_to: new Date(notices[0].created_at).toISOString() })).dismissed).toBe(1);
       expect(b(await call('veteran', 'GET', '/v1/me/notifications')).notices).toEqual([]);
     });
 

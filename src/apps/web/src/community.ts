@@ -42,6 +42,7 @@ import {
   grievanceQueue,
   hasUnreadReplies,
   lookupStory,
+  markNoticesSeen,
   markRepliesSeen,
   markSessionMfa,
   oldestUserActionSince,
@@ -321,6 +322,15 @@ export async function getReplies(db: pg.ClientBase, user: SessionUser | null, no
 export async function getNotifications(db: pg.ClientBase, user: SessionUser | null): Promise<Res> {
   if (!user) return authRequired;
   return { status: 200, body: { unread_replies: await hasUnreadReplies(db, user.id), notices: await unseenNotices(db, user.id) } };
+}
+
+// Dismisses notices created up to `up_to` (the newest one shown), never ones that arrived later.
+export async function postNoticesSeen(db: pg.ClientBase, body: unknown, user: SessionUser | null, now: Date): Promise<Res> {
+  if (!user) return authRequired;
+  const raw = field(body, 'up_to');
+  const upTo = typeof raw === 'string' ? new Date(raw) : null;
+  if (!upTo || Number.isNaN(upTo.getTime())) return invalid('up_to');
+  return { status: 200, body: { dismissed: await markNoticesSeen(db, user.id, upTo, now) } };
 }
 
 // ---------------------------------------------------------------- operator 2FA (PRD-007 US-007.5 AC-2)

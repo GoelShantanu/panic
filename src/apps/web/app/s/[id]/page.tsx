@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { api } from '../../../site/api.ts';
+import { Comments } from '../../../site/comments/Comments.tsx';
+import type { CommentPage } from '../../../site/comments/Comments.tsx';
 import { istDateTime } from '../../../site/format.ts';
 import { StoryVotes } from '../../../site/story/StoryVotes.tsx';
 import type { EventType, Instrument, VoteDisplay } from '../../../site/types.ts';
@@ -58,7 +60,11 @@ const out = (itemId: string) => `/v1/out/${itemId}?from=story`;
 // PRD-004 US-004.2: everything about one story, in the specified order.
 export default async function StoryPage({ params }: { params: Promise<{ id: string }> }) {
   const s = await load((await params).id);
-  const [types, me] = await Promise.all([api<{ types: EventType[] }>('/v1/event-types'), api<unknown>('/v1/me')]);
+  const [types, me, comments] = await Promise.all([
+    api<{ types: EventType[] }>('/v1/event-types'),
+    api<{ username: string | null }>('/v1/me'),
+    api<CommentPage>(`/v1/stories/${encodeURIComponent(s.story_id)}/comments`),
+  ]);
   const labels = new Map((types.status === 200 ? types.body.types : []).map((t) => [t.code, t.label]));
   const primary = s.items.find((i) => i.item_id === s.primary_item_id) ?? s.items[0]!;
   const withdrawn = s.items.some((i) => i.kind === 'filing' && i.status === 'withdrawn_by_exchange');
@@ -173,6 +179,8 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
       </section>
 
       <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={me.status === 200} />
+
+      {comments.status === 200 && <Comments storyId={s.story_id} initial={comments.body} me={me.status === 200 ? me.body.username : null} />}
 
       {related.some((r) => r.stories.length > 0) && (
         <section aria-labelledby="related-h">

@@ -1522,6 +1522,49 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-045 — Comments, grievance form, profiles, replies and notices in the browser *(implements PRD-006 §2–§5 in the browser)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Frontend F6. Founder may override |
+
+**Decision**
+
+1. **Story-page comments** sit below votes, with the fixed "not reviewed" note.
+   - Threads run oldest first and nest to 3 levels. A reply to a level-3 comment is prefilled with `@username`.
+   - Edit is offered for 10 minutes. Delete leaves "[deleted by author]" only when there are replies.
+   - Report offers the legal reasons only and returns a reference.
+   - Every PRD-006 §8 state is shown. A rate-limited draft is kept.
+   - URLs become `nofollow ugc` links; nothing else in the text is interpreted.
+2. **Others' comments appear within 10 s** (US-006.1 AC-7): the first page is refreshed every 10 s while the tab is visible, and at once when it becomes visible again. There is no live-channel event for comments.
+3. **Notices stay until dismissed:**
+   - `GET /v1/me/notifications` no longer marks notices seen.
+   - New `POST /v1/me/notices/seen {up_to}` dismisses notices up to the newest one shown, never ones that arrived later. The comparison is at millisecond precision, because browsers cannot carry microseconds.
+4. **Reply dot.** The header shows "Replies" with a dot (never a number) for unread replies or undismissed notices.
+   - `/replies` lists notices, with a link to dispute a removal, and replies. Opening it marks the replies read.
+5. **`/grievance`** names the Grievance Officer (from configuration) and has a complaint form usable without an account. `?comment=` prefills a dispute; there is an urgent option for the 24-hour categories.
+6. **`/u/{username}`** shows the username, the join month, and visible comments with their story headlines. It is marked `noindex` in both the page and the `X-Robots-Tag` header.
+   - The profile API gains `story_headline`.
+
+**Reason**
+
+1. PRD-006 §2, §8.
+2. Comments are low-volume. Polling one page avoids a new event type, and a new event type would put comment traffic on the live channel that every stream reader holds.
+3. The header requests notifications on every page. If reading them also marked them seen, a takedown notice (US-006.8 AC-5) could vanish before the author ever saw it.
+4. PRD-001 C-001.6 rules out counts that create urgency.
+5. IT Rules 2021 Rule 3(2) `[INFERRED]`; C-006.6.
+6. US-006.10.
+
+**Consequences**
+
+- Founder: the Grievance Officer's name and email are still needed (D-043). Until then the page says they will be published before launch.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

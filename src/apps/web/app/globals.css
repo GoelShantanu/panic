@@ -332,3 +332,30 @@ kbd { font-family: var(--font-mono); font-size: var(--text-xs); border: 1px soli
 .time-range { display: inline-flex; gap: 6px; align-items: center; margin: 4px 0 8px 22px; }
 .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
 .row-follow { display: inline-flex; gap: 4px; margin-left: 8px; }
+
+/* ---------- comments, profiles, replies, grievances ---------- */
+.comments { margin-top: 22px; max-width: 760px; }
+.comment-list, .comment-replies { list-style: none; margin: 0; padding: 0; }
+.comment-replies { margin-left: 18px; padding-left: 12px; border-left: 2px solid var(--border); }
+.comment { padding: 8px 0; }
+.comment:target { background: var(--row-selected); }
+.comment-head { font-size: var(--text-sm); }
+.comment-author { font-weight: 600; color: var(--text); }
+.comment-body { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-actions { display: flex; gap: 12px; font-size: var(--text-sm); }
+.link-button { background: none; border: 0; padding: 0; cursor: pointer; color: var(--muted); font: inherit; }
+.link-button:hover { color: var(--text); text-decoration: underline; }
+.composer { margin: 8px 0 12px; }
+.composer textarea, .stack-label textarea, .stack-label input { width: 100%; box-sizing: border-box; font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.composer-bar { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.composer-bar .faint { margin-right: auto; }
+.report-form { padding: 10px 14px; margin: 6px 0; }
+.report-form fieldset { border: 0; padding: 0; margin: 0 0 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 12px; }
+.report-form legend { font-weight: 600; margin-bottom: 4px; }
+.stack-label { display: block; margin: 0 0 10px; }
+.grievance-form { margin-top: 16px; }
+.profile { max-width: 760px; }
+.profile h1 { font-size: var(--text-xl); margin-bottom: 2px; }
+.notice-row { padding: 4px 0; }
+.replies-link { position: relative; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--unread-line); margin-left: 5px; vertical-align: middle; }

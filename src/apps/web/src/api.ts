@@ -384,6 +384,7 @@ export async function route(
   if (path === 'grievances' && method === 'POST') return community.postGrievance(db, req.body, now);
   if (path === 'me/replies' && method === 'GET') return community.getReplies(db, user, now);
   if (path === 'me/notifications' && method === 'GET') return community.getNotifications(db, user);
+  if (path === 'me/notices/seen' && method === 'POST') return community.postNoticesSeen(db, req.body, user, now);
   if (resource === 'users' && id && parts.length === 3 && method === 'GET') return community.getProfile(db, id);
   if ((path === 'me/totp/enrol' || path === 'me/totp/confirm') && method === 'POST') {
     if (!deps) return { status: 503, body: { error: 'auth_unavailable' } };

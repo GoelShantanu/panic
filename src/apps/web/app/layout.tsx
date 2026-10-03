@@ -24,7 +24,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     api<{ session: SessionInfo }>('/v1/session').catch(() => null),
     api<{ username: string | null; tier: 'free' | 'paid' }>('/v1/me').catch(() => null),
   ]);
-  const viewer: Viewer | null = me && me.status === 200 ? { username: me.body.username, tier: me.body.tier } : null;
+  const notes = me && me.status === 200 ? await api<{ unread_replies: boolean; notices: unknown[] }>('/v1/me/notifications').catch(() => null) : null;
+  // PRD-006 US-006.5 AC-1: a dot, never a number.
+  const attention = !!notes && notes.status === 200 && (notes.body.unread_replies || notes.body.notices.length > 0);
+  const viewer: Viewer | null = me && me.status === 200 ? { username: me.body.username, tier: me.body.tier, attention } : null;
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <head>

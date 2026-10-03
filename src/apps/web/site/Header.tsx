@@ -7,6 +7,7 @@ import { ThemeToggle } from './ThemeToggle.tsx';
 export interface Viewer {
   username: string | null;
   tier: 'free' | 'paid';
+  attention?: boolean;
 }
 
 export function Header({ session, viewer, current }: { session: SessionInfo | null; viewer: Viewer | null; current?: string }) {
@@ -27,6 +28,11 @@ export function Header({ session, viewer, current }: { session: SessionInfo | nu
       <div className="header-spacer" />
       <SessionStatus initial={session} />
       <ThemeToggle />
+      {viewer && (
+        <Link href="/replies" className="icon-button replies-link" aria-label={viewer.attention ? 'Replies and notices (new)' : 'Replies and notices'}>
+          Replies{viewer.attention && <span className="dot" aria-hidden="true" />}
+        </Link>
+      )}
       {viewer ? (
         <Link href="/settings" className="button">
           {viewer.username ?? 'Account'}

@@ -1,9 +1,11 @@
 import { randomBytes } from 'node:crypto';
+import type { AddressInfo } from 'node:net';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { isinCheckDigit, newPublicId, upgradeRequired } from '@stockpanic/core';
 import { addItemToStory, createStory, migrate, setStoryDerived } from '@stockpanic/db';
 import { route } from './api.ts';
+import { createApiServer } from './server.ts';
 
 // All companies, headlines and ISINs are fictional.
 const adminUrl = process.env['TEST_DATABASE_URL'];
@@ -323,5 +325,40 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
   it('unknown routes and methods', async () => {
     expect((await get('/v1/nope')).status).toBe(404);
     expect((await route(db, 'POST', new URL('http://test/v1/stream'))).status).toBe(405);
+  });
+
+  it('HTTP server: the anonymous first page of Latest is shared for 2 s; past capacity it fails fast (D-050)', async () => {
+    const url = new URL(adminUrl!);
+    url.pathname = `/${dbName}`;
+    const pool = new pg.Pool({ connectionString: url.toString(), max: 2 });
+    const open = async (opts: Parameters<typeof createApiServer>[2]) => {
+      const server = createApiServer(pool, null, opts);
+      await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+      return { base: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, close: () => new Promise((r) => server.close(r)) };
+    };
+    const s = await open({});
+    try {
+      const headlines = async (path = '/v1/stream', headers: Record<string, string> = {}) => ((await (await fetch(s.base + path, { headers })).json()) as any).stories.map((x: any) => x.headline);
+      const before = await headlines();
+      const a = await item('article', 'src_desk', 'cache-1', 'Fictional cache probe story', new Date());
+      await story('C1', [a], new Date(), { primaryItemId: a, sourceCount: 1, eventTypes: ['other'], tags: [], unresolved: [] });
+      expect(await headlines()).toEqual(before); // shared copy
+      expect((await headlines('/v1/stream?view=latest'))[0]).toBe('Fictional cache probe story'); // any parameter: computed
+      expect((await headlines('/v1/stream', { cookie: 'sp_session=not-a-real-session' }))[0]).toBe('Fictional cache probe story'); // a session: computed
+      await new Promise((r) => setTimeout(r, 2100));
+      expect((await headlines())[0]).toBe('Fictional cache probe story');
+    } finally {
+      await s.close();
+    }
+    const shed = await open({ maxDbQueue: 0 });
+    try {
+      const r = await fetch(`${shed.base}/v1/session`);
+      expect(r.status).toBe(503);
+      expect(r.headers.get('retry-after')).toBe('2');
+      expect(await r.json()).toEqual({ error: 'overloaded' });
+    } finally {
+      await shed.close();
+      await pool.end();
+    }
   });
 });

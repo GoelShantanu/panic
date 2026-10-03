@@ -1756,6 +1756,41 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-050 — API overload: shared anonymous first page, fail fast past capacity *(NFR-001.3; QA finding)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture |
+| **Decided by** | Founder (chose "cache and fail fast" in chat, 2026-10-03); built by the CTO |
+
+**Decision**
+
+1. **The anonymous first page of Latest is shared.** `GET /v1/stream` with no parameters and no session is computed once and served to everyone for 2 s; concurrent requests for it wait for that one computation. Any parameter or any session gets a fresh response.
+2. **Past capacity, requests fail fast.** When 20 or more requests are waiting for a database connection, a new API request gets `503 {"error":"overloaded"}` with `Retry-After: 2`. The filings push and payment webhooks are exempt: they are handled before this check, and their senders retry anyway.
+
+**Reason**
+
+- QA load test: one API process saturates at 150–200 stream reads per second. Past that, requests queued without bound (p95 26 s at 300/s).
+- At market open most page loads are anonymous Latest, which is identical for every visitor.
+
+**Measured after the change** (development machine, `docs/qa/test-strategy.md` §3):
+
+| Scenario | p95 | Shed (503) |
+| --- | --- | --- |
+| Cached path at 300/s | 86 ms | 0 |
+| Uncached at 300/s | 311 ms for served requests | 48% |
+| Uncached at 150/s | 160 ms | 0.5% |
+
+**Consequences**
+
+- Anonymous Latest can be up to 2 s old on first load. The live channel delivers anything newer within seconds.
+- The number of API processes for launch is still a sizing decision. The queue limit is a constant in `server.ts`.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

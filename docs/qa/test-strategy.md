@@ -69,7 +69,13 @@ Live process memory at 5,000 clients: about 190 MB.
 | 200/s | 5.1 s |
 | 300/s | 26 s |
 
-The knee is between 150 and 200 requests/s. Past it, requests queue without bound (§6).
+The knee is between 150 and 200 requests/s. Past it, requests queued without bound. **Fixed (D-050):**
+
+| Scenario after the fix | Served | Shed (503) | p95 |
+| --- | --- | --- | --- |
+| Anonymous first page of Latest at 300/s (cached for 2 s) | 100% | 0 | 86 ms |
+| Uncached stream at 300/s | 52% | 48% | 311 ms |
+| Uncached stream at 150/s | 99.5% | 0.5% | 160 ms |
 
 ## 4. Acceptance-criteria traceability
 
@@ -99,10 +105,11 @@ A story-by-story matrix is the next QA deliverable. It needs the held-out run an
 | 7 | Headlines kept publisher double-escaping ("F&amp;O") and zero-width characters, which readers would see | Display, matching | Decoded and stripped at ingestion |
 | 8 | Loading NSE's mainboard and SME lists in two runs would read the first as delisted (the guard refused it) | Data | `load-nse` takes every list for the day in one run |
 | 9 | "Tata Motors" now legally names the commercial-vehicle company, but headlines usually mean the passenger-vehicle one | Precision | Data, not code: curated ambiguous alias, in the proposed list for founder approval |
+| 10 | No overload shedding on the API: past capacity, requests waited tens of seconds | NFR-001.3 | The anonymous first page of Latest is shared for 2 s; with 20 or more requests waiting for a database connection, new requests get 503 and `Retry-After: 2` (founder choice, D-050) |
 
 ## 6. Open findings (not fixed in this phase)
 
-- **No overload shedding on the API.** Past capacity, requests wait tens of seconds instead of failing fast. Options: a short shared cache for the anonymous first page of Latest; a queue limit that returns 503 with `Retry-After`; more API processes. Founder and CTO to decide before launch sizing.
+- **API capacity per process** is about 150–200 uncached stream reads per second on this machine. Past that, load is now shed with 503 rather than queued (D-050). The number of API processes is a launch sizing decision.
 - **10,000 clients were not reached on one machine.** About 2.6% of 5,000 failed during the connect burst, consistent with client-side socket limits on Windows, though not proven. Re-run on the target VPS with clients on separate machines.
 - **Recall at launch is about 51%** without curated aliases. The proposed list is founder data (entity-resolution.md §2.3) and is not loaded anywhere until approved.
 

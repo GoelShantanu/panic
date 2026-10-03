@@ -36,6 +36,7 @@ const SECONDS = Number(opt('--seconds', '40'));
 const STORIES = Number(opt('--stories', '300'));
 const RATE = Number(opt('--rate', '10'));
 const API_RPS = Number(opt('--api-rps', '40'));
+const API_PATH = opt('--api-path', '/v1/stream')!;
 
 const pct = (xs: number[], p: number) => {
   if (xs.length === 0) return NaN;
@@ -95,11 +96,12 @@ function reportListen(): void {
 // ---- driver
 const apiLatency: number[] = [];
 let apiErrors = 0;
+let apiShed = 0;
 function apiTick(): void {
   const t0 = Date.now();
-  const req = request(`${api}/v1/stream`, { agent: false }, (res) => {
+  const req = request(`${api}${API_PATH}`, { agent: false }, (res) => {
     res.resume();
-    res.on('end', () => (res.statusCode === 200 ? apiLatency.push(Date.now() - t0) : apiErrors++));
+    res.on('end', () => (res.statusCode === 200 ? apiLatency.push(Date.now() - t0) : res.statusCode === 503 ? apiShed++ : apiErrors++));
   });
   req.on('error', () => apiErrors++);
   req.end();
@@ -131,7 +133,7 @@ async function drive(): Promise<void> {
   await new Promise((r) => setTimeout(r, 2000));
   clearInterval(apiTimer);
   await db.end();
-  console.log(`driver: ${STORIES} stories in ${secs.toFixed(1)} s (${(STORIES / secs).toFixed(1)}/s); stream API ${apiLatency.length} ok, ${apiErrors} errors; latency ms p50 ${pct(apiLatency, 50)}  p95 ${pct(apiLatency, 95)}  max ${max(apiLatency)}`);
+  console.log(`driver: ${STORIES} stories in ${secs.toFixed(1)} s (${(STORIES / secs).toFixed(1)}/s); stream API ${apiLatency.length} ok, ${apiShed} shed (503), ${apiErrors} errors; latency ms p50 ${pct(apiLatency, 50)}  p95 ${pct(apiLatency, 95)}  max ${max(apiLatency)}`);
 }
 
 if (role === 'listen') {

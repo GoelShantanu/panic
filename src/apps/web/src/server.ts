@@ -8,6 +8,9 @@ import { handleWebhook } from './billing.ts';
 import { INGEST_PREFIX, MAX_PUSH_BYTES, receivePush } from './ingest.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
+// About one NFR-001.3 budget (300 ms) of queueing at measured throughput (docs/qa/test-strategy.md §3).
+const MAX_DB_QUEUE = 20;
+const LATEST_CACHE_MS = 2_000;
 const MAX_IMPORT_BODY_BYTES = 1536 * 1024; // CSV text (≤ 1 MB) inside JSON
 const UNSUBSCRIBE_PATH = '/v1/alerts/unsubscribe';
 
@@ -73,6 +76,8 @@ export interface SiteOptions {
   pages?: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
   // The SSE live channel runs in apps/live (ADR-005); /v1/live is passed through so pages stay same-origin.
   liveOrigin?: string;
+  // Requests waiting for a database connection before new ones get 503 (default MAX_DB_QUEUE).
+  maxDbQueue?: number;
 }
 
 function proxyLive(req: IncomingMessage, res: ServerResponse, origin: string) {
@@ -93,6 +98,8 @@ function proxyLive(req: IncomingMessage, res: ServerResponse, origin: string) {
 }
 
 export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, site: SiteOptions = {}): Server {
+  let latestCache: { until: number; body: string } | null = null;
+  let latestPending: Promise<string | null> | null = null;
   return createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     if (site.liveOrigin && url.pathname === '/v1/live') return proxyLive(req, res, site.liveOrigin);
@@ -129,10 +136,40 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, sit
         return;
       }
       const body = await readJson(req, url.pathname);
-      client = await pool.connect();
-      const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken: sessionTokenFrom(req), ip: req.socket.remoteAddress ?? null }, deps);
-      res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(r.headers ?? {}) });
-      res.end(r.status === 204 || r.status === 302 ? undefined : JSON.stringify(r.body));
+      const sessionToken = sessionTokenFrom(req);
+      // The anonymous first page of Latest is the same for every visitor: one computation serves
+      // everyone for LATEST_CACHE_MS, and concurrent misses wait for it (D-050).
+      const cacheable = req.method === 'GET' && url.pathname === '/v1/stream' && url.search === '' && !sessionToken;
+      if (cacheable) {
+        const fresh = latestCache && latestCache.until > Date.now() ? latestCache.body : await (latestPending ?? Promise.resolve(null));
+        if (fresh) {
+          res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+          res.end(fresh);
+          return;
+        }
+      }
+      // Past capacity, fail fast rather than queue for tens of seconds (QA load test, D-050).
+      if (pool.waitingCount >= (site.maxDbQueue ?? MAX_DB_QUEUE)) {
+        res.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'retry-after': '2' });
+        res.end('{"error":"overloaded"}');
+        return;
+      }
+      let settle: ((v: string | null) => void) | undefined;
+      if (cacheable) latestPending = new Promise((r) => (settle = r));
+      try {
+        client = await pool.connect();
+        const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken, ip: req.socket.remoteAddress ?? null }, deps);
+        const text = r.status === 204 || r.status === 302 ? undefined : JSON.stringify(r.body);
+        if (cacheable && r.status === 200 && text) latestCache = { until: Date.now() + LATEST_CACHE_MS, body: text };
+        settle?.(cacheable && r.status === 200 ? (text ?? null) : null);
+        res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(r.headers ?? {}) });
+        res.end(text);
+      } finally {
+        if (cacheable) {
+          settle?.(null);
+          latestPending = null;
+        }
+      }
     } catch (err) {
       if (err instanceof HttpError) {
         res.writeHead(err.status, { 'content-type': 'application/json; charset=utf-8' });

@@ -68,11 +68,16 @@ describe('alert content (C-003.1, C-003.5)', () => {
     url: 'https://stockpanic.example/s/st_X',
   };
 
+  const links = { oneClick: 'https://stockpanic.example/v1/alerts/unsubscribe?token=t', page: 'https://stockpanic.example/unsubscribe?token=t', settings: 'https://stockpanic.example/settings/alerts' };
+
   it('email carries symbol, headline, source, time and link, plus one-click unsubscribe headers', () => {
-    const e = alertEmail(c, 'https://stockpanic.example/v1/alerts/unsubscribe?token=t');
+    const e = alertEmail(c, links);
     expect(e.subject).toBe('ASTERION: Financial Results for the quarter ended September 30, 2026');
     expect(e.text).toContain('BSE Announcements');
     expect(e.text).toContain('https://stockpanic.example/s/st_X');
+    expect(e.text).toContain(' IST'); // times are shown on the market's clock
+    expect(e.text).toContain('Stop alert emails: https://stockpanic.example/unsubscribe?token=t'); // a page people can read
+    expect(e.text).toContain('Alert settings: https://stockpanic.example/settings/alerts');
     expect(e.headers).toEqual({
       'List-Unsubscribe': '<https://stockpanic.example/v1/alerts/unsubscribe?token=t>',
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -80,7 +85,7 @@ describe('alert content (C-003.1, C-003.5)', () => {
   });
 
   it('no urgency language or emoji in any template', () => {
-    const texts = [alertEmail(c, 'u'), alertEmail({ ...c, kind: 'correction', removed_isin: 'INE000A01011' }, 'u'), digestEmail([c, c], 'u')];
+    const texts = [alertEmail(c, links), alertEmail({ ...c, kind: 'correction', removed_isin: 'INE000A01011' }, links), digestEmail([c, c], links)];
     for (const t of texts) expect(`${t.subject}\n${t.text}`).not.toMatch(BANNED_ALERT_LANGUAGE);
     expect('🚀 Act now').toMatch(BANNED_ALERT_LANGUAGE);
   });
@@ -90,7 +95,7 @@ describe('alert content (C-003.1, C-003.5)', () => {
   });
 
   it('a digest groups by instrument and counts stories', () => {
-    const d = digestEmail([c, { ...c, story_id: 'st_Y', headline: 'Outcome of Board Meeting' }], 'u');
+    const d = digestEmail([c, { ...c, story_id: 'st_Y', headline: 'Outcome of Board Meeting' }], links);
     expect(d.text).toMatch(/^2 stories about your watchlist/);
     expect(d.text.match(/ASTERION/g)).toHaveLength(1);
   });

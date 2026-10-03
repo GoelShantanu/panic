@@ -85,6 +85,15 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       expect((await call('GET', '/v1/watchlist', null, null)).status).toBe(401);
     });
 
+    it('a merged company stays on the list and names its successor, which is not added (US-003.4 AC-3)', async () => {
+      const M = isin('E00F00001');
+      expect((await call('POST', '/v1/watchlist', { isin: M })).status).toBe(201);
+      await db.query(`UPDATE instrument SET status = 'merged', successor_isin = $2 WHERE isin = $1`, [M, K]);
+      expect(b(await call('GET', '/v1/watchlist')).instruments).toMatchObject([{ isin: M, status: 'merged', successor_isin: K }]);
+      await db.query(`UPDATE instrument SET status = 'listed', successor_isin = NULL WHERE isin = $1`, [M]);
+      await db.query('DELETE FROM watchlist_entry WHERE user_id = $1', [userId]);
+    });
+
     it('the free tier stops at 20 with the standard 402 body', async () => {
       for (let n = 0; n < 20; n++) expect((await call('POST', '/v1/watchlist', { isin: isin(`E00F${String(n).padStart(2, '0')}001`) })).status).toBe(201);
       expect(await call('POST', '/v1/watchlist', { isin: A })).toMatchObject({ status: 402, body: upgradeRequired('watchlist_limit') });

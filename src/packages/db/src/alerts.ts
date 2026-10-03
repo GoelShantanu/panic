@@ -9,7 +9,7 @@ const TODAY_IST = `(now() AT TIME ZONE 'Asia/Kolkata')::date`;
 
 export async function listWatchlist(db: pg.ClientBase, userId: string) {
   const { rows } = await db.query(
-    `SELECT w.isin, w.added_at, w.alerts_enabled, i.status, n.name,
+    `SELECT w.isin, w.added_at, w.alerts_enabled, i.status, i.successor_isin::text AS successor_isin, n.name,
             coalesce(nse.code, bse.code) AS display_symbol,
             (SELECT max(t.story_first_seen_at) FROM story_tag_display d JOIN story_tag t ON t.story_id = d.story_id AND t.isin = d.isin
               WHERE d.isin = w.isin) AS latest_story_at
@@ -26,6 +26,8 @@ export async function listWatchlist(db: pg.ClientBase, userId: string) {
     display_symbol: r.display_symbol,
     name: r.name,
     status: r.status,
+    // US-003.4 AC-3: a merged company stays listed; its successor is suggested, never added.
+    successor_isin: r.successor_isin ? String(r.successor_isin).trim() : null,
     latest_story_at: r.latest_story_at,
     added_at: r.added_at,
   }));

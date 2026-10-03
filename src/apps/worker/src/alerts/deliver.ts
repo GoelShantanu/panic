@@ -37,8 +37,10 @@ export interface AlertDeps {
 
 const CORRECTION_IMMEDIATE_WINDOW_MS = 2 * 3600_000; // PRD-003 US-003.8 AC-2
 
-const unsubscribeUrl = (deps: AlertDeps, userPublicId: string) =>
-  `${deps.baseUrl}/v1/alerts/unsubscribe?token=${encodeURIComponent(unsubscribeToken(deps.authSecret, userPublicId))}`;
+const unsubscribeUrl = (deps: AlertDeps, userPublicId: string) => {
+  const token = encodeURIComponent(unsubscribeToken(deps.authSecret, userPublicId));
+  return { oneClick: `${deps.baseUrl}/v1/alerts/unsubscribe?token=${token}`, page: `${deps.baseUrl}/unsubscribe?token=${token}`, settings: `${deps.baseUrl}/settings/alerts` };
+};
 
 // Only the C-003.1 fields: symbols, headline, source, time, link. No votes, tone or price.
 async function content(

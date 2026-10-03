@@ -66,23 +66,36 @@ export const ALERT_FIELDS = ['alert_id', 'kind', 'story_id', 'instruments', 'hea
 
 const symbols = (c: AlertContent) => c.instruments.map((i) => i.display_symbol ?? i.isin).join(', ');
 
-export function alertEmail(c: AlertContent, unsubscribeUrl: string): { subject: string; text: string; headers: Record<string, string> } {
-  const headers = { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' };
+// Email links (PRD-003 US-003.6 AC-4): the List-Unsubscribe header points at the one-click API
+// (RFC 8058); the body links a human-readable unsubscribe page and alert settings.
+export interface EmailLinks {
+  oneClick: string;
+  page: string;
+  settings: string;
+}
+
+const istStamp = (d: Date) =>
+  `${new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(d)} IST`;
+
+const footer = (l: EmailLinks) => [`Alert settings: ${l.settings}`, `Stop alert emails: ${l.page}`];
+
+export function alertEmail(c: AlertContent, links: EmailLinks): { subject: string; text: string; headers: Record<string, string> } {
+  const headers = { 'List-Unsubscribe': `<${links.oneClick}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' };
   if (c.kind === 'correction') {
     return {
       subject: `Correction: ${c.headline}`,
-      text: [`Correction: the alert about "${c.headline}" was not about ${c.removed_isin}.`, '', c.url, '', `Stop alert emails: ${unsubscribeUrl}`].join('\n'),
+      text: [`Correction: the alert about "${c.headline}" was not about ${c.removed_isin}.`, '', c.url, '', ...footer(links)].join('\n'),
       headers,
     };
   }
   return {
     subject: `${symbols(c)}: ${c.headline}`,
-    text: [`${symbols(c)}`, c.headline, `${c.source_name} · ${c.story_time.toISOString()}`, '', c.url, '', `Alert settings or stop alert emails: ${unsubscribeUrl}`].join('\n'),
+    text: [`${symbols(c)}`, c.headline, `${c.source_name} · ${istStamp(c.story_time)}`, '', c.url, '', ...footer(links)].join('\n'),
     headers,
   };
 }
 
-export function digestEmail(items: readonly AlertContent[], unsubscribeUrl: string): { subject: string; text: string; headers: Record<string, string> } {
+export function digestEmail(items: readonly AlertContent[], links: EmailLinks): { subject: string; text: string; headers: Record<string, string> } {
   const byInstrument = new Map<string, AlertContent[]>();
   for (const it of items) {
     const key = symbols(it) || 'Other';
@@ -94,11 +107,11 @@ export function digestEmail(items: readonly AlertContent[], unsubscribeUrl: stri
     for (const g of [...group].sort((a, b) => b.story_time.getTime() - a.story_time.getTime())) lines.push(`  ${g.headline} (${g.source_name})`, `  ${g.url}`);
     lines.push('');
   }
-  lines.push(`Alert settings or stop alert emails: ${unsubscribeUrl}`);
+  lines.push(...footer(links));
   return {
     subject: 'Your StockPanic digest',
     text: lines.join('\n'),
-    headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+    headers: { 'List-Unsubscribe': `<${links.oneClick}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
   };
 }
 

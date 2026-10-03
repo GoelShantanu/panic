@@ -34,7 +34,8 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
   ]);
   const signedIn = me.status === 200;
   const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false, saved_views: 0 };
-  const watchlist = query.view === 'watchlist' && signedIn ? await api<{ instruments: { isin: string }[] }>('/v1/watchlist') : null;
+  // Signed-in readers: the watchlist drives the Watchlist view and the row Follow controls.
+  const watchlist = signedIn ? await api<{ instruments: { isin: string }[] }>('/v1/watchlist') : null;
   const eventTypes = types.status === 200 ? types.body.types : [];
   const clear = streamParams({ ...query, eventTypes: [], filingsOnly: false }).toString();
 

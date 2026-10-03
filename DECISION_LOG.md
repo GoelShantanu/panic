@@ -1481,6 +1481,47 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-044 — Watchlist and alerts in the browser *(implements PRD-003 §2–§7 in the browser)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Frontend F5. Founder may override |
+
+**Decision**
+
+1. **Watchlist page (`/watchlist`):**
+   - Search-and-add, plus broker CSV import with a review step: matched rows can be deselected, and unmatched and already-present rows are listed. Only ISINs are sent to confirm. Files over 1 MB are refused before upload.
+   - Remove one company or several at once.
+   - At the plan limit, the page shows the paid limit and a link to plans. Nothing is silently dropped.
+2. **Merged companies stay on the list.** `GET /v1/watchlist` gains `successor_isin`, and the page links to the successor without adding it (US-003.4 AC-3).
+3. **Follow from the stream.** Each stream row has a Follow button for signed-in readers. The company page already had one.
+4. **New accounts land on `/watchlist?welcome=1`.** It shows a welcome note with "Skip for now" (US-007.1 AC-5).
+5. **Alert settings (`/settings/alerts`):**
+   - Channels, daily budget (clamped to the plan ceiling, with today's use shown), quiet hours, digest time, digest-only, and a switch for each event type. Each change saves on its own.
+   - Browser push asks for permission only when the reader turns it on. It registers `/sw.js` with the VAPID key and is shown as unavailable when no key is configured.
+6. **Alert history (`/alerts`).** Shows the channel or "In digest", the time sent in IST, and correction and corrected-later marks. More rows load by cursor.
+7. **Email links are split:**
+   - The `List-Unsubscribe` header keeps the one-click API (RFC 8058).
+   - The email body links a readable `/unsubscribe` page (a button that POSTs) and alert settings.
+   - Story times in emails are shown in IST.
+
+**Reason**
+
+1. PRD-003 §2: building the list must be fast, and imported holdings data must never be stored (C-003.6).
+2. Alerting about a company that no longer trades, without telling the reader, would erode trust. Adding the successor silently would be a guess (Coding Philosophy: never guess).
+3. Mail clients and link scanners prefetch links. A link that unsubscribes on GET would unsubscribe readers by accident, so the body links a page that needs a click.
+4. Asking for push permission on page load is refused by browsers and readers alike.
+
+**Consequences**
+
+- Founder: generate VAPID keys (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) before browser push can be offered.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

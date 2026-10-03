@@ -313,3 +313,22 @@ kbd { font-family: var(--font-mono); font-size: var(--text-xs); border: 1px soli
 .legal-table th, .legal-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
 .footer-links { display: flex; gap: 14px; margin-top: 6px; }
 .footer-links a { color: var(--faint); }
+
+/* ---------- watchlist and alerts ---------- */
+.watchlist, .settings { max-width: 860px; }
+.page-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.page-head h1 { font-size: var(--text-xl); margin: 0; }
+.welcome-note { font-size: var(--text-md); }
+.search-input.wide { width: 100%; }
+.add-results { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.import { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.import-review { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.list-actions { margin: 8px 0; }
+.wl-table { width: 100%; border-collapse: collapse; }
+.wl-table th, .wl-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+.wl-table thead th { color: var(--muted); font-weight: 600; font-size: var(--text-sm); }
+.inline-label { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.inline-label input, .time-range input { font: inherit; padding: 3px 6px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); width: 110px; }
+.time-range { display: inline-flex; gap: 6px; align-items: center; margin: 4px 0 8px 22px; }
+.type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.row-follow { display: inline-flex; gap: 4px; margin-left: 8px; }

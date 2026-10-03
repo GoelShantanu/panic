@@ -46,6 +46,23 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [help, setHelp] = useState(false);
+  // Follow from any stream row (PRD-003 US-003.1 AC-3).
+  const [followed, setFollowed] = useState<Set<string> | null>(watchlistIsins ? new Set(watchlistIsins) : null);
+  async function follow(isin: string, on: boolean) {
+    const res = await fetch(on ? '/v1/watchlist' : `/v1/watchlist/${isin}`, {
+      method: on ? 'POST' : 'DELETE',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      ...(on ? { body: JSON.stringify({ isin }) } : {}),
+    }).catch(() => null);
+    if (res && (res.ok || res.status === 409)) {
+      setFollowed((f) => {
+        const n = new Set(f ?? []);
+        on ? n.add(isin) : n.delete(isin);
+        return n;
+      });
+    } else if (res?.status === 402 && selected) setMessages((m) => ({ ...m, [selected]: 'Your watchlist is full on this plan. Paid holds 200 companies.' }));
+  }
   const [depthLimit, setDepthLimit] = useState(timeline?.depthLimitReached ?? false);
   const buffer = useRef<StoryCard[]>([]);
   const newestSeen = useRef<string | null>(initial.stories[0]?.first_seen_at ?? null);
@@ -232,6 +249,8 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
             message={messages[s.story_id] ?? null}
             onSelect={() => setSelected(s.story_id)}
             onVotes={(v) => setVotes(s.story_id, v)}
+            followed={followed}
+            onFollow={(isin, on) => void follow(isin, on)}
           />
         ))}
       </ol>

@@ -13,11 +13,13 @@ export interface RowProps {
   message: string | null;
   onSelect: () => void;
   onVotes: (v: VoteDisplay) => void;
+  followed?: ReadonlySet<string> | null;
+  onFollow?: (isin: string, follow: boolean) => void;
 }
 
 // PRD-001 US-001.1 AC-2: headline, source, age, symbols, event types, source count, comment count,
 // compact community opinion at ≥ 3 votes; the selected row carries vote controls.
-export function StoryRow({ story: s, selected, labels, signedIn, message, onSelect, onVotes }: RowProps) {
+export function StoryRow({ story: s, selected, labels, signedIn, message, onSelect, onVotes, followed, onFollow }: RowProps) {
   const symbols = s.instruments.map((i) => i.display_symbol ?? i.exchange_codes.bse ?? i.isin);
   const unresolved = s.instruments.length === 0 && s.unresolved_mentions.length > 0;
   return (
@@ -65,6 +67,18 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
       {selected && (
         <div className="row-actions">
           <VoteControls storyId={s.story_id} votes={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} />
+          {signedIn && followed && onFollow && s.instruments.length > 0 && (
+            <span className="row-follow" onClick={(e) => e.stopPropagation()}>
+              {s.instruments.map((i) => {
+                const on = followed.has(i.isin);
+                return (
+                  <button key={i.isin} type="button" className="vote" aria-pressed={on} onClick={() => onFollow(i.isin, !on)}>
+                    {on ? 'Following' : 'Follow'} {i.display_symbol ?? i.isin}
+                  </button>
+                );
+              })}
+            </span>
+          )}
           {message && <span className="vote-error" role="status">{message}</span>}
         </div>
       )}

@@ -11,7 +11,7 @@
 
 ## Current Phase
 
-**Phase 8 — QA** *(entry met 2026-10-03: features complete)*. Phase 7 — Frontend: complete *(exited 2026-10-03 — [D-048](DECISION_LOG.md))*. Phase 6 — Backend: complete *(D-039)*.
+**Phase 8 — QA** *(opened 2026-10-03; in progress — [docs/qa/test-strategy.md](docs/qa/test-strategy.md), D-049)*. Phase 7 — Frontend: complete *(exited 2026-10-03 — [D-048](DECISION_LOG.md))*. Phase 6 — Backend: complete *(D-039)*.
 
 ### Frontend plan
 
@@ -184,7 +184,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO drafts the QA test strategy (`docs/qa/`): PRD acceptance-criteria traceability, entity-resolution precision method, market-open load profile. New founder inputs: Grievance Officer name and email; confirm or replace the Terms and Privacy drafts (D-043); VAPID keys for browser push (D-044).
+**Single next action:** Collect and label the held-out headline batch (Monday market hours), measure precision against 99.5%; founder approves or amends `docs/qa/curated-aliases-proposed.csv`. New founder inputs: Grievance Officer name and email; confirm or replace the Terms and Privacy drafts (D-043); VAPID keys for browser push (D-044).
 - accountant confirmation of GST treatment (release blocker for billing, D-039);
 - each December, next year's holidays and Muhurat date (D-038);
 - exchange feed vendor (OQ-6);
@@ -296,3 +296,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **F7 done.** Operator console at `/admin`: 404 for everyone else (title included). Two-factor enrol at `/admin/enrol` (before the role grant) and the 12-hour check. Grievance queue now carries the complaint, email, comment as posted (kept after removal), author and reasons; deadlines with overdue flags; take-down cites the grievance; operator-recorded court orders and government notices with the received time (36 h clock). Corrections queue with prefilled retag, merge, split and dismiss; summary reports (migration 0014, reader button on story pages, hide/regenerate/dismiss, in data export); voters (audited); abuse signals; restrictions with undo; kill switches with current state. Found while testing: action outcomes vanished when the control unmounted — card and console status lines added; a reload crashed on an unexpected body — guarded. 394/394 tests. **D-046.** | Phase 7 in progress |
 | 2026-10-03 | **F8 done; frontend exit review run.** Phone view read-only below 768 px (notes in place of actions, shortcuts off, session-dismissible notice; 0 horizontal scroll at 360 px). WCAG 2.2 AA: text tokens fixed (faint was 2.5:1), stream rows no longer ARIA options containing links (plain list, `aria-current`, focus follows selection), links in text underlined, 24 px targets, button tabs styled; axe 0 violations on 15 pages in both themes; jsdom axe guard. Saved views rendered on the server (they shifted the filter row). `/status`, sitemaps, robots. Exit checks driven in the browser: stale banner appears live and clears 59 ms after recovery; keyboard model; idle insert at top, insert while reading held with 0 px movement. 401/401 tests. **D-047.** | Phase 7 — exit review awaiting approval |
 | 2026-10-03 | **Frontend exit review — approved (D-048).** All WORKFLOW §7 criteria checked in the browser with evidence; 5 defects found and fixed (contrast, list semantics, filter-row shift, phone menu overflow, robots naming the console). Limits recorded: loopback-only performance, no screen-reader or physical-device pass, stand-ins for external services. **Phase 7 complete.** | **Phase 7 exited** |
+| 2026-10-03 | **QA opened (D-049).** Founder chose a public-RSS corpus and authorised the NSE list download. Found the instrument registry loader was never built (D-039 erratum) — built (`registry.ts`, temporal diff, partial-list guard); 2,593 real NSE companies loaded. Real pipeline on 263 unique headlines (ET, BusinessLine, Mint; Moneycontrol and Business Standard refuse non-browser agents): precision 91.3% → 97.3% after hazard fixes (lower-case words, BSE-beside-NSE, truncated longer names, English-word aliases need context); 99.1% / recall 78.5% with the proposed curated aliases (biased: tuning set). Headline entity decoding fixed. Load: live fan-out collapsed at 20–30k frames/s — write coalescing added, 40–50k frames/s now delivered in full (p95 ≤ 1.2 s); stream API knee 150–200 rps, no shedding (open). 412/412 tests. Held-out precision pending. | Phase 8 in progress |

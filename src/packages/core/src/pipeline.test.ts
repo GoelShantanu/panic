@@ -121,6 +121,59 @@ describe('rule-only tagging (entity-resolution.md §4–5)', () => {
   it('unknown companies produce nothing', () => {
     expect(index.resolve('Orion Cables to invest in new plant')).toEqual({ isins: [], unresolved: [] });
   });
+
+  // Hazards found on real headlines in QA (D-049). Fictional companies stand in for the real ones.
+  const qa = new AliasIndex([
+    { isin: 'ISIN_TAKE', text: 'TAKE Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_BSE', text: 'BSE Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_N', text: 'Nimbus Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_NG', text: 'Nimbus Green Energy Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_CV', text: 'Orbit Motors Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_PV', text: 'Orbit Motors', source: 'alias', ambiguous: true, commonWord: false },
+  ]);
+
+  it('a company name written in lower case is ordinary words', () => {
+    expect(qa.resolve('Petronet LNG chief to take over in May').isins).toEqual([]);
+    expect(qa.resolve('Take shares rally on order win').isins).toEqual(['ISIN_TAKE']);
+  });
+
+  it('BSE beside NSE is the exchanges, not BSE Limited', () => {
+    expect(qa.resolve('Are NSE, BSE closed for Gandhi Jayanti?')).toEqual({ isins: [], unresolved: [] });
+    expect(qa.resolve('BSE shares hit record on derivatives volumes').isins).toEqual(['ISIN_BSE']);
+  });
+
+  it('the start of a longer listed name is unresolved, not the shorter company', () => {
+    expect(qa.resolve('Top picks: Sagility, Nimbus Green, Ujjivan')).toEqual({ isins: [], unresolved: ['Nimbus Green'] });
+    expect(qa.resolve('Nimbus Green Energy commissions solar park').isins).toEqual(['ISIN_NG']);
+    expect(qa.resolve('Nimbus shares rise 3%').isins).toEqual(['ISIN_N']);
+  });
+
+  // PRD-002 US-002.9: each naming hazard is a test case (entity-resolution.md §4.1). Dual listing and
+  // reused tickers are registry properties, tested in packages/db registry.integration.test.ts.
+  const hz = new AliasIndex([
+    { isin: 'ISIN_OM', text: 'Orbit Motors Passenger Vehicles Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_OS', text: 'Orbit Steel Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_OS', text: 'Orbit', source: 'alias', ambiguous: true, commonWord: false },
+    { isin: 'ISIN_IN', text: 'Infotech Systems Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_IN', text: 'Infy', source: 'alias', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_US', text: 'US', source: 'alias', ambiguous: false, commonWord: true },
+    { isin: 'ISIN_B1', text: 'Vardhan Auto Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_B2', text: 'Vardhan Sugar Limited', source: 'name', ambiguous: false, commonWord: false },
+    { isin: 'ISIN_B1', text: 'Vardhan', source: 'alias', ambiguous: true, commonWord: false },
+  ]);
+  it('US-002.9 hazards: conglomerate alone, colloquial name, English-word ticker, group event, same-name firms, unlisted parent', () => {
+    expect(hz.resolve('Orbit plans ₹10,000 cr investment')).toEqual({ isins: [], unresolved: ['Orbit'] }); // never every Orbit company
+    expect(hz.resolve('Infy wins $2 billion deal').isins).toEqual(['ISIN_IN']);
+    expect(hz.resolve('US markets rally on jobs data').isins).toEqual([]); // a bare word is not the ticker
+    expect(hz.resolve('SEBI order against Orbit promoter').isins).toEqual([]); // no fan-out to the group
+    expect(hz.resolve('Vardhan shares in focus')).toEqual({ isins: [], unresolved: ['Vardhan'] });
+    expect(hz.resolve('Vardhan Sugar crushing season begins').isins).toEqual(['ISIN_B2']); // context names the firm
+    expect(hz.resolve('Orbit Sons board meets on succession')).toEqual({ isins: [], unresolved: ['Orbit'] }); // the unlisted parent is no instrument
+  });
+
+  it('a name shared after a demerger is unresolved once curated as ambiguous', () => {
+    expect(qa.resolve('Orbit Motors PV shares fall 3%')).toEqual({ isins: [], unresolved: ['Orbit Motors'] });
+  });
 });
 
 describe('clustering decisions (deduplication.md)', () => {

@@ -111,6 +111,21 @@ export function isProbablyEnglish(text: string): boolean {
   return latin / letters.length >= 0.8;
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', ndash: '–', mdash: '—', hellip: '…',
+};
+const ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z]+);/gi;
+
+// Publishers often escape entities twice ('&amp;amp;', or '&amp;' inside CDATA), so the parsed title
+// still contains them; zero-width characters also ride along. Both are removed before storage.
 export function normaliseHeadline(raw: string): string {
-  return raw.replace(/\s+/g, ' ').trim();
+  let s = raw;
+  for (let i = 0; i < 2; i++) {
+    s = s.replace(ENTITY, (m, e: string) => {
+      if (e[0] !== '#') return NAMED_ENTITIES[e.toLowerCase()] ?? m;
+      const code = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : m;
+    });
+  }
+  return s.replace(/[​-‍⁠﻿]/g, '').replace(/\s+/g, ' ').trim();
 }

@@ -11,5 +11,6 @@ export * from './filings.ts';
 export * from './billing.ts';
 export * from './corrections.ts';
 export * from './summaries.ts';
+export * from './registry.ts';
 export * from './calendar.ts';
 export * from './trending.ts';

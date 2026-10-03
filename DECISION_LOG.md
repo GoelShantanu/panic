@@ -1313,6 +1313,8 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 - No security review. That is WORKFLOW §9; the probe covers robustness, not threat modelling.
 - One watchlist CSV test failed once while the probe loaded the same database. It passed in two later full runs. Treat it as a possible timing sensitivity.
 
+> **Erratum (2026-10-03, D-049):** the instrument registry loader specified in entity-resolution.md §2.2 was not built and this review did not catch it. QA found it and added it; see [D-049](#d-049).
+
 **Status** — Active
 
 ---
@@ -1704,6 +1706,51 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 - The phone view was emulated at 360–375 px, not run on physical devices.
 - The live channel, push, Razorpay Checkout, Google sign-in and AI summaries were exercised against local or demo stand-ins. There are no real credentials or feed.
 - Paint-based Core Web Vitals (FCP, LCP) were not captured.
+
+**Status** — Active
+
+---
+
+## D-049 — QA opened: registry loader, resolver hazard fixes, live fan-out coalescing *(WORKFLOW §8; corrects D-039)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture · Process |
+| **Decided by** | CTO as QA reviewer. The founder chose the corpus (public RSS assembled by the CTO) and authorised downloading NSE's equity lists (chat, 2026-10-03) |
+
+**Decision**
+
+1. **Erratum to D-039: the instrument registry loader was never built.** entity-resolution.md §2.2 specifies it, the backend exit review missed it, and no real company could resolve without it.
+   - `registry.ts load-nse <lists…> [--as-of]` diffs the day's NSE lists against what is valid today. Symbol and name changes close the old validity row and open a new one. A company missing from the list has its code closed and is listed for an operator; status is never guessed. Each run is audited.
+   - A list smaller than half the current registry is refused.
+   - `[ASSUMPTION]` On first sight of an instrument, its current symbol and name are taken as valid from its listing date, because the list carries no history. A symbol another instrument held starts on the load date.
+   - NSE mainboard and SME lists must be loaded in one run.
+   - BSE-only companies need a BSE list (source to be chosen with OQ-6).
+   - Run daily before 06:30 IST (cron).
+2. **Resolver hazards found on real headlines are fixed in `AliasIndex`.** Every fix only removes tags, so the launch rule (entity-resolution.md §5) still holds:
+   - company names must start capitalised;
+   - "BSE" beside "NSE" is the exchanges;
+   - the start of a longer listed name is unresolved;
+   - English-word aliases need capitals and company context.
+   US-002.9 has an explicit hazard test block.
+3. **Curated aliases.** `registry.ts add-alias` and `load-aliases` add them, audited. `docs/qa/curated-aliases-proposed.csv` (66 aliases, including the Tata Motors ambiguity) is a **draft for founder approval** and is not loaded anywhere.
+4. **Headlines** are decoded of publisher double-escaping and stripped of zero-width characters at ingestion.
+5. **The live channel coalesces fan-out.** Events committed within 250 ms go to each client in one write, with the same frames in the same order. Measured: fan-out collapsed at 20–30k frames/s before the change; after it, 40–50k frames/s are delivered in full (p95 0.7–1.2 s).
+6. **QA tools:** `qa-resolution.ts` (precision and recall on a labelled corpus) and `qa-load.ts` (market-open load; refuses any database whose name lacks "load").
+
+**Reason**
+
+1. WORKFLOW §8 requires precision measured on a real corpus, which needs a real registry.
+2. The tuning-set baseline was 91.3% precision against a 99.5% target. Every wrong tag was a documented hazard class.
+3. Precision first: a bad tag is worse than a missing one.
+4. ADR-005 `[ASSUMPTION]` (one small process serves 10,000 clients at peak) failed by about 4–5× as built.
+
+**Consequences**
+
+- Precision on the tuning corpus is 97.3% with the fixes, and 99.1% with recall 78.5% using the proposed aliases. **This figure is biased.** A held-out batch (about 300 headlines, collected from Monday's market hours) is needed before the phase can exit.
+- Open findings: no API overload shedding (knee at 150–200 stream reads per second per process); 10,000 clients not reached on one machine. See `docs/qa/test-strategy.md` §6.
+- Founder: approve or amend the proposed curated aliases.
 
 **Status** — Active
 

@@ -1,0 +1,83 @@
+# Proposed curated aliases (entity-resolution.md §2.3) — DRAFT for founder approval (D-049).
+# symbol,alias[,ambiguous][,common_word]
+# common_word: also an English word; matches only in capitals next to company context ("SAIL shares"). ambiguous: always shown unresolved.
+# Load after approval: node src/apps/worker/src/cli/registry.ts load-aliases docs/qa/curated-aliases-proposed.csv
+#
+# Demerger and shared names: never guessed
+TMPV,Tata Motors,ambiguous
+#
+# Banks and financials
+SBIN,SBI
+SBIN,State Bank
+KOTAKBANK,Kotak Bank
+HDFCAMC,HDFC AMC
+HDFCLIFE,HDFC Life
+SBILIFE,SBI Life
+SBICARD,SBI Card
+ICICIPRULI,ICICI Prudential Life
+ICICIGI,ICICI Lombard
+RBLBANK,RBL
+BAJAJHFL,Bajaj Housing Finance
+BAJAJHFL,Bajaj HFL
+UJJIVANSFB,Ujjivan SFB
+UJJIVANSFB,Ujjivan Small Finance Bank
+PNB,PNB
+LICI,LIC
+JIOFIN,Jio Financial
+IREDA,IREDA
+IRFC,IRFC
+KFINTECH,KFintech
+POLICYBZR,Policybazaar
+PAYTM,Paytm
+#
+# IT and telecom
+TCS,TCS
+INFY,Infy
+HCLTECH,HCL Tech
+HCLTECH,HCLTech
+MTNL,MTNL
+#
+# Energy, metals, PSUs
+RELIANCE,RIL
+BPCL,BPCL
+ONGC,ONGC
+IOC,Indian Oil
+GAIL,GAIL
+MRPL,MRPL
+HINDALCO,Hindalco
+NATIONALUM,NALCO
+SAIL,SAIL,,common_word
+POWERGRID,Power Grid
+HAL,HAL
+BEL,BEL
+BHEL,BHEL
+IRCTC,IRCTC
+CGPOWER,CG Power
+#
+# Autos
+MARUTI,Maruti
+MARUTI,Maruti Suzuki
+M&M,M&M
+TVSMOTOR,TVS Motor
+TMPV,Tata Motors PV
+TMCV,Tata Motors CV
+#
+# Consumer, pharma, others
+HINDUNILVR,HUL
+TITAN,Titan
+DABUR,Dabur
+DMART,D-Mart
+DMART,DMart
+NYKAA,Nykaa
+HONASA,Honasa
+ETERNAL,Zomato
+LENSKART,Lenskart
+APOLLOHOSP,Apollo Hospitals
+SUNPHARMA,Sun Pharma
+DRREDDY,Dr Reddy's
+AUROPHARMA,Aurobindo Pharma
+ULTRACEMCO,UltraTech
+LT,L&T
+INDIGO,IndiGo
+TATACONSUM,Tata Consumer
+BECTORFOOD,Bectors Food

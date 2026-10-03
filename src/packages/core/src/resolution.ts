@@ -29,8 +29,21 @@ interface Token {
   orig: string;
 }
 
+// A mention is shown as written, without the punctuation around it ("Nimbus Green," → "Nimbus Green").
+const trimMention = (s: string) => s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+
+// Words that show a common-word alias is being used as a company (entity-resolution.md §4 R2).
+const COMPANY_CONTEXT = new Set(['shares', 'share', 'stock', 'stocks', 'ltd', 'limited', 'q1', 'q2', 'q3', 'q4', 'results', 'board', 'ipo', 'dividend', 'profit', 'revenue', 'order', 'target']);
+const CONTEXT_WINDOW = 3;
+
+// "BSE" beside "NSE" names the exchanges, not BSE Limited's shares ("Are NSE, BSE closed today?").
+const EXCHANGE_PAIR: Record<string, string> = { bse: 'nse' };
+const EXCHANGE_WINDOW = 3;
+
 export class AliasIndex {
   private readonly entries = new Map<string, Entry>();
+  // Proper word-prefixes of multi-word keys: "ntpc green" for "ntpc green energy".
+  private readonly prefixes = new Set<string>();
   private maxWords = 1;
 
   constructor(aliases: readonly AliasEntry[]) {
@@ -42,7 +55,9 @@ export class AliasIndex {
       e.ambiguous ||= a.ambiguous;
       e.commonWord ||= a.commonWord;
       this.entries.set(key, e);
-      this.maxWords = Math.max(this.maxWords, key.split(' ').length);
+      const words = key.split(' ');
+      this.maxWords = Math.max(this.maxWords, words.length);
+      for (let k = 2; k < words.length; k++) this.prefixes.add(words.slice(0, k).join(' '));
     }
   }
 
@@ -62,11 +77,26 @@ export class AliasIndex {
       let matched = 0;
       for (let n = Math.min(this.maxWords, tokens.length - i); n >= 1; n--) {
         const span = tokens.slice(i, i + n);
-        const entry = this.entries.get(span.map((t) => t.norm).join(' '));
+        const key = span.map((t) => t.norm).join(' ');
+        const entry = this.entries.get(key);
         if (!entry) continue;
+        // An alias that is also an English word needs ticker casing and company context (PRD-002
+        // US-002.9): "US markets rally" is not a company; "TREND shares jump" is.
         if (entry.commonWord && !span.every((t) => /[A-Z]/.test(t.orig) && t.orig === t.orig.toUpperCase())) continue;
+        if (entry.commonWord && !tokens.slice(Math.max(0, i - CONTEXT_WINDOW), i + n + CONTEXT_WINDOW).some((t) => COMPANY_CONTEXT.has(t.norm))) continue;
+        // Headlines capitalise company names; a lower-case run is ordinary words ("to take over").
+        if (!/^[\p{Lu}\p{N}]/u.test(span[0]!.orig)) continue;
+        const partner = EXCHANGE_PAIR[key];
+        if (partner && tokens.slice(Math.max(0, i - EXCHANGE_WINDOW), i + n + EXCHANGE_WINDOW).some((t) => t.norm === partner)) {
+          matched = n;
+          break;
+        }
         const text = [...new Set(span.map((t) => t.orig))].join(' ');
-        if (entry.ambiguous || entry.isins.size > 1) unresolved.add(text);
+        // The start of a longer listed name ("NTPC Green" for NTPC Green Energy) is not the shorter
+        // company: shown unresolved rather than guessed.
+        const next = tokens[i + n];
+        const truncated = next !== undefined && this.prefixes.has(`${key} ${next.norm}`) && !this.entries.has(`${key} ${next.norm}`);
+        if (entry.ambiguous || entry.isins.size > 1 || truncated) unresolved.add(trimMention(truncated ? `${text} ${next!.orig}` : text));
         else isins.add([...entry.isins][0]!);
         matched = n;
         break;

@@ -126,5 +126,8 @@ describe('English-only check (N14)', () => {
 
   it('normalises whitespace in headlines', () => {
     expect(normaliseHeadline('  Kestrel   Power\n wins order ')).toBe('Kestrel Power wins order');
+    // Double-escaped entities and zero-width characters, as real feeds send them (QA, D-049).
+    expect(normaliseHeadline('​Bonus issues &amp; stock split: F&amp;amp;O &#8377;5 &lt;b&gt;')).toBe('Bonus issues & stock split: F&O ₹5 <b>');
+    expect(normaliseHeadline('Kept &unknown; &#0; as written')).toBe('Kept &unknown; &#0; as written');
   });
 });

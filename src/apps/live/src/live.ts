@@ -13,6 +13,7 @@ export interface LiveServerOptions {
   listenConnectionString: string;
   heartbeatMs?: number;
   replayLimit?: number;
+  coalesceMs?: number;
 }
 
 export interface LiveServer {
@@ -35,6 +36,9 @@ interface Client {
 
 const HEARTBEAT_MS = 15_000;
 const REPLAY_LIMIT = 1_000;
+// Events committed within this window go to each client in one write. Per-socket writes, not bytes,
+// bound fan-out (QA load test, D-049); the frames and their order are unchanged.
+const COALESCE_MS = 250;
 
 async function toFrame(db: pg.ClientBase, row: LiveEventRow): Promise<Frame | null> {
   let data: Record<string, unknown>;
@@ -63,11 +67,20 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
   let chain: Promise<void> = Promise.resolve();
   let listener: pg.Client | null = null;
   let closing = false;
+  let pending: ReturnType<typeof setTimeout> | null = null;
 
   function send(client: Client, frame: Frame) {
     if (frame.id <= client.lastSent) return;
     client.res.write(frame.text);
     client.lastSent = frame.id;
+  }
+
+  // One write per client for a run of frames.
+  function sendAll(client: Client, batch: Frame[]) {
+    const fresh = batch.filter((f) => f.id > client.lastSent);
+    if (fresh.length === 0) return;
+    client.res.write(fresh.map((f) => f.text).join(''));
+    client.lastSent = fresh[fresh.length - 1]!.id;
   }
 
   // Catch up from the table rather than trusting notification payloads: no gaps, strict order.
@@ -77,12 +90,13 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
         for (;;) {
           const rows = await liveEventsAfter(db, lastBroadcast.toString(), REPLAY_LIMIT);
           if (rows.length === 0) break;
+          const batch: Frame[] = [];
           for (const row of rows) {
             const frame = await toFrame(db, row);
             lastBroadcast = BigInt(row.id);
-            if (!frame) continue;
-            for (const c of clients) c.ready ? send(c, frame) : c.queue.push(frame);
+            if (frame) batch.push(frame);
           }
+          for (const c of clients) c.ready ? sendAll(c, batch) : c.queue.push(...batch);
         }
       });
     }).catch((err) => console.error('live catch-up failed:', err));
@@ -95,7 +109,13 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
         const l = new pg.Client({ connectionString: opts.listenConnectionString });
         await l.connect();
         await l.query(`LISTEN ${LIVE_CHANNEL}`);
-        l.on('notification', () => void catchUp());
+        l.on('notification', () => {
+          if (pending) return;
+          pending = setTimeout(() => {
+            pending = null;
+            void catchUp();
+          }, opts.coalesceMs ?? COALESCE_MS);
+        });
         l.on('error', (err) => {
           console.error('live listener error:', err.message);
           if (listener === l) {
@@ -177,6 +197,7 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
     async close() {
       closing = true;
       clearInterval(heartbeat);
+      if (pending) clearTimeout(pending);
       for (const c of clients) c.res.end();
       clients.clear();
       await new Promise((r) => server.close(r));

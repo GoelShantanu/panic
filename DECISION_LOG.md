@@ -1661,6 +1661,54 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-048 — Frontend approved; Frontend phase exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Process |
+| **Decided by** | CTO (WORKFLOW §7 reviewer); approved by the founder in writing (chat, 2026-10-03) |
+
+**Decision**
+
+The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations 0013–0014) is approved. WORKFLOW §7 exits, and QA (WORKFLOW §8) entry is met: the features are complete.
+
+**Defects found by the review, fixed before approval** (commit `e3b299f`)
+
+| # | Defect | Fix |
+| --- | --- | --- |
+| 1 | The faint text colour was 2.5–3.1:1 in the light theme and 3.1–4.5:1 in the dark theme, below WCAG AA | All text tokens reach 4.5:1 or more on every surface, including the selected row |
+| 2 | Stream rows were ARIA options containing links (invalid for assistive technology) | Plain list with `aria-current`; focus follows the selection |
+| 3 | Saved views loaded after hydration and shifted the filter row | Rendered on the server: 0 layout shift measured |
+| 4 | The "Saved views" menu overflowed to 476 px at a 360 px viewport | Menus pin to the screen edges on phones |
+| 5 | `robots.txt` named the operator console, which otherwise denies existing | Removed from robots |
+
+**Exit check (WORKFLOW §7)**
+
+| Criterion | Result | Evidence |
+| --- | --- | --- |
+| Loading, empty and error states | ✅ | Transition spinner and load-more retry; view- and filter-specific empty states; 404 for unknown stories and companies; error boundary; component tests |
+| **Stale** state `[Research R11]` | ✅ | Real `setHealthState` on a tier-1 source: the banner appeared live without reload and cleared **59 ms** after recovery (AC-5: 60 s). `/status` lists every source `[VERIFIED]` |
+| Keyboard model | ✅ | In the browser: Esc, J, J, ↓, K and ↑ moved the selection through rows −1, 0, 1, 2, 1, 0; focus on the selected headline; `?` opens help and Esc closes it `[VERIFIED]` |
+| No layout shift on feed insert | ✅ | Real pipeline functions created live stories. Reader idle at the top: the story inserted at the top. Row selected: the story was held behind "1 new story", rows moved **0 px**, and the anchor is 0 px tall `[VERIFIED]` |
+| Driven in a real browser | ✅ | Every milestone (session log F1–F8) |
+| No engagement mechanics (GUARDRAILS §4.10) | ✅ | No streaks, countdowns, scarcity or urgency language; the reply indicator is a dot with no number; alerts capped by a daily budget with digest overflow; stream depth bounded by plan |
+| Tests | ✅ | 401/401 (43 files) on PostgreSQL 17, including a jsdom axe structural guard |
+| Accessibility (NFR-001.5) | ✅ | axe-core in the browser: 0 WCAG A/AA violations, 15 pages, light and dark themes `[VERIFIED]` |
+| Phone view (US-001.8) | ✅ | 14 pages at 360 px: no horizontal scroll; participation controls hidden with "Open on desktop to take part." `[VERIFIED]` |
+
+**Limits (not verified)**
+
+- **NFR-001.1** was measured over loopback only. Stream load event p75 was about 255 ms (production build, warm), with 144 KB of JS. Real-network, CDN and cold-cache figures from Indian broadband are not measured; paint timings are unavailable because the test browser pane is hidden.
+- No manual screen-reader pass. Automated checks and focus behaviour only.
+- The phone view was emulated at 360–375 px, not run on physical devices.
+- The live channel, push, Razorpay Checkout, Google sign-in and AI summaries were exercised against local or demo stand-ins. There are no real credentials or feed.
+- Paint-based Core Web Vitals (FCP, LCP) were not captured.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

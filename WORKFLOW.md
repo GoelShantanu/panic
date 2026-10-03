@@ -139,7 +139,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 
 **Note:** the reference study's UX findings are `[VERIFIED]` at the CSS level but were **never rendered** `[RE §12]`. Do not treat its geometry as a spec.
 
-**Status:** ◐ Opened 2026-10-03. Milestones: PROJECT_STATE → Frontend plan.
+**Status:** ✅ Exited 2026-10-03 — [D-048](DECISION_LOG.md).
 
 ---
 

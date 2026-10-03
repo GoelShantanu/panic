@@ -1116,6 +1116,60 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-036 — Billing mechanics on Razorpay *(implements PRD-007 §2.2, §4.3)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture · Business |
+| **Decided by** | CTO, during Backend B10. Founder may override |
+
+**Decision**
+
+1. **Checkout creates a Razorpay subscription.**
+   - Its parameters are the plan, a finite `total_count` (120 monthly or 10 yearly cycles `[ASSUMPTION]`) and `customer_notify: 1`.
+   - The API returns the provider's `short_url`, the subscription ID and the public key for Razorpay Checkout.
+   - Paid access starts only when a webhook confirms payment, never on the checkout response.
+2. **Webhooks:**
+   - **Verification:** `POST /v1/billing/webhook` checks `X-Razorpay-Signature` (HMAC-SHA256 of the raw body).
+   - **Idempotency:** each `x-razorpay-event-id` is applied once (`billing_event`), and events older than the last one applied are ignored.
+   - **`authenticated`, `activated`, `charged`, `resumed`, `updated`** make the subscription active until `current_end`.
+   - **`pending`** marks it past due and keeps access for 7 days from the first failure (US-007.7 AC-6), with an in-app notice and an email.
+   - **`halted`** moves the account to Free, with a notice and an email.
+   - **`cancelled` and `completed`** keep access to the end of the paid period (US-007.8 AC-2).
+3. **Cancel** is one call: cancel at cycle end. **Switch** is a plan change at cycle end. If the provider refuses (for example, a mandate that cannot change amount), the API returns `switch_unavailable` and the user cancels and subscribes again.
+4. **Invoices:**
+   - One invoice per payment, numbered `SP/<FY>/NNNNNN` without gaps per Indian financial year.
+   - Emailed on payment, and listed and downloadable as text from settings.
+   - Prices are GST-inclusive at 18%. With no customer address on record, the place of supply is taken as the supplier's state, so tax is split CGST + SGST `[INFERRED]`.
+   - If `SELLER_GSTIN` is blank, no GST is charged and a bill of supply is issued.
+   - The SAC code is a setting, not guessed.
+5. **Account deletion** also cancels the provider subscription at cycle end, so the user is not charged again.
+6. **Configuration** is environment only: Razorpay keys, plan IDs, webhook secret and seller details. Billing is disabled while any of these is missing.
+
+**Reason**
+
+1. The webhook is the authenticated source of truth. A checkout return can be faked or delayed.
+2. Razorpay delivers webhooks at least once, and not always in order.
+3. No partial refunds, and mandate behaviour belongs to the provider.
+4. GST law needs consecutive invoice numbers within a financial year. The tax treatment is an engineer's reading, with no counsel review (D-018).
+5. Deletion must stop charges, not only access.
+6. These values are secrets and account details, not product settings.
+
+**Consequences**
+
+- Founder setup:
+  - Razorpay account and KYC;
+  - create the two plans (₹299 per month, ₹2,999 per year, GST-inclusive);
+  - add the webhook (subscription events) with its secret;
+  - set the seller name, address, GSTIN and SAC, confirmed with an accountant.
+- Pre-debit notification and retry counts follow Razorpay's e-mandate implementation `[INFERRED]`. Confirm both in test mode before launch.
+- PDF invoices are not produced (`pdf_url` is null); the text invoice is emailed and downloadable.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

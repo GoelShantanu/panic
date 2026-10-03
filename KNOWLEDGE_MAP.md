@@ -81,9 +81,9 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | Path | Purpose | Owner | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, text features, classification, tagging, clustering, auth, alerts, community (eligibility, TOTP, secret encryption), AI rules (output validation, safeguards G1–G7, spend), filing envelope v1 and push signature | CTO | PRD-002, 004, 005, 007; ADR-001; D-030 | ✅ B1–B3 — 62 unit tests |
-| `src/packages/db` | Migration runner; data access for ingestion, pipeline, reads, accounts, alerts, community and moderation; partition maintenance | CTO | `docs/database/` | ✅ B1–B9 |
-| `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007; watchlist/alerts: PRD-003; votes, comments, grievances, operator moderation with TOTP 2FA: PRD-005/006), filings push receiver (D-035), Google sign-in verifier, Node server with sessions | CTO | `db`, `mail`; PRD contracts; ADR-007; D-032, D-033 | ✅ B4–B7 — 68 tests |
+| `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, text features, classification, tagging, clustering, auth, alerts, community (eligibility, TOTP, secret encryption), AI rules (output validation, safeguards G1–G7, spend), filing envelope v1 and push signature, billing (GST, invoice numbering, webhook signature) | CTO | PRD-002, 004, 005, 007; ADR-001; D-030 | ✅ B1–B3 — 62 unit tests |
+| `src/packages/db` | Migration runner; data access for ingestion, pipeline, reads, accounts, alerts, community and moderation; partition maintenance | CTO | `docs/database/` | ✅ B1–B10 |
+| `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007; watchlist/alerts: PRD-003; votes, comments, grievances, operator moderation with TOTP 2FA: PRD-005/006), filings push receiver (D-035), billing on Razorpay with webhooks and GST invoices (D-036), Google sign-in verifier, Node server with sessions | CTO | `db`, `mail`; PRD contracts; ADR-007; D-032, D-033 | ✅ B4–B7 — 68 tests |
 | `src/packages/push` | Pusher interface: web-push (VAPID), memory | CTO | PRD-003 US-003.6 | ✅ B6 — 2 tests |
 | `src/packages/mail` | Mailer interface: smtp (free Gmail / Workspace), log, memory | CTO | ADR-007 | ✅ B5 — 3 tests |
 | `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |

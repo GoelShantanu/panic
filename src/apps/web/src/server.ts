@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { SESSION_COOKIE } from '@stockpanic/core';
 import { route } from './api.ts';
 import type { AuthDeps } from './auth.ts';
+import { handleWebhook } from './billing.ts';
 import { INGEST_PREFIX, MAX_PUSH_BYTES, receivePush } from './ingest.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
@@ -79,6 +80,16 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null): Se
         client = await pool.connect();
         const sig = req.headers['x-sp-signature'];
         const r = await receivePush(client, decodeURIComponent(url.pathname.slice(INGEST_PREFIX.length)), raw, typeof sig === 'string' ? sig : null, process.env, new Date());
+        res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+        res.end(JSON.stringify(r.body));
+        return;
+      }
+      // Payment provider webhook: signature over the raw body (D-036).
+      if (req.method === 'POST' && url.pathname === '/v1/billing/webhook') {
+        const raw = await readRaw(req, MAX_BODY_BYTES);
+        client = await pool.connect();
+        const header = (n: string) => (typeof req.headers[n] === 'string' ? (req.headers[n] as string) : null);
+        const r = await handleWebhook(client, raw, header('x-razorpay-signature'), header('x-razorpay-event-id'), deps?.billing ?? null, new Date());
         res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
         res.end(JSON.stringify(r.body));
         return;

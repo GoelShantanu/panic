@@ -1,5 +1,6 @@
 // Account endpoints (PRD-007 §4.1, §4.2, §4.4; trial from §4.3).
 
+import type { BillingDeps } from './billing.ts';
 import type pg from 'pg';
 import {
   OTP_MAX_PER_HOUR,
@@ -47,6 +48,7 @@ export interface AuthDeps {
   mailer: Mailer;
   authSecret: string;
   google: GoogleVerifier | null;
+  billing?: BillingDeps | null;
 }
 
 export interface AuthResponse {

@@ -53,7 +53,9 @@ import {
   putAlertSettings,
   unsubscribe,
 } from './watchlist.ts';
+import * as billing from './billing.ts';
 import * as community from './community.ts';
+import { currentSubscription } from '@stockpanic/db';
 
 export interface ApiResponse {
   status: number;
@@ -307,8 +309,22 @@ export async function route(
   if (path === 'me' && method === 'PATCH') return patchMe(db, req.body, user, now);
   if (path === 'me/export' && method === 'POST') return postExport(db, user, now);
   if (resource === 'me' && id === 'export' && sub && parts.length === 4 && method === 'GET') return getExportStatus(db, user, sub, now);
-  if (path === 'me/delete' && method === 'POST') return postDelete(db, req.body, user, now);
+  if (path === 'me/delete' && method === 'POST') {
+    // Stop future charges at the provider too; access ends with the account (PRD-007 US-007.4).
+    const sub = user && deps?.billing ? await currentSubscription(db, user.id, now) : null;
+    if (sub && !sub.cancelAtPeriodEnd && sub.status !== 'cancelled') {
+      await deps!.billing!.provider.cancelAtCycleEnd(sub.providerRef).catch((e: Error) => deps!.billing!.log?.(`cancel on deletion failed: ${e.message}`));
+    }
+    return postDelete(db, req.body, user, now);
+  }
   if (path === 'billing/trial' && method === 'POST') return postTrial(db, user, now);
+  const bill = deps?.billing ?? null;
+  if (path === 'billing' && method === 'GET') return billing.getBilling(db, user, now);
+  if (path === 'billing/checkout' && method === 'POST') return billing.postCheckout(db, req.body, user, bill, now);
+  if (path === 'billing/cancel' && method === 'POST') return billing.postCancel(db, user, bill, now);
+  if (path === 'billing/switch' && method === 'POST') return billing.postSwitch(db, req.body, user, bill, now);
+  if (path === 'billing/invoices' && method === 'GET') return billing.getInvoices(db, user);
+  if (resource === 'billing' && id === 'invoices' && sub && parts.length === 4 && method === 'GET') return billing.getInvoice(db, sub, user, bill);
   if (path === 'stream/seen' && method === 'POST') return postStreamSeen(db, req.body, user, now);
   if (path === 'watchlist' && method === 'GET') return getWatchlist(db, user);
   if (path === 'watchlist' && method === 'POST') return postWatchlist(db, req.body, user);

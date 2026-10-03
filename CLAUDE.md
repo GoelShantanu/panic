@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend** opened 2026-10-02 (milestones in PROJECT_STATE).
+**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend** is next.
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -63,7 +63,7 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 
 In order. Do not skip.
 
-1. **Backend** — WORKFLOW §6, from the approved schema and architecture. See [PROJECT_STATE.md](PROJECT_STATE.md).
+1. **Frontend** — WORKFLOW §7, on the approved backend. See [PROJECT_STATE.md](PROJECT_STATE.md).
 2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
 3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
 

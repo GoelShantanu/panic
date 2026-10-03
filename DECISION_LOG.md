@@ -1261,6 +1261,62 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-039 — Backend approved; Backend phase exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture · Process |
+| **Decided by** | CTO (WORKFLOW §6 reviewer); approved by the founder in writing (chat, 2026-10-03) |
+
+**Decision**
+
+1. The backend under `src/` (milestones B1–B11 and B4b, migrations 0001–0012) is approved. WORKFLOW §6 exits. Frontend (WORKFLOW §7) entry criteria are met.
+2. **Launch parameters accepted by the founder.** These were `[ASSUMPTION]`s in load-bearing logic and cannot be verified before launch data exists. Each is now a decided parameter with a revisit trigger:
+
+| Parameter | Revisit trigger |
+| --- | --- |
+| Event-type rules (`RULES_VERSION`) and clustering thresholds (merge 0.75, attach 0.6) | First 2 weeks of the procured feed, measured on labelled samples (PRD-002, PRD-004 targets) |
+| GST: 18%, CGST + SGST split, SAC code from settings | **Billing stays off until the founder's accountant confirms**: a release blocker, not a backend blocker |
+| Grievance deadlines: 24 h acknowledge, 15 days resolve, 36 h legal orders, 24 h urgent (`[INFERRED]`, IT Rules 2021; no counsel per D-018) | Any regulatory change or counsel advice |
+| Trending: tier weights 3/2/1/0.5, 28-day baseline, floor 1, extra item 0.5 | First month of real traffic |
+
+3. Operational limits are not load-bearing and stay as labelled assumptions in code: Razorpay cycle count, 20 MB attachment cap, 30,000-character summary input, 24-month `ai_call` retention, abuse-report thresholds (information for operators only).
+
+**Defects found by the review, fixed before approval** (commit `f360a36`)
+
+| # | Defect | Fix |
+| --- | --- | --- |
+| 1 | `session.changed` was never broadcast (ADR-005, PRD-001 §4.2) | Ingestion tick emits it on each state change; observed with the real CLI |
+| 2 | Source tier (publisher weight) changes were unaudited (GUARDRAILS §4.9) | Migration 0012 trigger audits every source change |
+| 3 | `ai_call` was mutable; direct setting changes unaudited (§4.8) | 0012: `ai_call` append-only; setting trigger (app paths keep their richer row) |
+| 4 | Constraint test fixture broke after migration 0002 | Fixture updated with erratum; 56/56 pass on 0001–0012 |
+| 5 | AI spend USD/INR assumed 84; NSE showed 96.5425 on 2026-10-01 `[VERIFIED]`, so the cap would have bound at ~₹57k | 0012 sets 96.5 (audited) |
+| 6 | Uploads ≥ ~10 MB got a connection reset, not 413 | Body drained up to 32 MB before replying |
+
+**Exit check (WORKFLOW §6)**
+
+| Criterion | Result | Evidence |
+| --- | --- | --- |
+| Contracts implemented as specified | ✅ | Every endpoint in PRD-001…007 contracts routed; live channel emits all four ADR-005 event types; deviations recorded (D-032, D-036, D-037, D-038) |
+| Error paths handled | ✅ | Hostile-input probe: 9,427 requests over every route (junk, wrong types, injection strings, malformed and oversized bodies; anonymous, user, operator): **0 5xx, 0 server error-log lines**, server alive throughout |
+| Per-source health / circuit breakers `[Research E4]` | ✅ | One breaker and health evaluator shared by RSS and filings adapters; 17 tests |
+| Audit logging live `[Research E7]` | ✅ | Votes, comments, moderation, settings, roles, corrections, calendar, source health and configuration, AI calls (append-only), billing events |
+| Tests pass | ✅ | 319/319 (32 files) on PostgreSQL 17; constraint suite 56/56 |
+| Behaviour observed end-to-end | ✅ | Each milestone run with real processes (session log B2–B11, B4b); review fixes observed with real CLIs |
+| No `[ASSUMPTION]` in load-bearing logic | ✅ by founder decision | Point 2 above |
+
+**Limits (not verified)**
+
+- No real exchange feed, Anthropic key, Razorpay account, Gmail or Google credentials. Their adapters are tested against fakes and stand-ins only.
+- No load or volume testing (query plans on real data volumes, live-channel fan-out).
+- No security review. That is WORKFLOW §9; the probe covers robustness, not threat modelling.
+- One watchlist CSV test failed once while the probe loaded the same database. It passed in two later full runs. Treat it as a possible timing sensitivity.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

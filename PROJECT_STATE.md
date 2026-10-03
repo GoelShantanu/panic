@@ -11,11 +11,11 @@
 
 ## Current Phase
 
-**Phase 6 — Backend** *(opened 2026-10-02 on founder go-ahead)*
+**Phase 6 — Backend: complete** *(opened 2026-10-02; exited 2026-10-03 — [D-039](DECISION_LOG.md))*. **Phase 7 — Frontend** is next, on founder go-ahead.
 
-Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26. Built in milestones, each verified end-to-end before the next.
+`src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26. Built in milestones, each verified end-to-end before the next.
 
-**Phase gate status:** 🟡 **In progress.** Exit criteria: WORKFLOW §6 — contracts implemented as specified; error paths handled; per-source health and circuit breakers; audit logging live; tests pass; behaviour observed end-to-end.
+**Phase gate status:** ✅ **Exited.** All WORKFLOW §6 criteria met with evidence (D-039 exit check); four launch parameters accepted by the founder; billing held until the accountant confirms GST.
 
 ### Backend plan
 
@@ -168,10 +168,11 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** All Backend milestones (B1–B11, B4b) are built. Next: the Backend exit review (WORKFLOW §6), then the Frontend phase. Founder:
-- each December, the next year's official holiday list and Muhurat date (`admin.ts add-holiday` / `set-muhurat`, D-038);
-- exchange feed vendor (OQ-6), after which B9 needs a mapping adapter;
-- Razorpay account, plans, webhook and seller GST details (D-036);
+**Single next action:** Backend exited (D-039). Next: open the Frontend phase (WORKFLOW §7) on founder go-ahead. Founder, outstanding:
+- accountant confirmation of GST treatment (release blocker for billing, D-039);
+- each December, next year's holidays and Muhurat date (D-038);
+- exchange feed vendor (OQ-6);
+- Razorpay account, plans, webhook, seller details (D-036);
 - Anthropic API key (D-034);
 - RSS feed list with terms checks; first curated aliases;
 - Gmail app password, Google client ID, VAPID keys, `OPS_EMAIL`.
@@ -269,3 +270,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **B10 done.** Migration 0009. Razorpay checkout (subscription + short_url), signed and idempotent webhooks with ordering guard (active, past due with 7-day grace, halted → Free, cancelled keeps access to period end), one-step cancel, plan switch at renewal, gap-free GST invoices per financial year (CGST/SGST split, or a bill of supply when unregistered) emailed and downloadable, provider cancel on account deletion. 294/294 tests; e2e observed. **D-036.** | Phase 6 in progress |
 | 2026-10-03 | **B11 done.** Migration 0010. Retag with stored overrides (survive recomputation), merge (older survives, items/comments/votes/overrides move, redirect), split (new story at its own time with bands), all atomic under the clustering lock, audited, labelled, broadcast; alert re-evaluation and correction notices queued to the alerts worker; review queue by distinct reporters with dismissal. `recomputeStory` moved to `packages/db`. 300/300 tests; e2e observed. **D-037.** | Phase 6 in progress |
 | 2026-10-03 | **B4b done.** Founder: NSE page as the source, Muhurat 18:00–19:00 every year, one calendar for NSE and BSE, reuse for later years (recurring fixed dates automatic; lunar dates entered yearly — Holi etc. move). Migration 0011. Calendar generated 60 days ahead by maintenance with year-end warning; admin calendar commands; session header skips same-state midnights. Trending: ≥ 3 sources in 2 h, tier-weighted activity ÷ company's own expected activity in the current session type over 28 days; no vote input. 315/315 tests; e2e observed (found and fixed an invalid-date crash). **D-038.** | Phase 6 in progress |
+| 2026-10-03 | **Backend exit review — approved (D-039).** Checked every WORKFLOW §6 criterion against evidence. Hostile-input probe (9,427 requests): 0 5xx after fixes. Found and fixed 6 defects (session.changed never broadcast; source changes unaudited; ai_call mutable; stale constraint fixture; AI spend rate 84→96.5; oversized uploads reset). Migration 0012. 319/319 tests, 56/56 constraint tests. Founder accepted 4 launch parameters (rules/clustering, GST with billing held, grievance deadlines, Trending weights). **Phase 6 complete.** | **Phase 6 exited** |

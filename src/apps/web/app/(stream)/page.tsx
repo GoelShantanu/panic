@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { api } from '../site/api.ts';
-import { StaleBanner } from '../site/LiveStatus.tsx';
-import { Filters } from '../site/stream/Filters.tsx';
-import { parseQuery, streamParams } from '../site/stream/logic.ts';
-import { Stream } from '../site/stream/Stream.tsx';
-import type { EventType, StaleSource, StoryCard } from '../site/types.ts';
+import { api } from '../../site/api.ts';
+import { StaleBanner } from '../../site/LiveStatus.tsx';
+import { Filters } from '../../site/stream/Filters.tsx';
+import { parseQuery, streamParams } from '../../site/stream/logic.ts';
+import { Stream } from '../../site/stream/Stream.tsx';
+import type { EventType, StaleSource, StoryCard } from '../../site/types.ts';
 
 interface StreamBody {
   stories: StoryCard[];

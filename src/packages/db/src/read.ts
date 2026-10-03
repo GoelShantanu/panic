@@ -29,6 +29,7 @@ export interface StoryCard {
   first_seen_at: Date;
   updated_at: Date;
   primary_item: {
+    item_id: string;
     kind: 'filing' | 'article';
     source: { source_id: string; name: string; tier: number };
     url: string;
@@ -49,7 +50,7 @@ export async function loadStoryCards(db: pg.ClientBase, storyIds: readonly strin
 
   const base = await db.query(
     `SELECT s.id, s.public_id, s.first_seen_at, s.updated_at, s.source_count,
-            p.kind, p.headline, p.url, p.published_at, src.source_id, src.name AS source_name, src.tier,
+            p.public_id AS item_public_id, p.kind, p.headline, p.url, p.published_at, src.source_id, src.name AS source_name, src.tier,
             coalesce(v.bullish, 0) AS bullish, coalesce(v.bearish, 0) AS bearish,
             coalesce(v.neutral, 0) AS neutral, coalesce(v.important, 0) AS important,
             (SELECT count(*)::int FROM comment c WHERE c.story_id = s.id AND c.state = 'visible') AS comment_count
@@ -81,6 +82,7 @@ export async function loadStoryCards(db: pg.ClientBase, storyIds: readonly strin
       first_seen_at: r.first_seen_at,
       updated_at: r.updated_at,
       primary_item: {
+        item_id: r.item_public_id,
         kind: r.kind,
         source: { source_id: r.source_id, name: r.source_name, tier: r.tier },
         url: r.url,
@@ -412,4 +414,18 @@ export async function liveEventBounds(db: pg.ClientBase): Promise<{ min: string 
 export async function storyIdByPublicId(db: pg.ClientBase, publicId: string): Promise<string | null> {
   const { rows } = await db.query(`SELECT id FROM story WHERE public_id = $1`, [publicId]);
   return rows[0] ? String(rows[0].id) : null;
+}
+
+// Outbound click (exit-rate metric). Only the item's own URL is ever returned: never an open redirect.
+export async function recordOutbound(db: pg.ClientBase, itemPublicId: string, surface: string, at: Date): Promise<string | null> {
+  const { rows } = await db.query(`SELECT id, url, status FROM item WHERE public_id = $1`, [itemPublicId]);
+  const it = rows[0];
+  if (!it || it.status === 'removed_by_source') return null;
+  await db.query('INSERT INTO outbound_click (item_id, clicked_at, surface) VALUES ($1, $2, $3)', [it.id, at, ['story', 'stream'].includes(surface) ? surface : 'other']);
+  return it.url as string;
+}
+
+export async function isFollowed(db: pg.ClientBase, userId: string, isin: string): Promise<boolean> {
+  const { rows } = await db.query('SELECT 1 FROM watchlist_entry WHERE user_id = $1 AND isin = $2', [userId, isin]);
+  return rows.length > 0;
 }

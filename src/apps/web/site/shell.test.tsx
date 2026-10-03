@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { age, sessionLabel } from './format.ts';
 import { Header } from './Header.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 
 afterEach(() => {
   cleanup();

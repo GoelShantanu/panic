@@ -37,7 +37,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
         <div className="row-body">
           <div className="row-line">
             {s.primary_item.kind === 'filing' && <span className="badge badge-filing">Filing</span>}
-            <Link href={`/story/${s.story_id}`} className="row-headline" tabIndex={-1}>
+            <Link href={`/s/${s.story_id}`} className="row-headline" tabIndex={-1}>
               {s.headline}
             </Link>
           </div>
@@ -45,7 +45,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
             <span className="row-source">{s.primary_item.source.name}</span>
             {s.source_count > 1 && <span className="badge" title={`${s.source_count} sources`}>{s.source_count} sources</span>}
             {symbols.map((sym, i) => (
-              <Link key={s.instruments[i]!.isin} href={`/company/${s.instruments[i]!.isin}`} className="symbol" tabIndex={-1}>
+              <Link key={s.instruments[i]!.isin} href={`/c/${s.instruments[i]!.isin}`} className="symbol" tabIndex={-1}>
                 {sym}
               </Link>
             ))}

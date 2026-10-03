@@ -11,16 +11,21 @@ export interface FiltersProps {
   eventTypes: EventType[];
   directionalEnabled: boolean;
   entitlements: { multi_event_filter: boolean; stream_filings_only: boolean };
+  // Company timeline: no view tabs; filings-only is free there (PRD-007 §2.1, PRD-004 US-004.3 AC-3).
+  basePath?: string;
+  views?: boolean;
 }
 
-const href = (q: StreamQuery) => {
+const hrefFor = (base: string) => (q: StreamQuery) => {
   const p = streamParams(q).toString();
-  return p ? `/?${p}` : '/';
+  return p ? `${base}?${p}` : base;
 };
 
 // PRD-001 US-001.3: one active view; event-type filter combines with any view; paid filters show an
 // upgrade prompt rather than an empty list (AC-8). The URL carries the whole state (AC-3).
-export function Filters({ query, eventTypes, directionalEnabled, entitlements }: FiltersProps) {
+export function Filters({ query, eventTypes, directionalEnabled, entitlements, basePath = '/', views: showViews = true }: FiltersProps) {
+  const href = hrefFor(basePath);
+  const filingsFree = basePath !== '/';
   const router = useRouter();
   const [upgrade, setUpgrade] = useState<string | null>(null);
   const views: { v: View; label: string }[] = [
@@ -41,13 +46,13 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements }:
   }
   return (
     <div className="filters">
-      <nav className="tabs" aria-label="Views">
+      {showViews && <nav className="tabs" aria-label="Views">
         {views.map(({ v, label }) => (
           <Link key={v} href={href({ ...query, view: v })} aria-current={query.view === v ? 'page' : undefined} className="tab">
             {label}
           </Link>
         ))}
-      </nav>
+      </nav>}
       <div className="filter-row">
         <details className="dropdown">
           <summary className="button">
@@ -67,16 +72,16 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements }:
             ))}
           </div>
         </details>
-        <label className="check" title={entitlements.stream_filings_only ? undefined : 'Paid feature'}>
+        <label className="check" title={entitlements.stream_filings_only || filingsFree ? undefined : 'Paid feature'}>
           <input
             type="checkbox"
             checked={query.filingsOnly}
             onChange={() => {
-              if (!entitlements.stream_filings_only && !query.filingsOnly) return setUpgrade('Filings-only is part of the paid plan. It shows only stories led by an exchange filing.');
+              if (!entitlements.stream_filings_only && !filingsFree && !query.filingsOnly) return setUpgrade('Filings-only is part of the paid plan. It shows only stories led by an exchange filing.');
               go({ ...query, filingsOnly: !query.filingsOnly });
             }}
           />
-          Filings only {!entitlements.stream_filings_only && <span className="paid-label">Paid</span>}
+          Filings only {!entitlements.stream_filings_only && !filingsFree && <span className="paid-label">Paid</span>}
         </label>
         {(query.eventTypes.length > 0 || query.filingsOnly) && (
           <button type="button" className="icon-button" onClick={() => go({ ...query, eventTypes: [], filingsOnly: false })}>

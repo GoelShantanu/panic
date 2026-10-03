@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { SessionInfo } from './format.ts';
 import { SessionStatus } from './LiveStatus.tsx';
+import { Search } from './Search.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 
 export interface Viewer {
@@ -22,6 +23,7 @@ export function Header({ session, viewer, current }: { session: SessionInfo | nu
           Watchlist
         </Link>
       </nav>
+      <Search />
       <div className="header-spacer" />
       <SessionStatus initial={session} />
       <ThemeToggle />

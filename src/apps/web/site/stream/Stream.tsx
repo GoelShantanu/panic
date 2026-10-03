@@ -17,6 +17,8 @@ export interface StreamProps {
   eventLabels: [string, string][];
   signedIn: boolean;
   watchlistIsins: string[] | null;
+  // Company timeline (PRD-004 US-004.3 AC-3): pages from its own endpoint, takes only its company's stories.
+  timeline?: { isin: string; depthLimitReached: boolean };
 }
 
 const SEEN_KEY = (view: string) => `sp-seen:${view}`;
@@ -31,7 +33,7 @@ function readLocalSeen(view: string): string | null {
   }
 }
 
-export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }: StreamProps) {
+export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline }: StreamProps) {
   const router = useRouter();
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const watchlist = useMemo(() => (watchlistIsins ? new Set(watchlistIsins) : null), [watchlistIsins]);
@@ -44,6 +46,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [help, setHelp] = useState(false);
+  const [depthLimit, setDepthLimit] = useState(timeline?.depthLimitReached ?? false);
   const buffer = useRef<StoryCard[]>([]);
   const newestSeen = useRef<string | null>(initial.stories[0]?.first_seen_at ?? null);
   const listRef = useRef<HTMLOListElement>(null);
@@ -109,6 +112,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }
   }, [flush]);
 
   useLiveEvent('story.created', (e: { story: StoryCard }) => {
+    if (timeline && !e.story.instruments.some((i) => i.isin === timeline.isin)) return;
     if (belongsToView(e.story, query, watchlist)) buffer.current.push(e.story);
   });
   useLiveEvent('story.updated', (e: { story_id: string; changes: Partial<StoryCard> }) => {
@@ -134,9 +138,11 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }
     setLoadingMore(true);
     setLoadError(false);
     try {
-      const res = await fetch(`/v1/stream?${streamParams(query, cursor)}`, { credentials: 'same-origin' });
+      const base = timeline ? `/v1/companies/${timeline.isin}/timeline` : '/v1/stream';
+      const res = await fetch(`${base}?${streamParams(query, cursor)}`, { credentials: 'same-origin' });
       if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { stories: StoryCard[]; next_cursor: string | null };
+      const body = (await res.json()) as { stories: StoryCard[]; next_cursor: string | null; depth_limit_reached?: boolean };
+      if (body.depth_limit_reached) setDepthLimit(true);
       setStories((list) => mergeStories(list, signedIn ? body.stories : markUnread(body.stories, readLocalSeen(query.view))));
       setCursor(body.next_cursor);
     } catch {
@@ -144,7 +150,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }
     } finally {
       setLoadingMore(false);
     }
-  }, [cursor, loadingMore, query, signedIn]);
+  }, [cursor, loadingMore, query, signedIn, timeline]);
 
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -187,11 +193,11 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }
     ArrowUp: () => move(-1),
     Enter: () => {
       const s = current();
-      if (s) router.push(`/story/${s.story_id}`);
+      if (s) router.push(`/s/${s.story_id}`);
     },
     o: () => {
       const s = current();
-      if (s) window.open(s.primary_item.url, '_blank', 'noopener,noreferrer');
+      if (s) window.open(`/v1/out/${s.primary_item.item_id}?from=stream`, '_blank', 'noopener,noreferrer');
     },
     '?': () => setHelp(true),
     Escape: () => (help ? setHelp(false) : setSelected(null)),
@@ -239,7 +245,9 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins }
             </button>
           </span>
         )}
-        {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && <span className="faint">No more stories.</span>}
+        {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
+          <span className="faint">{depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}</span>
+        )}
         {cursor && !loadingMore && !loadError && (
           <button type="button" className="button" onClick={() => void loadMore()}>
             Load more

@@ -21,6 +21,8 @@ import {
   streamPage,
   streamUnreadCount,
   trendingPage,
+  isFollowed,
+  recordOutbound,
 } from '@stockpanic/db';
 import type { SessionUser, StoryCard, StreamQuery, StreamView } from '@stockpanic/db';
 import {
@@ -220,7 +222,7 @@ async function knownInstrument(db: pg.ClientBase, raw: string) {
 }
 
 // GET /v1/companies/{isin} (PRD-004 §6.2)
-export async function getCompany(db: pg.ClientBase, rawIsin: string, now: Date = new Date()): Promise<ApiResponse> {
+export async function getCompany(db: pg.ClientBase, rawIsin: string, now: Date = new Date(), user: SessionUser | null = null): Promise<ApiResponse> {
   const inst = await knownInstrument(db, rawIsin);
   if (!inst) return notFound();
   const body: Record<string, unknown> = {
@@ -232,6 +234,7 @@ export async function getCompany(db: pg.ClientBase, rawIsin: string, now: Date =
     segment: inst.segment,
     status: inst.status,
     successor_isin: inst.successor_isin,
+    ...(user ? { is_followed: await isFollowed(db, user.id, inst.isin) } : {}),
   };
   if (await directionalVotingEnabled(db)) {
     body['community_opinion'] = {
@@ -384,6 +387,11 @@ export async function route(
   }
   if (resource === 'admin') return adminRoute(db, method, parts, url, req.body, user, now);
 
+  // Outbound link to an item's source, counted for the exit rate (PRD-004 US-004.2 AC-3, D-042).
+  if (resource === 'out' && id && parts.length === 3 && method === 'GET') {
+    const target = await recordOutbound(db, id, url.searchParams.get('from') ?? 'other', now);
+    return target ? { status: 302, body: null, headers: { location: target, 'referrer-policy': 'no-referrer' } } : notFound();
+  }
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();
   // Page header state (PRD-001 US-001.7 AC-1, US-001.6): session and stale tier-1 sources (D-040).
@@ -393,7 +401,7 @@ export async function route(
   if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now, viewer, user);
   if (resource === 'event-types' && parts.length === 2) return getEventTypes(db);
   if (resource === 'stories' && id && parts.length === 3) return getStory(db, id, user, now);
-  if (resource === 'companies' && id && parts.length === 3) return getCompany(db, id, now);
+  if (resource === 'companies' && id && parts.length === 3) return getCompany(db, id, now, user);
   if (resource === 'companies' && id && sub === 'timeline' && parts.length === 4) return getCompanyTimeline(db, id, url.searchParams, now, viewer, user);
   if (resource === 'instruments' && id === 'search' && parts.length === 3) return getInstrumentSearch(db, url.searchParams);
   if (resource === 'instruments' && id && parts.length === 3) return getInstrument(db, id, url.searchParams);

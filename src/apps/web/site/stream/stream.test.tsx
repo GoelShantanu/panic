@@ -18,7 +18,7 @@ function card(over: Partial<StoryCard> = {}): StoryCard {
     headline: `Invented story ${n}`,
     first_seen_at: new Date(Date.UTC(2026, 9, 5, 6, 0, n)).toISOString(),
     updated_at: new Date(Date.UTC(2026, 9, 5, 6, 0, n)).toISOString(),
-    primary_item: { kind: 'article', source: { source_id: 'src_x', name: 'Example Desk', tier: 3 }, url: 'https://example.invalid/x', published_at: null },
+    primary_item: { item_id: `it_${n}`, kind: 'article', source: { source_id: 'src_x', name: 'Example Desk', tier: 3 }, url: 'https://example.invalid/x', published_at: null },
     source_count: 1,
     instruments: [{ isin: A, display_symbol: 'ASTERION', exchange_codes: { nse: 'ASTERION', bse: '500101' }, resolution: 'resolved', confidence: 1 }],
     unresolved_mentions: [],

@@ -1399,6 +1399,42 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-042 — Story and company pages: URLs, redirects, exit counting *(implements PRD-004 §2–3, §6)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Frontend F3. Founder may override |
+
+**Decision**
+
+1. **URLs follow PRD-004:**
+   - Stories live at `/s/{story_id}`. A merged story gives a 308 to the survivor; an unknown one gives 404.
+   - Companies live at `/c/{slug}-{isin}`. `/c/{isin}`, an outdated slug, and `/c/{symbol}` (when it matches one instrument) give a 308 to the canonical URL.
+   - An ambiguous symbol shows a choice. An unknown company gives 404.
+   - Canonical and Open Graph URLs are absolute, from `PUBLIC_BASE_URL`.
+2. **Real HTTP status codes.** The loading spinner lives only in the stream's route group, `app/(stream)/`. A root-level loading boundary would stream a 200 before a page could redirect or return 404, which defeats indexing (AC-8).
+3. **Exit counting:** `GET /v1/out/{item_id}?from=story|stream` records an `outbound_click` (migration 0013) and gives a 302 to the item's own URL. It records no user, session or IP; the target can only ever be the item's stored URL; a removed item gives 404. "Read full story", the source list and the stream's `O` key all use it (Product Definition §6.2, PRD-004 AC-3).
+4. **Contract additions:**
+   - `is_followed` on `GET /v1/companies/{isin}` for signed-in readers, as the PRD-004 §6.2 contract already showed.
+   - `primary_item.item_id` on story cards, needed for exit counting from the stream.
+5. **"More on <symbol>"** fetches the related stories' details server-side, since `related` carries IDs only. The contract is unchanged.
+6. **"Report a summary"** (PRD-004 US-004.4 AC-5) needs the reviewer queue, so it moves to F7 with the reviewer console. Sitemaps for indexing are not built yet; they're listed for F8.
+
+**Reason**
+
+1. These are the PRD-004 URL rules. A single canonical URL per page is what search engines need.
+2. Search engines read status codes, not on-page notices.
+3. "Instrument the exit" (Coding Philosophy) without tracking people. Restricting the target stops the endpoint being used as an open redirect.
+4. The contract already promised `is_followed`, and exit counting needs the item ID.
+5. Keeps the existing story contract intact.
+6. Each depends on work scheduled for a later milestone.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

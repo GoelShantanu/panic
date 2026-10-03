@@ -8,10 +8,10 @@ import type { VoteAction } from './vote.ts';
 
 // PRD-005 US-005.3: 0 → "Be the first to vote"; 1–2 → "N people voted"; ≥ 3 → counts, always
 // labelled as community opinion (C-001.5) and always with words next to colour.
-export function CommunityOpinion({ votes, compact = false }: { votes: VoteDisplay; compact?: boolean }) {
+export function CommunityOpinion({ votes, compact = false, emptyText = 'Be the first to vote' }: { votes: VoteDisplay; compact?: boolean; emptyText?: string }) {
   const d = votes.directional;
   if (!d) return null;
-  if (d.state === 'none') return compact ? null : <span className="faint">Be the first to vote</span>;
+  if (d.state === 'none') return compact ? null : <span className="faint">{emptyText}</span>;
   if (d.state === 'few') return compact ? null : <span className="muted">{d.total === 1 ? '1 person voted' : `${d.total} people voted`}</span>;
   return (
     <span className="opinion" title="Community opinion: what users voted, not StockPanic's assessment">

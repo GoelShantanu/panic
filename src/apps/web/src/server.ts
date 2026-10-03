@@ -132,7 +132,7 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, sit
       client = await pool.connect();
       const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken: sessionTokenFrom(req), ip: req.socket.remoteAddress ?? null }, deps);
       res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(r.headers ?? {}) });
-      res.end(r.status === 204 ? undefined : JSON.stringify(r.body));
+      res.end(r.status === 204 || r.status === 302 ? undefined : JSON.stringify(r.body));
     } catch (err) {
       if (err instanceof HttpError) {
         res.writeHead(err.status, { 'content-type': 'application/json; charset=utf-8' });

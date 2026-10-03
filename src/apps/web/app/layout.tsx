@@ -12,6 +12,8 @@ import './globals.css';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
+  // Absolute canonical and Open Graph URLs (PRD-004 AC-8 indexability). PUBLIC_BASE_URL in production.
+  metadataBase: new URL(process.env['PUBLIC_BASE_URL'] ?? 'http://localhost:3000'),
   title: { default: 'StockPanic — Indian market news, deduplicated', template: '%s · StockPanic' },
   description: 'NSE and BSE filings and financial news, one row per event, tagged to the right company.',
 };

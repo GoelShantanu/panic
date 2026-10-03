@@ -24,7 +24,7 @@ export interface StoryCard {
   headline: string;
   first_seen_at: string;
   updated_at: string;
-  primary_item: { kind: 'filing' | 'article'; source: { source_id: string; name: string; tier: number }; url: string; published_at: string | null };
+  primary_item: { item_id: string; kind: 'filing' | 'article'; source: { source_id: string; name: string; tier: number }; url: string; published_at: string | null };
   source_count: number;
   instruments: Instrument[];
   unresolved_mentions: string[];

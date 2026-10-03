@@ -38,7 +38,7 @@ try {
   let lastDigestRun = 0;
   do {
     const r = await drainAlertJobs(db, deps, workerId);
-    if (r.stories || r.failed) console.log(`stories=${r.stories} individual=${r.individual} digest=${r.digest} failed=${r.failed}`);
+    if (r.stories || r.corrections || r.failed) console.log(`stories=${r.stories} individual=${r.individual} digest=${r.digest} corrections=${r.corrections} failed=${r.failed}`);
     for (const e of r.errors) console.error(e);
     if (once || Date.now() - lastDigestRun > DIGEST_EVERY_MS) {
       const sent = await runDigests(db, deps, new Date());

@@ -253,6 +253,8 @@ GET /v1/instruments/{isin}?as_of=2026-10-05
 
 ### 8.4 Operator corrections
 
+> *Implemented per [D-037](../../DECISION_LOG.md): `audit_id` is the audit row's numeric ID; the review queue and report dismissal endpoints are added.*
+
 ```
 POST /v1/admin/stories/{story_id}/tags      { "add": ["INE000Y01011"], "remove": ["INE000X01010"], "reason": "…" }
 POST /v1/admin/stories/{story_id}/merge     { "into_story_id": "st_…", "reason": "…" }

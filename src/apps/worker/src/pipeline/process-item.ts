@@ -17,6 +17,8 @@ import {
 } from '@stockpanic/core';
 import type { FilingFeatures, ItemFeatures } from '@stockpanic/core';
 import {
+  CLUSTER_LOCK_KEY,
+  recomputeStory,
   addItemToStory,
   aiEnabled,
   candidateStoryIds,
@@ -34,8 +36,7 @@ import {
 } from '@stockpanic/db';
 import type { ItemAnalysis, ItemTag, PipelineItem, StoryItem } from '@stockpanic/db';
 
-// Serialises the clustering step so two near-simultaneous duplicates cannot both start stories.
-export const CLUSTER_LOCK_KEY = 730_120_262;
+export { CLUSTER_LOCK_KEY, recomputeStory } from '@stockpanic/db';
 
 export class PermanentJobError extends Error {}
 
@@ -124,26 +125,6 @@ function chooseTarget(item: PipelineItem, analysis: ItemAnalysis, candidates: St
     stories.filter(([, items]) => !hasFiling(items)).map(([id, items]) => ({ id, items: items.map((i) => features(i.analysis, i.at)) })),
     ctx.thresholds.merge,
   );
-}
-
-// deduplication.md §5: primary item, source count, event types and tags from the story's items.
-export async function recomputeStory(db: pg.ClientBase, storyId: string): Promise<void> {
-  const items = await loadStoryItems(db, [storyId]);
-  const filings = items.filter((i) => i.kind === 'filing');
-  const byTime = (a: StoryItem, b: StoryItem) => a.at.getTime() - b.at.getTime() || Number(a.itemId) - Number(b.itemId);
-  const primary = filings.length > 0 ? [...filings].sort(byTime)[0]! : [...items].sort((a, b) => a.tier - b.tier || byTime(a, b))[0]!;
-  const authoritative = filings.length > 0 ? filings : items;
-
-  const tags = new Map<string, ItemTag>();
-  for (const i of authoritative) for (const t of i.analysis.tags) if (!tags.has(t.isin)) tags.set(t.isin, t);
-
-  await setStoryDerived(db, storyId, {
-    primaryItemId: primary.itemId,
-    sourceCount: new Set(items.map((i) => i.sourceId)).size,
-    eventTypes: combineEventTypes(authoritative.map((i) => i.analysis.eventTypes)),
-    tags: [...tags.values()],
-    unresolved: filings.length > 0 ? [] : [...new Set(items.flatMap((i) => i.analysis.unresolved))],
-  });
 }
 
 export interface ProcessResult {

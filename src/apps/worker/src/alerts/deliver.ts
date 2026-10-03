@@ -132,11 +132,18 @@ export async function evaluateStory(db: pg.ClientBase, storyId: string, deps: Al
 }
 
 export async function drainAlertJobs(db: pg.ClientBase, deps: AlertDeps, workerId: string, now: () => Date = () => new Date()) {
-  const totals = { stories: 0, individual: 0, digest: 0, failed: 0, errors: [] as string[] };
+  const totals = { stories: 0, individual: 0, digest: 0, corrections: 0, failed: 0, errors: [] as string[] };
   for (;;) {
     const job = await claimJob(db, ALERTS_QUEUE, workerId);
     if (!job) break;
     try {
+      const removed = job.payload['correction_removed_isin'];
+      if (typeof removed === 'string') {
+        // Queued by an operator correction (B11): notify users alerted on the removed instrument.
+        totals.corrections += await issueCorrections(db, String(job.payload['story_id']), removed, deps, now());
+        await completeJob(db, job.id);
+        continue;
+      }
       const r = await evaluateStory(db, String(job.payload['story_id']), deps, now());
       await completeJob(db, job.id);
       totals.stories++;

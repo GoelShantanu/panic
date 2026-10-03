@@ -1170,6 +1170,51 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-037 — Operator story corrections: mechanics *(implements PRD-002 US-002.7, US-002.11, §8.4; PRD-003 §3.4)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture |
+| **Decided by** | CTO, during Backend B11. Founder may override |
+
+**Decision**
+
+1. **Tag decisions are stored as overrides** (`story_tag_override`). An added tag is an `operator` tag. A removed tag is never re-derived when the story is recomputed, for example after a filing revision or a new item joining.
+2. **Merge:**
+   - The older story survives (US-002.7 AC-1). Items, comment threads and tag overrides move to it, and the absorbed story redirects.
+   - A vote moves unless the same user already voted the same way on the survivor. A vote that would duplicate one stays recorded on the absorbed story and leaves the counts, since one user may count once.
+3. **Split:**
+   - The chosen items form a new story, dated by the earliest moved item, with its own clustering bands.
+   - A split must leave at least one item behind.
+4. **Every correction:**
+   - Runs as one transaction under the clustering lock.
+   - Is audited with before and after state and the reason, and stored as a labelled example (`correction_label`, US-002.11 AC-5).
+   - Broadcasts `story.updated` (and `story.created` for a split), and queues alert work:
+     - re-evaluation, so a newly added instrument alerts its watchers;
+     - a correction notice to every user alerted on each removed instrument (PRD-003 §3.4), sent by the alerts worker.
+5. **Review queue:** `GET /v1/admin/corrections` lists wrong-stock and duplicate reports not yet reviewed, ordered by distinct reporters, then story recency (AC-2).
+   - Applying a correction, or `POST …/reports/dismiss` with a reason, marks a story's reports as reviewed. A later report reopens it.
+   - Reports never change a story by themselves (AC-3).
+6. **`recomputeStory` moved into `packages/db`**, so the API applies corrections synchronously. `audit_id` in the response is the audit row's numeric ID (PRD-002 §8.4 showed an `au_` prefix; audit rows have no public ID).
+
+**Reason**
+
+1. Without stored overrides, the next recomputation would silently undo an operator's fix.
+2. Moving duplicate votes would let one user count twice; deleting them would destroy audit data.
+3. A split story belongs at the time of its own news, and needs bands to keep clustering later duplicates.
+4. Atomic and audited (GUARDRAILS §4.8). Alerts keep their existing worker and email path.
+5. Operator review only (OQ-002.1).
+6. A synchronous correction satisfies the 5-second propagation target (US-002.7 AC-4) without waiting on the pipeline loop.
+
+**Consequences**
+
+- The median report-to-decision target (AC-6) needs operator screens and a queue-age metric; that belongs to the Frontend and Ops phases.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

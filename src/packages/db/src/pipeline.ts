@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { newPublicId } from '@stockpanic/core';
+import { combineEventTypes, newPublicId } from '@stockpanic/core';
 import type { AliasEntry, EventTypeCode, SourceKind } from '@stockpanic/core';
 import { LIVE_CHANNEL } from './ingestion.ts';
 
@@ -229,7 +229,7 @@ export interface StoryDerived {
   unresolved: string[];
 }
 
-// Replaces derived rows; operator tags are never overwritten (PRD-002 US-002.11).
+// Replaces derived rows; operator tag decisions (added or removed) always win (PRD-002 US-002.11).
 export async function setStoryDerived(db: pg.ClientBase, storyId: string, d: StoryDerived): Promise<void> {
   await db.query('UPDATE story SET primary_item_id = $2, source_count = $3, updated_at = now() WHERE id = $1', [
     storyId,
@@ -241,7 +241,10 @@ export async function setStoryDerived(db: pg.ClientBase, storyId: string, d: Sto
     await db.query(`INSERT INTO story_event_type (story_id, code, source) VALUES ($1, $2, 'rule')`, [storyId, code]);
   }
   await db.query(`DELETE FROM story_tag WHERE story_id = $1 AND method <> 'operator'`, [storyId]);
-  for (const t of d.tags) {
+  const removed = new Set(
+    (await db.query(`SELECT isin FROM story_tag_override WHERE story_id = $1 AND action = 'remove'`, [storyId])).rows.map((r) => String(r.isin).trim()),
+  );
+  for (const t of d.tags.filter((x) => !removed.has(x.isin))) {
     await db.query(
       `INSERT INTO story_tag (story_id, isin, method, confidence) VALUES ($1, $2, $3, 1)
        ON CONFLICT (story_id, isin) DO NOTHING`,
@@ -289,3 +292,27 @@ export async function clusterThresholds(db: pg.ClientBase): Promise<{ merge: num
   };
   return { merge: get('cluster_merge_threshold'), attach: get('cluster_attach_threshold') };
 }
+
+// Serialises clustering and story rewrites so two writers cannot interleave on the same stories.
+export const CLUSTER_LOCK_KEY = 730_120_262;
+
+// deduplication.md §5: primary item, source count, event types and tags from the story's items.
+export async function recomputeStory(db: pg.ClientBase, storyId: string): Promise<void> {
+  const items = await loadStoryItems(db, [storyId]);
+  const filings = items.filter((i) => i.kind === 'filing');
+  const byTime = (a: StoryItem, b: StoryItem) => a.at.getTime() - b.at.getTime() || Number(a.itemId) - Number(b.itemId);
+  const primary = filings.length > 0 ? [...filings].sort(byTime)[0]! : [...items].sort((a, b) => a.tier - b.tier || byTime(a, b))[0]!;
+  const authoritative = filings.length > 0 ? filings : items;
+
+  const tags = new Map<string, ItemTag>();
+  for (const i of authoritative) for (const t of i.analysis.tags) if (!tags.has(t.isin)) tags.set(t.isin, t);
+
+  await setStoryDerived(db, storyId, {
+    primaryItemId: primary.itemId,
+    sourceCount: new Set(items.map((i) => i.sourceId)).size,
+    eventTypes: combineEventTypes(authoritative.map((i) => i.analysis.eventTypes)),
+    tags: [...tags.values()],
+    unresolved: filings.length > 0 ? [] : [...new Set(items.flatMap((i) => i.analysis.unresolved))],
+  });
+}
+

@@ -32,7 +32,7 @@ Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26.
 | B8 | AI layer: classification, summaries, safeguards, spend cap | ai-layer.md; D-025 | ✅ Done — migration 0007; 256/256 tests (23 safeguard/validation/spend unit, 5 client, 8 job integration with a fake model); real-process run without credentials observed (jobs retry, stories keep rule types). Live Haiku check pending an API key. D-034 |
 | B9 | Filings adapter (+ PDF text extraction for summaries, D-034) | ingestion.md §3 | ✅ Done (vendor-neutral) — migration 0008; 278/278 tests (8 filings integration, 7 envelope/signature, 3 document extraction); fake vendor → poll + signed push → pipeline → reconciliation backfill → stream observed end-to-end. **A vendor mapping adapter is still needed once OQ-6 is decided.** D-035 |
 | B10 | Billing | PRD-007 §2.2 | ✅ Done — Razorpay (D-035, D-036); migration 0009; 294/294 tests (7 billing integration, 5 GST/signature unit, 4 provider client); sign-up → checkout → signed webhooks → paid → GST invoice email → cancel observed end-to-end against a local Razorpay stand-in. Live test-mode check pending the founder's Razorpay account |
-| B11 | Operator story corrections: merge, split, retag; correction notices to alert recipients | PRD-002 §6 (US-002.11), §8.4; PRD-003 §3.4 | ☐ (D-033) |
+| B11 | Operator story corrections: merge, split, retag; correction notices to alert recipients | PRD-002 §6 (US-002.11), §8.4; PRD-003 §3.4 | ✅ Done — migration 0010; 300/300 tests (6 corrections integration); filing → alert → operator retag → correction email, merge with redirect, split observed end-to-end. D-037 |
 
 ### Database plan
 
@@ -168,11 +168,12 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Backend B1–B10 are built. Remaining Backend work: B4b Trending (blocked on the trading-calendar source) and B11 operator story corrections. Founder:
+**Single next action:** Backend B1–B11 are built; only B4b Trending remains, blocked on the trading-calendar source. Next is the Backend exit review (WORKFLOW §6) and then the Frontend phase. Founder:
+- trading-calendar source (unblocks B4b);
 - exchange feed vendor (OQ-6), after which B9 needs a mapping adapter;
-- Razorpay account, KYC, two plans, webhook and seller GST details (D-036), plus a test-mode check;
-- Anthropic API key, then `admin.ts set-setting ai_enabled true` and the live Haiku check (D-034);
-- RSS feed list with terms checks; trading-calendar source; first curated aliases;
+- Razorpay account, plans, webhook and seller GST details (D-036);
+- Anthropic API key (D-034);
+- RSS feed list with terms checks; first curated aliases;
 - Gmail app password, Google client ID, VAPID keys, `OPS_EMAIL`.
 
 Schedule `maintenance.ts` daily and `reconcile.ts` at 23:30 and 07:30 IST.
@@ -266,3 +267,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **B8 done.** Migration 0007. `ai` queue: classify (articles; filings rules couldn't classify) refines event types after publication, candidates from registry only, raw scores stored, no model tags before calibration; summarise (alert-default filings with extracted text) with citations and safeguards G1–G7, withheld on any failure. Spend meter, 80%/100% cap, pace and withhold-rate alerts to OPS_EMAIL. Anthropic SDK client behind an interface; `ai.ts` CLI; `admin.ts set-setting`. 256/256 tests; e2e without credentials observed. **D-034.** | Phase 6 in progress |
 | 2026-10-03 | **B9 done (vendor-neutral).** Founder chose: build vendor-neutral now; Razorpay for B10. Migration 0008. Filing envelope v1; poll adapter (cursor, bearer token, 5 s cadence), signed push receiver → raw_inbox → worker; upsert with revisions (item_revision, story recomputed, stale summary dropped) and withdrawals; daily reconciliation (backfill at original time, coverage, alert, latency p50/p95); pdf.js attachment text for summaries; revision time on story items. 278/278 tests; e2e observed. **D-035.** | Phase 6 in progress |
 | 2026-10-03 | **B10 done.** Migration 0009. Razorpay checkout (subscription + short_url), signed and idempotent webhooks with ordering guard (active, past due with 7-day grace, halted → Free, cancelled keeps access to period end), one-step cancel, plan switch at renewal, gap-free GST invoices per financial year (CGST/SGST split, or a bill of supply when unregistered) emailed and downloadable, provider cancel on account deletion. 294/294 tests; e2e observed. **D-036.** | Phase 6 in progress |
+| 2026-10-03 | **B11 done.** Migration 0010. Retag with stored overrides (survive recomputation), merge (older survives, items/comments/votes/overrides move, redirect), split (new story at its own time with bands), all atomic under the clustering lock, audited, labelled, broadcast; alert re-evaluation and correction notices queued to the alerts worker; review queue by distinct reporters with dismissal. `recomputeStory` moved to `packages/db`. 300/300 tests; e2e observed. **D-037.** | Phase 6 in progress |

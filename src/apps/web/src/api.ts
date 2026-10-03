@@ -55,6 +55,7 @@ import {
 } from './watchlist.ts';
 import * as billing from './billing.ts';
 import * as community from './community.ts';
+import * as corrections from './corrections.ts';
 import { currentSubscription } from '@stockpanic/db';
 
 export interface ApiResponse {
@@ -389,6 +390,13 @@ async function adminRoute(db: pg.ClientBase, method: string, parts: string[], ur
   const [, , kind, id, action] = parts;
   const n = parts.length;
   if (kind === 'stories' && id && action === 'voters' && n === 5 && method === 'GET') return community.adminVoters(db, id, url.searchParams, op, now);
+  if (kind === 'stories' && id && n === 5 && method === 'POST') {
+    if (action === 'tags') return corrections.postRetag(db, id, body, op, now);
+    if (action === 'merge') return corrections.postMerge(db, id, body, op, now);
+    if (action === 'split') return corrections.postSplit(db, id, body, op, now);
+  }
+  if (kind === 'stories' && id && action === 'reports' && parts[5] === 'dismiss' && n === 6 && method === 'POST') return corrections.postDismiss(db, id, body, op, now);
+  if (kind === 'corrections' && n === 3 && method === 'GET') return corrections.getCorrectionQueue(db);
   if (kind === 'comments' && id && action === 'takedown' && n === 5 && method === 'POST') return community.adminTakedown(db, id, body, op, now);
   if (kind === 'users' && id && n === 5 && method === 'POST') {
     if (action === 'comment-suspension') return community.adminUserRestriction(db, id, 'commenting', body, op, now);

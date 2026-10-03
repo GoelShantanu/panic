@@ -327,6 +327,18 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     expect((await route(db, 'POST', new URL('http://test/v1/stream'))).status).toBe(405);
   });
 
+  it('article tags can be switched off after a failed audit; filing tags stay (US-002.8 AC-5, D-051)', async () => {
+    await db.query(`UPDATE setting SET value = 'false' WHERE key = 'article_tags_enabled'`);
+    try {
+      expect(body(await get(`/v1/stories/${ids['S2']!.pub}`)).instruments).toEqual([]); // rule tag hidden
+      expect(body(await get(`/v1/stories/${ids['S1']!.pub}`)).instruments.map((i: any) => i.isin)).toEqual([A]); // exchange code stays
+      expect(body(await get(`/v1/companies/${K}/timeline`)).stories).toEqual([]);
+    } finally {
+      await db.query(`UPDATE setting SET value = 'true' WHERE key = 'article_tags_enabled'`);
+    }
+    expect(body(await get(`/v1/stories/${ids['S2']!.pub}`)).instruments.map((i: any) => i.isin)).toEqual([K]);
+  });
+
   it('HTTP server: the anonymous first page of Latest is shared for 2 s; past capacity it fails fast (D-050)', async () => {
     const url = new URL(adminUrl!);
     url.pathname = `/${dbName}`;

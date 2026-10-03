@@ -4,15 +4,15 @@
 | --- | --- |
 | **Phase** | 8 — QA (WORKFLOW §8) |
 | **Owner** | CTO (QA reviewer role) |
-| **Status** | ◐ In progress — founder decision on curated aliases and on how to treat the 99.5% target pending |
-| **Decisions** | D-049 |
+| **Status** | ✅ Exited 2026-10-03 (D-052). 99.5% precision carried by the weekly audit with automatic switch-off (D-051) |
+| **Decisions** | D-049, D-050, D-051, D-052 |
 | **Date** | 2026-10-03 |
 
 ## 1. Exit criteria and where each stands
 
 | WORKFLOW §8 exit criterion | Status | Evidence (§) |
 | --- | --- | --- |
-| Acceptance criteria exercised | ◐ | §4. Every story has an automated test or was driven in a real browser at its milestone; gaps named |
+| Acceptance criteria exercised | ✅ with named gaps | §4.1. Each of the 56 stories mapped to its evidence; gaps that depend on external services are marked Ext |
 | **Entity-resolution precision measured, not assumed** | ✅ measured · target not yet demonstrated | §2.3. Held-out: 100% (30/30) with the proposed aliases, ≥ 90.5% at 95% confidence; 99.5% needs about 600 held-out tags |
 | Load profile tested at market-open shape `[Research E5]` | ✅ with limits | §3 |
 | Failures reported faithfully; coverage gaps named | ✅ | §5, §6 |
@@ -36,7 +36,7 @@
 | As built (launch rule: legal names only) | 80 | **91.3%** | 51.0% | 7 |
 | + resolver fixes (§5 #2–#4) | 75 | 97.3% | 50.7% | 2 (Tata Motors) |
 | + curated ambiguity "Tata Motors" | 73 | 100% | 50.7% | 0 |
-| + proposed curated aliases (`curated-aliases-proposed.csv`) | 114 | 99.1% | 78.5% | 1 ("SBI" meaning SBI's fund house) |
+| + proposed curated aliases (`curated-aliases.csv`) | 114 | 99.1% | 78.5% | 1 ("SBI" meaning SBI's fund house) |
 
 **These figures are biased upwards.** The fixes and the alias list were made while looking at this corpus. The figure that counts is the held-out one (§2.3).
 
@@ -105,7 +105,75 @@ The knee is between 150 and 200 requests/s. Past it, requests queued without bou
   - US-007.7 (checkout): no Razorpay account.
 - US-002.9 now has an explicit hazard test block (`packages/core/src/pipeline.test.ts`). Dual listing and reused tickers are tested in `packages/db/src/registry.integration.test.ts`.
 
-A story-by-story matrix is the next QA deliverable. It needs the held-out run and the feed (OQ-6) to fill its last rows.
+### 4.1 Story-by-story matrix
+
+**Evidence key:**
+
+- **A**: automated test (file, under `src/`).
+- **B**: driven in a real browser at the milestone (PROJECT_STATE session log).
+- **R**: real data (this QA phase).
+- **—**: not exercised.
+- **Ext**: depends on an external service we do not have yet.
+
+| Story | Evidence | Gap |
+| --- | --- | --- |
+| US-001.1 Latest first | A `web/site/stream/stream.test.tsx`, `web/src/api.integration.test.ts`; B F2 | — |
+| US-001.2 Live without reload | A `live/src/live.integration.test.ts`, stream test; B F2/F8 (insert at top, held while reading, 0 px); R load test | 10,000 clients on one host not reached |
+| US-001.3 Filters, saved views | A stream test, `savedViews.integration.test.ts`; B F2/F4 | — |
+| US-001.4 Since last visit | A stream test (unread divider, server and browser) | — |
+| US-001.5 Keyboard | A stream test, `phone.test.tsx`; B F8 exit | No screen-reader pass |
+| US-001.6 Feed incomplete | A `api.integration.test.ts` (status); B F8 (banner live; cleared 59 ms after recovery) | — |
+| US-001.7 Market session | A `core/calendar.test.ts`, shell test; B F1 | Yearly holiday input (founder) |
+| US-001.8 Phone view | A `phone.test.tsx`; B F8 (360 px, 14 pages) | Emulated, not physical devices |
+| US-002.1 Filing as soon as published | A `worker/ingestion/filings.integration.test.ts` (push receiver) | Ext: no exchange feed (OQ-6) |
+| US-002.2 One announcement across exchanges | A filings and pipeline integration tests | Ext |
+| US-002.3 Filing first with coverage | A pipeline integration test, `api.integration.test.ts` (filing-first order) | Ext |
+| US-002.4 Complete filing feed | A filings integration test (reconciliation backfill) | Ext |
+| US-002.5 Sources attributed | A `ingest.integration.test.ts`, `rss-http.test.ts`; R 11 public feeds (2 refuse non-browser agents) | — |
+| US-002.6 One row per event | A pipeline integration test, `core/pipeline.test.ts` (clustering); R 290 items → 265 stories | Clustering thresholds are a launch parameter (D-039) |
+| US-002.7 Fix clustering | A `worker/corrections.integration.test.ts`, admin test; B F7 | — |
+| US-002.8 Right company | A `core/pipeline.test.ts`, `db/registry.integration.test.ts`, audit switch; R held-out 30/30 (≥ 90.5% at 95% confidence) | 99.5% carried by the weekly audit (D-051) |
+| US-002.9 Naming hazards | A `core/pipeline.test.ts` (US-002.9 block), registry test (dual listing, reused ticker); R hazards found on real headlines | — |
+| US-002.10 Corporate actions | A registry test (symbol and name changes, removals) | Corporate-action filings need the feed (Ext) |
+| US-002.11 Report wrong tag | A corrections and admin tests; B F7 | — |
+| US-003.1 Add companies | A `watchlist.integration.test.ts`, watchlist test; B F5 | — |
+| US-003.2 Broker CSV | A watchlist integration and component tests; B F5 | — |
+| US-003.3 Broker connect | — | Feature-flagged, not built (OQ-003.1) |
+| US-003.5 Material alerts only | A `worker/alerts/alerts.integration.test.ts`, `core/alerts.test.ts` | — |
+| US-003.6 Fast alerts on chosen channels | A alerts tests, `mail.test.ts`, `push.test.ts`; B F5 (email via log mailer) | Ext: Gmail, VAPID |
+| US-003.7 Interruption control | A alerts tests (budget, quiet hours, digest); B F5 | — |
+| US-003.8 Wrong-alert notice | A alerts and corrections integration tests | — |
+| US-004.1 Event type shown | A `core/pipeline.test.ts` (classification), stream test | Rules are a launch parameter (D-039) |
+| US-004.2 Story page | A `pages.test.tsx`, `out.integration.test.ts`; B F3 | — |
+| US-004.3 Company page | A pages test, `api.integration.test.ts`; B F3 | — |
+| US-004.4 Summaries | A `worker/ai/*.test.ts`, `core/ai.test.ts`, summary reports (community test) | Ext: no Anthropic key |
+| US-005.1 Vote | A `community.integration.test.ts`, stream test; B F4 | — |
+| US-005.2 Why I can't vote | A stream test (plain-language refusals), community test | — |
+| US-005.3 Small numbers | A `core/core.test.ts` (vote display) | — |
+| US-005.4 Votes not attributed | A community test (profiles carry no votes; voter list operator-only and audited) | — |
+| US-005.5 Costly to fake | A community test (eligibility, rate limits) | — |
+| US-005.6 Brigading | A community test (abuse report, discounting); B F7 | Thresholds informational |
+| US-005.7 Voting kill switch | A community and admin tests; B F7 | — |
+| US-006.1 Comment | A community and comments tests; B F6 | — |
+| US-006.2 Reply | A comments test (depth 3, `@name`); B F6 | — |
+| US-006.3 Edit or withdraw | A comments and community tests | — |
+| US-006.4 Read discussion | A comments test; B F6 | — |
+| US-006.5 Reply notice | A community test (notices persist), comments test (dot); B F6 | — |
+| US-006.6 Pause commenting | A community and admin tests; B F7 | — |
+| US-006.7 Report comment | A comments and community tests; B F6 | — |
+| US-006.8 Grievance deadlines | A community test (36 h court orders, deadlines); B F6/F7 | Grievance Officer details (founder) |
+| US-006.9 Repeat offenders | A community test (suspension), admin test | — |
+| US-006.10 Profiles | A community test (noindex, comments only); B F6 | — |
+| US-006.11 Spam removal | A community test (takedown reason spam); B F7 | — |
+| US-007.1 Sign up in a minute | A `auth.integration.test.ts`, account test; B F4 | Ext: Google client ID |
+| US-007.2 Username | A auth and account tests (30-day rule, reserved names); B F4 | — |
+| US-007.3 Manage and leave | A auth integration test (export, deletion), account test | — |
+| US-007.4 What is collected | A account test (separate consent); B F4 | Terms and Privacy drafts need founder sign-off |
+| US-007.6 Paid without nagging | A account test (plans page, no countdown) | — |
+| US-007.7 Subscribe | A `billing.integration.test.ts`, `razorpay.test.ts`; B F4 | Ext: Razorpay account; billing held for GST (D-039) |
+| US-007.8 Cancel as easily | A billing integration test (one-step cancel) | Ext |
+| US-007.9 Paid → Free keeps data | A billing and saved-views tests (kept on downgrade) | — |
+
 
 ## 5. Defects found by QA (fixed unless stated)
 

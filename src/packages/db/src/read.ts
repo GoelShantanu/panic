@@ -284,6 +284,7 @@ export async function storyDetailExtras(db: pg.ClientBase, storyId: string) {
     const r = await db.query(
       `SELECT s.public_id FROM story_tag t JOIN story s ON s.id = t.story_id
         WHERE t.isin = $1 AND s.id <> $2 AND s.merged_into IS NULL
+          AND EXISTS (SELECT 1 FROM story_tag_display d WHERE d.story_id = t.story_id AND d.isin = t.isin)
         ORDER BY t.story_first_seen_at DESC, s.id DESC LIMIT 5`,
       [isin, storyId],
     );

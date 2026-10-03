@@ -43,7 +43,7 @@ const data = (over: Partial<ConsoleData> = {}): ConsoleData => ({
   corrections: [],
   summaries: [],
   abuse: { vote_bursts: [], shared_ips: [], concentrated_voters: [], bullish_view_sme_share: { total: 0, sme: 0 } },
-  settings: { comments_posting_enabled: true, comments_visible: true, directional_voting_enabled: true },
+  settings: { comments_posting_enabled: true, comments_visible: true, directional_voting_enabled: true, article_tags_enabled: true },
   ...over,
 });
 

@@ -497,9 +497,19 @@ export async function adminCreateGrievance(db: pg.ClientBase, body: unknown, op:
 
 // GET /v1/admin/settings — current kill-switch state for the console.
 export async function adminSettings(db: pg.ClientBase): Promise<Res> {
-  const { rows } = await db.query(`SELECT key, value #>> '{}' AS v FROM setting WHERE key IN ('comments_posting_enabled', 'comments_visible', 'directional_voting_enabled')`);
+  const { rows } = await db.query(`SELECT key, value #>> '{}' AS v FROM setting WHERE key IN ('comments_posting_enabled', 'comments_visible', 'directional_voting_enabled', 'article_tags_enabled')`);
   const on = (k: string) => rows.find((r) => r.key === k)?.v !== 'false';
-  return { status: 200, body: { comments_posting_enabled: on('comments_posting_enabled'), comments_visible: on('comments_visible'), directional_voting_enabled: on('directional_voting_enabled') } };
+  return { status: 200, body: { comments_posting_enabled: on('comments_posting_enabled'), comments_visible: on('comments_visible'), directional_voting_enabled: on('directional_voting_enabled'), article_tags_enabled: on('article_tags_enabled') } };
+}
+
+// PRD-002 US-002.8 AC-5: article tags off (or back on after a passing re-audit); D-051.
+export async function adminArticleTagsSetting(db: pg.ClientBase, body: unknown, op: SessionUser, now: Date): Promise<Res> {
+  const reason = reasonOf(body);
+  if (!reason) return invalid('reason');
+  const enabled = field(body, 'enabled');
+  if (typeof enabled !== 'boolean') return invalid('enabled');
+  await changeSetting(db, 'article_tags_enabled', enabled, op.id, reason, now);
+  return { status: 200, body: { article_tags_enabled: enabled } };
 }
 
 export async function adminGrievances(db: pg.ClientBase, now: Date): Promise<Res> {

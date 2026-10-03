@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend: complete** (2026-10-03, D-048). **Phase 8 — QA** in progress (PROJECT_STATE, `docs/qa/`).
+**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend: complete** (2026-10-03, D-048). **Phase 8 — QA: complete** (2026-10-03, D-052). **Phase 9 — Security review** next (PROJECT_STATE).
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -86,7 +86,8 @@ DATABASE_URL=postgres://… PORT=3001 node src/apps/live/src/cli/serve.ts      #
 npm run web:build && NODE_ENV=production … node src/apps/web/src/cli/serve.ts   # pages + API in one process (D-040); without NODE_ENV=production it runs Next.js in dev mode; LIVE_ORIGIN=http://127.0.0.1:3001 passes /v1/live through
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/seed-demo.ts           # fictional demo data for frontend work (refuses non-demo databases)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/account.ts [--once]    # data export and account deletion jobs
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/registry.ts load-nse <EQUITY_L.csv> <SME_EQUITY_L.csv>   # daily instrument registry (D-049)
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/registry.ts load-nse <EQUITY_L.csv> <SME_EQUITY_L.csv>   # daily instrument registry (D-049); load-aliases docs/qa/curated-aliases.csv (D-051)
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/audit-tags.ts sample|score <file>   # weekly tag audit; below 99.5% switches article tags off (D-051)
 DATABASE_URL=postgres://… AUTH_SECRET=… PUBLIC_BASE_URL=… node src/apps/worker/src/cli/alerts.ts [--once]   # alerts + digests (PUSH=web + VAPID_* for browser push)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/maintenance.ts        # daily, owner role: partitions ahead, drops expired ip_log/live_event/ai_call, purges
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts grant-role <username> operator   # after the user enrols TOTP (/v1/me/totp/enrol, /confirm)

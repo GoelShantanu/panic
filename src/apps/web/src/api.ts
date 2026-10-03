@@ -453,6 +453,7 @@ async function adminRoute(db: pg.ClientBase, method: string, parts: string[], ur
   }
   if (kind === 'settings' && id === 'comments' && n === 4 && method === 'PUT') return community.adminCommentSettings(db, body, op, now);
   if (kind === 'settings' && id === 'directional-voting' && n === 4 && method === 'PUT') return community.adminDirectionalSetting(db, body, op, now);
+  if (kind === 'settings' && id === 'article-tags' && n === 4 && method === 'PUT') return community.adminArticleTagsSetting(db, body, op, now);
   if (kind === 'grievances' && n === 3 && method === 'GET') return community.adminGrievances(db, now);
   if (kind === 'grievances' && n === 3 && method === 'POST') return community.adminCreateGrievance(db, body, op, now);
   if (kind === 'settings' && n === 3 && method === 'GET') return community.adminSettings(db);

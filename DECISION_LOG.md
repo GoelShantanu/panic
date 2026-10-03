@@ -1791,6 +1791,59 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-051 — Curated aliases approved; weekly tag audit with automatic switch-off *(PRD-002 US-002.8 AC-5)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Process |
+| **Decided by** | Founder (chat, 2026-10-03): approved the alias list, and "exit now, keep auditing" for the 99.5% target |
+
+**Decision**
+
+1. **The curated alias list is approved:** `docs/qa/curated-aliases.csv`, 66 entries, renamed from `-proposed`. It includes the Tata Motors demerger ambiguity.
+   - It is loaded with the registry: `registry.ts load-aliases`. Operators add or prune entries from corrections.
+   - Held-out evidence: 30/30 tags correct, and recall rose from 55.3% to 78.9%.
+2. **The weekly tagging audit is a tool:** `audit-tags.ts sample` draws up to 500 displayed article tags from the last 7 days, and an operator marks each right or wrong; `audit-tags.ts score` computes precision and recall and writes an audit row.
+3. **Below 99.5%, article tags switch off automatically.**
+   - The new setting `article_tags_enabled` (migration 0015) gates the `story_tag_display` view for the resolver methods (`rule`, `model`). Every reader — stream, story, company, alerts, related stories — goes through that view, so the switch takes effect at once.
+   - Filing tags (exchange code) and operator tags stay.
+   - Operators can switch it in the console (Switches tab); it is turned back on after a passing re-audit.
+
+**Reason**
+
+- On weekend volume the held-out sample (30 tags) shows ≥ 90.5% precision at 95% confidence. Demonstrating 99.5% needs about 600 tags.
+- A product that cannot yet prove its tagging precision must be able to stop showing article tags the moment an audit fails (GUARDRAILS §4.6).
+- Observed: the "More on" related-stories query read raw tags. It now goes through the display view too.
+
+**Status** — Active
+
+---
+
+## D-052 — QA approved; QA phase exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Process |
+| **Decided by** | CTO (WORKFLOW §8 reviewer); founder approved in writing ("exit now, keep auditing", chat, 2026-10-03) |
+
+**Exit check (WORKFLOW §8)** — evidence in `docs/qa/test-strategy.md`
+
+| Criterion | Result | Evidence |
+| --- | --- | --- |
+| Acceptance criteria exercised | ✅ with named gaps | §4.1: all 56 stories mapped. Gaps are external services (exchange feed, Anthropic, Razorpay, Gmail, Google, VAPID) and the deferred broker connect |
+| Entity-resolution precision measured, not assumed | ✅ measured | §2. Held-out: 100% (30/30) with the approved aliases, ≥ 90.5% at 95% confidence. 99.5% enforced by the weekly audit and switch (D-051) |
+| Load profile at market-open shape | ✅ with limits | §3. Live fan-out fixed (40–50k frames/s delivered in full); API sheds past capacity (D-050) |
+| Failures reported faithfully; coverage gaps named | ✅ | §5 (10 defects found and fixed), §6, §7 |
+| Tests | ✅ | 414/414 (44 files) |
+
+**Carried forward** (§6–§7): a 10,000-client run on the target host; API process count for launch; a BSE list for BSE-only companies (e.g. SpiceJet); real-feed and real-credential runs; a single labeller.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

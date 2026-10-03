@@ -156,6 +156,8 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 
 **Mandatory metric:** entity-resolution precision/recall on a real corpus. The reference product ships visible mis-tags `[RE §4.8.1]`; we must know our own number rather than discover it in production.
 
+**Status:** ✅ Exited 2026-10-03 — [D-052](DECISION_LOG.md).
+
 ---
 
 ## 9. Security Review

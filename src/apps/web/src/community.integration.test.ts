@@ -296,7 +296,7 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
     });
 
     it('settings read for the console', async () => {
-      expect(b(await call('mod', 'GET', '/v1/admin/settings'))).toEqual({ comments_posting_enabled: true, comments_visible: true, directional_voting_enabled: true });
+      expect(b(await call('mod', 'GET', '/v1/admin/settings'))).toEqual({ comments_posting_enabled: true, comments_visible: true, directional_voting_enabled: true, article_tags_enabled: true });
       expect((await call(null, 'GET', '/v1/admin/settings')).status).toBe(401);
     });
 

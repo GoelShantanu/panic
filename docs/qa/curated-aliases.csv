@@ -1,7 +1,8 @@
-# Proposed curated aliases (entity-resolution.md §2.3) — DRAFT for founder approval (D-049).
+# Curated aliases (entity-resolution.md §2.3) — approved by the founder 2026-10-03 (D-051).
+# Held-out QA: 30/30 tags correct with this list (docs/qa/test-strategy.md §2.3). Operators add or prune from corrections.
 # symbol,alias[,ambiguous][,common_word]
 # common_word: also an English word; matches only in capitals next to company context ("SAIL shares"). ambiguous: always shown unresolved.
-# Load after approval: node src/apps/worker/src/cli/registry.ts load-aliases docs/qa/curated-aliases-proposed.csv
+# Load with the registry: node src/apps/worker/src/cli/registry.ts load-aliases docs/qa/curated-aliases.csv
 #
 # Demerger and shared names: never guessed
 TMPV,Tata Motors,ambiguous

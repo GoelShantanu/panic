@@ -16,6 +16,10 @@ import {
   searchInstruments,
   sessionInfo,
   lastSeen,
+  sitemapCompanies,
+  sitemapMonths,
+  sitemapStories,
+  sourceStatus,
   staleTier1Sources,
   storyDetailExtras,
   streamPage,
@@ -403,6 +407,16 @@ export async function route(
   // Page header state (PRD-001 US-001.7 AC-1, US-001.6): session and stale tier-1 sources (D-040).
   if (path === 'session') {
     return ok({ session: await sessionInfo(db, now), stale_sources: await staleTier1Sources(db), directional_voting_enabled: await directionalVotingEnabled(db) });
+  }
+  // Every enabled source's health, for the public status page (PRD-001 US-001.6 AC-4).
+  if (path === 'sources/status') return ok({ sources: await sourceStatus(db) });
+  // Sitemap data (PRD-004 US-004.3 AC-8): companies, months with stories, and one month's stories.
+  if (path === 'sitemap/companies') return ok({ companies: await sitemapCompanies(db) });
+  if (path === 'sitemap/months') return ok({ months: await sitemapMonths(db) });
+  if (path === 'sitemap/stories') {
+    const month = url.searchParams.get('month') ?? '';
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return { status: 400, body: { error: 'invalid_param', param: 'month' } };
+    return ok({ stories: await sitemapStories(db, month) });
   }
   if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now, viewer, user);
   if (resource === 'event-types' && parts.length === 2) return getEventTypes(db);

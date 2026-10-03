@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { api } from '../../../site/api.ts';
 import { FollowButton } from '../../../site/FollowButton.tsx';
+import { PhoneNote } from '../../../site/Phone.tsx';
 import { Filters } from '../../../site/stream/Filters.tsx';
 import { parseQuery, streamParams } from '../../../site/stream/logic.ts';
 import { Stream } from '../../../site/stream/Stream.tsx';
@@ -126,7 +127,10 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
             <dd>{c.segment === 'sme' ? 'SME' : 'Mainboard'}</dd>
           </dl>
         </div>
-        <FollowButton isin={c.isin} initial={c.is_followed ?? false} signedIn={signedIn} disabled={inactive} />
+        <span className="desktop-only">
+          <FollowButton isin={c.isin} initial={c.is_followed ?? false} signedIn={signedIn} disabled={inactive} />
+        </span>
+        <PhoneNote />
       </header>
 
       {c.community_opinion && (

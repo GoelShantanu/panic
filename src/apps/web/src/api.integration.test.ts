@@ -126,6 +126,29 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     await admin?.end();
   });
 
+  describe('source status and sitemaps (PRD-001 US-001.6 AC-4, PRD-004 US-004.3 AC-8)', () => {
+    it('every enabled source with its state; error text stays internal', async () => {
+      await db.query(`UPDATE source_health SET state = 'stale', last_error = 'HTTP 503 from upstream', changed_at = now() WHERE source_id = 'src_desk'`);
+      const s = body(await get('/v1/sources/status')).sources;
+      expect(s.map((x: any) => x.source_id)).toEqual(['src_bse_ann', 'src_desk']); // tier order
+      expect(s[1]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale' });
+      expect(JSON.stringify(s)).not.toContain('503');
+      await db.query(`UPDATE source_health SET state = 'healthy', last_error = NULL WHERE source_id = 'src_desk'`);
+    });
+
+    it('companies with canonical slugs; months and their live stories, merged ones excluded', async () => {
+      const companies = body(await get('/v1/sitemap/companies')).companies;
+      expect(companies).toContainEqual({ isin: A, slug: 'asterion-industries' });
+      const months = body(await get('/v1/sitemap/months')).months;
+      expect(months[0]).toMatch(/^\d{4}-\d{2}$/);
+      const all = (await Promise.all(months.map(async (m: string) => body(await get(`/v1/sitemap/stories?month=${m}`)).stories))).flat();
+      const listed = all.map((x: any) => x.story_id);
+      expect(listed).toEqual(expect.arrayContaining([ids['S1']!.pub, ids['S2']!.pub, ids['S4']!.pub]));
+      expect(listed).not.toContain(ids['S5']!.pub); // merged
+      expect((await get('/v1/sitemap/stories?month=2026-13')).status).toBe(400);
+    });
+  });
+
   describe('GET /v1/stream (PRD-001)', () => {
     it('latest: newest first; merged and out-of-depth stories excluded', async () => {
       const r = await get('/v1/stream');

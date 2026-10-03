@@ -1619,6 +1619,48 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-047 — Phone view, accessibility, performance, status page, sitemaps *(implements PRD-001 US-001.6 AC-4, US-001.8, NFR-001.1, NFR-001.5; PRD-004 US-004.3 AC-8)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Frontend F8. Founder may override |
+
+**Decision**
+
+1. **Phone view** below 768 px is read-only.
+   - Voting, commenting, Follow, watchlist editing, saved-view and summary-report controls are hidden (`.desktop-only`). In their place a line reads "Open on desktop to take part."
+   - Keyboard shortcuts are off.
+   - A dismissible "StockPanic works best on desktop." notice is remembered for the browser session.
+   - The header wraps; dropdown menus pin to the screen edges; wide tables scroll inside themselves.
+   - Measured at 360 px on 14 pages: no page scrolls horizontally `[VERIFIED]`.
+2. **Accessibility (WCAG 2.2 AA):**
+   - The faint and muted text colours, and light-theme bullish green, were changed so every text colour reaches 4.5:1 on every surface, including the selected row.
+   - The stream is a plain list. The selected row carries `aria-current`, and keyboard focus moves to its headline, which screen readers announce. Before this, rows were ARIA options containing links, which is invalid.
+   - Links inside running text are underlined. Vote, icon and checkbox targets are at least 24 px.
+   - Console tabs are styled as tabs. Danger buttons use the theme's contrast colour.
+   - axe-core in the browser: zero WCAG A/AA violations on 15 pages in both themes `[VERIFIED]`. A jsdom axe test guards the structural rules (`site/a11y.test.tsx`); contrast and target size need a real browser and are rechecked at each exit review.
+3. **Performance (NFR-001.1).** Saved views are rendered on the server, because loading them in the browser shifted the filter row after load. Stream, story, company and watchlist pages measured 0 layout shift.
+   - Production build over loopback: stream load event at about 190–275 ms (p75 about 255 ms) when warm, 144 KB of JS `[VERIFIED]`, against a 1.5 s budget. Real-network figures are not measured (see limits in the exit review).
+4. **`/status`** lists every enabled source: Working, Delayed or Not updating, since when, and the last update. Error text stays internal. It is linked from every page footer (US-001.6 AC-4). API: `GET /v1/sources/status`.
+5. **Sitemaps:**
+   - `/sitemap.xml` is an index of `/sitemaps/companies.xml` (canonical slugs) and one `/sitemaps/stories/YYYY-MM.xml` per IST month of live stories. Merged stories are excluded, and each file is capped at 50,000 URLs.
+   - `robots.txt` keeps the API and personal pages out and points to the sitemap. It does not name the operator console, and it is rendered per request so the base URL follows `PUBLIC_BASE_URL`.
+   - API: `GET /v1/sitemap/companies`, `/v1/sitemap/months`, `/v1/sitemap/stories?month=`.
+
+**Reason**
+
+1. PRD-001 US-001.8.
+2. NFR-001.5. The old faint colour measured 2.5–3.1:1 in the light theme.
+3. WORKFLOW §7 requires no layout shift; NFR-001.1 sets the budget.
+4. PRD-001 US-001.6 AC-4.
+5. PRD-004 AC-8: company and story pages are the acquisition channel.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

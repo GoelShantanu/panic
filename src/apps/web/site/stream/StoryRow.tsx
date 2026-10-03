@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { age, istDateTime } from '../format.ts';
 import type { StoryCard, VoteDisplay } from '../types.ts';
 import { CommunityOpinion, VoteControls } from '../votes/VoteControls.tsx';
+import { PhoneNote } from '../Phone.tsx';
 
 export interface RowProps {
   story: StoryCard;
@@ -28,8 +29,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
       id={`row-${s.story_id}`}
       data-selected={selected || undefined}
       data-unread={s.is_unread || undefined}
-      aria-selected={selected}
-      role="option"
+      aria-current={selected ? 'true' : undefined}
       onClick={onSelect}
     >
       <div className="row-main">
@@ -64,8 +64,9 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
           </div>
         </div>
       </div>
+      {selected && <PhoneNote />}
       {selected && (
-        <div className="row-actions">
+        <div className="row-actions desktop-only">
           <VoteControls storyId={s.story_id} votes={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} />
           {signedIn && followed && onFollow && s.instruments.length > 0 && (
             <span className="row-follow" onClick={(e) => e.stopPropagation()}>

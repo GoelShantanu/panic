@@ -15,6 +15,14 @@ export interface FiltersProps {
   // Company timeline: no view tabs; filings-only is free there (PRD-007 §2.1, PRD-004 US-004.3 AC-3).
   basePath?: string;
   views?: boolean;
+  // Server-rendered saved views, so the filter row does not shift after load (WORKFLOW §7).
+  savedViews?: SavedView[];
+}
+
+export interface SavedView {
+  id: string;
+  name: string;
+  params: { view: View; event_types: string[]; filings_only: boolean };
 }
 
 const hrefFor = (base: string) => (q: StreamQuery) => {
@@ -24,7 +32,7 @@ const hrefFor = (base: string) => (q: StreamQuery) => {
 
 // PRD-001 US-001.3: one active view; event-type filter combines with any view; paid filters show an
 // upgrade prompt rather than an empty list (AC-8). The URL carries the whole state (AC-3).
-export function Filters({ query, eventTypes, directionalEnabled, entitlements, basePath = '/', views: showViews = true, signedIn = false }: FiltersProps) {
+export function Filters({ query, eventTypes, directionalEnabled, entitlements, basePath = '/', views: showViews = true, signedIn = false, savedViews }: FiltersProps) {
   const href = hrefFor(basePath);
   const filingsFree = basePath !== '/';
   const router = useRouter();
@@ -38,16 +46,16 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
   ];
   // Saved views (PRD-001 US-001.3 AC-2b): paid, up to 10, stream only.
   const savedAllowed = (entitlements.saved_views ?? 0) > 0;
-  const [saved, setSaved] = useState<{ id: string; name: string; params: { view: View; event_types: string[]; filings_only: boolean } }[]>([]);
+  const [saved, setSaved] = useState<SavedView[]>(savedViews ?? []);
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState('');
   useEffect(() => {
-    if (!signedIn || !showViews) return;
+    if (!signedIn || !showViews || savedViews) return;
     fetch('/v1/saved-views', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
       .then((b) => b && !b.disabled && setSaved(b.views))
       .catch(() => undefined);
-  }, [signedIn, showViews]);
+  }, [signedIn, showViews, savedViews]);
   async function saveView(e: React.FormEvent) {
     e.preventDefault();
     const res = await fetch('/v1/saved-views', {
@@ -159,7 +167,7 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
           </form>
         )}
         {pending && <span className="spinner" aria-label="Loading stories" />}
-        <span className="faint filter-hint">
+        <span className="faint filter-hint desktop-only">
           Press <kbd>?</kbd> for shortcuts
         </span>
       </div>

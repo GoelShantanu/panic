@@ -104,22 +104,23 @@ describe('<Stream>', () => {
         <Stream initial={{ stories, next_cursor: null }} query={latest} eventLabels={[['results', 'Results']]} signedIn={false} watchlistIsins={null} {...props} />
       </LiveContext.Provider>,
     );
-  const headlines = () => screen.getAllByRole('option').map((li) => li.querySelector('.row-headline')!.textContent);
+  const rows = () => [...document.querySelectorAll<HTMLElement>('li.row')];
+  const headlines = () => rows().map((li) => li.querySelector('.row-headline')!.textContent);
 
   it('J/K select rows; Esc clears; shortcuts pause in text fields', () => {
     const [a, b] = [card(), card()];
     mount([b!, a!]);
     fireEvent.keyDown(window, { key: 'j' });
     fireEvent.keyDown(window, { key: 'j' });
-    expect(screen.getAllByRole('option')[1]!.getAttribute('aria-selected')).toBe('true');
+    expect(rows()[1]!.getAttribute('aria-current')).toBe('true');
     fireEvent.keyDown(window, { key: 'k' });
-    expect(screen.getAllByRole('option')[0]!.getAttribute('aria-selected')).toBe('true');
+    expect(rows()[0]!.getAttribute('aria-current')).toBe('true');
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.getAllByRole('option').some((o) => o.getAttribute('aria-selected') === 'true')).toBe(false);
+    expect(rows().some((o) => o.getAttribute('aria-current') === 'true')).toBe(false);
     const input = document.createElement('input');
     document.body.appendChild(input);
     fireEvent.keyDown(input, { key: 'j' });
-    expect(screen.getAllByRole('option').some((o) => o.getAttribute('aria-selected') === 'true')).toBe(false);
+    expect(rows().some((o) => o.getAttribute('aria-current') === 'true')).toBe(false);
     input.remove();
   });
 
@@ -139,7 +140,7 @@ describe('<Stream>', () => {
     const control = screen.getByRole('button', { name: '1 new story' });
     fireEvent.click(control);
     expect(headlines()[0]).toBe(later.headline);
-    expect(screen.getAllByRole('option').find((o) => o.getAttribute('aria-selected') === 'true')!.textContent).toContain(fresh.headline);
+    expect(rows().find((o) => o.getAttribute('aria-current') === 'true')!.textContent).toContain(fresh.headline);
   });
 
   it('stories outside the view are ignored; updates change rows in place', async () => {
@@ -150,7 +151,7 @@ describe('<Stream>', () => {
     expect(headlines()).toHaveLength(2);
     act(() => emit('story.updated', { story_id: a!.story_id, changes: { source_count: 6 } }));
     expect(headlines()[1]).toBe(a!.headline);
-    expect(screen.getAllByRole('option')[1]!.textContent).toContain('6 sources');
+    expect(rows()[1]!.textContent).toContain('6 sources');
   });
 
   it('loads the next page by cursor; a failed load keeps the stories and offers retry', async () => {
@@ -180,6 +181,6 @@ describe('<Stream>', () => {
     const [a, b, c] = [card(), card(), card()];
     localStorage.setItem('sp-seen:latest', a!.first_seen_at);
     mount([c!, b!, a!]);
-    expect(screen.getByRole('separator').textContent).toBe('New since your last visit (2) ↑');
+    expect(document.querySelector('.unread-divider')!.textContent).toBe('New since your last visit (2) ↑');
   });
 });

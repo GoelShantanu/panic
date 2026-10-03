@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { age, istDateTime } from '../format.ts';
+import { PhoneNote } from '../Phone.tsx';
 import { CommentText, REPORT_REASONS, removalLabel } from './text.tsx';
 
 export interface Comment {
@@ -211,7 +212,7 @@ function CommentNode({ c, me, canPost, now, onReply, onEdit, onDelete }: NodePro
         <p className="comment-body faint">{c.state === 'removed' ? `[removed: ${removalLabel(c.removed_reason)}]` : '[deleted by author]'}</p>
       )}
       {visible && mode !== 'edit' && (
-        <div className="comment-actions">
+        <div className="comment-actions desktop-only">
           {canPost && (
             <button type="button" className="link-button" onClick={() => setMode(mode === 'reply' ? 'none' : 'reply')}>
               Reply
@@ -331,6 +332,8 @@ export function Comments({ storyId, initial, me }: { storyId: string; initial: C
         <p className="state">Comments are temporarily unavailable.</p>
       ) : (
         <>
+          <PhoneNote />
+          <div className="desktop-only">
           {!me ? (
             <p>
               <Link href={`/sign-in?next=${encodeURIComponent(`/s/${storyId}`)}`}>Sign in to comment.</Link>
@@ -340,6 +343,7 @@ export function Comments({ storyId, initial, me }: { storyId: string; initial: C
           ) : (
             <Composer label="Post comment" onSubmit={(t) => post(t, null)} />
           )}
+          </div>
           {threads.length === 0 ? (
             <p className="muted">No comments yet.</p>
           ) : (

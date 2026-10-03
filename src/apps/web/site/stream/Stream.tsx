@@ -198,7 +198,10 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     const i = selected === null ? -1 : stories.findIndex((s) => s.story_id === selected);
     const next = stories[Math.max(0, Math.min(stories.length - 1, i + delta))]!;
     setSelected(next.story_id);
-    document.getElementById(`row-${next.story_id}`)?.scrollIntoView({ block: 'nearest' });
+    const row = document.getElementById(`row-${next.story_id}`);
+    row?.scrollIntoView({ block: 'nearest' });
+    // Focus follows the selection so screen readers announce the headline.
+    row?.querySelector<HTMLElement>('.row-headline')?.focus({ preventScroll: true });
   };
   const current = () => stories.find((s) => s.story_id === selected);
   const dir = (value: Direction) => () => void vote({ kind: 'directional', value });
@@ -236,7 +239,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
           </button>
         )}
       </div>
-      <ol className="rows panel" ref={listRef} role="listbox" aria-label="Stories" aria-activedescendant={selected ? `row-${selected}` : undefined}>
+      <ol className="rows panel" ref={listRef} aria-label="Stories">
         {stories.map((s, i) => (
           <StoryRowWithDivider
             key={s.story_id}
@@ -282,7 +285,7 @@ function StoryRowWithDivider({ showDivider, unreadCount, ...row }: { showDivider
   return (
     <>
       {showDivider && (
-        <li className="unread-divider" role="separator" aria-label="New since your last visit">
+        <li className="unread-divider">
           <span>New since your last visit{unreadCount !== null ? ` (${unreadCount})` : ''} ↑</span>
         </li>
       )}

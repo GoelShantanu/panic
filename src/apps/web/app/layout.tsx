@@ -6,6 +6,7 @@ import type { SessionInfo } from '../site/format.ts';
 import { Header } from '../site/Header.tsx';
 import type { Viewer } from '../site/Header.tsx';
 import { LiveProvider } from '../site/live.tsx';
+import { PhoneNotice } from '../site/Phone.tsx';
 import { THEME_BOOT } from '../site/ThemeToggle.tsx';
 import './globals.css';
 
@@ -40,6 +41,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </a>
           <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
           <main id="main" className="main">
+            <PhoneNotice />
             {children}
           </main>
           <footer className="footer">
@@ -48,6 +50,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <Link href="/plans">Plans</Link>
               <Link href="/terms">Terms</Link>
               <Link href="/privacy">Privacy</Link>
+              <Link href="/status">Source status</Link>
               <Link href="/grievance">Grievances</Link>
             </nav>
           </footer>

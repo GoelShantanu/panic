@@ -7,6 +7,7 @@ import type { CommentPage } from '../../../site/comments/Comments.tsx';
 import { istDateTime } from '../../../site/format.ts';
 import { StoryVotes } from '../../../site/story/StoryVotes.tsx';
 import { SummaryReport } from '../../../site/story/SummaryReport.tsx';
+import { PhoneNote } from '../../../site/Phone.tsx';
 import type { EventType, Instrument, VoteDisplay } from '../../../site/types.ts';
 
 interface Item {
@@ -128,7 +129,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
             )}
           </p>
           <p className="summary-text">{s.summary.text}</p>
-          <p className="faint summary-report">
+          <p className="faint summary-report desktop-only">
             <SummaryReport storyId={s.story_id} signedIn={me.status === 200} />
           </p>
         </section>
@@ -182,7 +183,10 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
         </ol>
       </section>
 
-      <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={me.status === 200} />
+      <div className="desktop-only">
+        <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={me.status === 200} />
+      </div>
+      <PhoneNote />
 
       {comments.status === 200 && <Comments storyId={s.story_id} initial={comments.body} me={me.status === 200 ? me.body.username : null} />}
 

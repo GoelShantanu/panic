@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { age, istDateTime } from '../format.ts';
+import { PhoneNote } from '../Phone.tsx';
 
 export interface Entry {
   isin: string;
@@ -116,7 +117,8 @@ export function Watchlist({ initial, limit, welcome }: { initial: Entry[]; limit
         </span>
       </header>
 
-      <section className="panel settings-section" aria-labelledby="add-h">
+      <PhoneNote />
+      <section className="panel settings-section desktop-only" aria-labelledby="add-h">
         <h2 id="add-h">Add companies</h2>
         <input className="search-input wide" type="search" placeholder="Company name, NSE symbol, BSE code or ISIN" aria-label="Find a company to add" value={q} onChange={(e) => setQ(e.target.value)} />
         {results.length > 0 && (
@@ -205,7 +207,7 @@ export function Watchlist({ initial, limit, welcome }: { initial: Entry[]; limit
         </div>
       ) : (
         <>
-          <div className="row-buttons list-actions">
+          <div className="row-buttons list-actions desktop-only">
             <button type="button" className="button" disabled={selected.size === 0} onClick={() => void remove([...selected])}>
               Remove selected ({selected.size})
             </button>
@@ -213,7 +215,7 @@ export function Watchlist({ initial, limit, welcome }: { initial: Entry[]; limit
           <table className="panel wl-table">
             <thead>
               <tr>
-                <th scope="col">
+                <th scope="col" className="desktop-only">
                   <input
                     type="checkbox"
                     aria-label="Select all"
@@ -230,7 +232,7 @@ export function Watchlist({ initial, limit, welcome }: { initial: Entry[]; limit
             <tbody>
               {entries.map((e) => (
                 <tr key={e.isin}>
-                  <td>
+                  <td className="desktop-only">
                     <input
                       type="checkbox"
                       aria-label={`Select ${e.display_symbol ?? e.isin}`}
@@ -258,7 +260,7 @@ export function Watchlist({ initial, limit, welcome }: { initial: Entry[]; limit
                     )}
                   </td>
                   <td className="faint">{e.latest_story_at ? <time title={`${istDateTime(e.latest_story_at)} IST`}>{age(e.latest_story_at)}</time> : 'None yet'}</td>
-                  <td>
+                  <td className="desktop-only">
                     <button type="button" className="icon-button" onClick={() => void remove([e.isin])}>
                       Remove
                     </button>

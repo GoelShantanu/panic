@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { api } from '../../site/api.ts';
 import { StaleBanner } from '../../site/LiveStatus.tsx';
 import { Filters } from '../../site/stream/Filters.tsx';
+import type { SavedView } from '../../site/stream/Filters.tsx';
 import { parseQuery, streamParams } from '../../site/stream/logic.ts';
 import { Stream } from '../../site/stream/Stream.tsx';
 import type { EventType, StaleSource, StoryCard } from '../../site/types.ts';
@@ -35,7 +36,10 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
   const signedIn = me.status === 200;
   const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false, saved_views: 0 };
   // Signed-in readers: the watchlist drives the Watchlist view and the row Follow controls.
-  const watchlist = signedIn ? await api<{ instruments: { isin: string }[] }>('/v1/watchlist') : null;
+  const [watchlist, saved] = signedIn
+    ? await Promise.all([api<{ instruments: { isin: string }[] }>('/v1/watchlist'), api<{ views: SavedView[]; disabled?: boolean }>('/v1/saved-views')])
+    : [null, null];
+  const savedViews = saved?.status === 200 && !saved.body.disabled ? saved.body.views : signedIn ? [] : undefined;
   const eventTypes = types.status === 200 ? types.body.types : [];
   const clear = streamParams({ ...query, eventTypes: [], filingsOnly: false }).toString();
 
@@ -122,7 +126,7 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
   return (
     <>
       {session.status === 200 && <StaleBanner initial={session.body.stale_sources} />}
-      <Filters query={query} eventTypes={eventTypes} directionalEnabled={session.status === 200 ? session.body.directional_voting_enabled : true} entitlements={entitlements} signedIn={signedIn} />
+      <Filters query={query} eventTypes={eventTypes} directionalEnabled={session.status === 200 ? session.body.directional_voting_enabled : true} entitlements={entitlements} signedIn={signedIn} savedViews={savedViews} />
       {content}
     </>
   );

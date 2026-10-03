@@ -429,3 +429,49 @@ export async function isFollowed(db: pg.ClientBase, userId: string, isin: string
   const { rows } = await db.query('SELECT 1 FROM watchlist_entry WHERE user_id = $1 AND isin = $2', [userId, isin]);
   return rows.length > 0;
 }
+
+// ---------------------------------------------------------------- public source status (PRD-001 US-001.6 AC-4)
+
+// Health of every enabled source. Error text stays internal; readers see the state and since when.
+export async function sourceStatus(db: pg.ClientBase) {
+  const { rows } = await db.query(
+    `SELECT s.source_id, s.name, s.kind, s.tier, h.state AS health, h.changed_at AS since, h.last_success_at
+       FROM source s JOIN source_health h USING (source_id)
+      WHERE s.enabled
+      ORDER BY s.tier, s.name`,
+  );
+  return rows;
+}
+
+// ---------------------------------------------------------------- sitemaps (PRD-004 US-004.3 AC-8)
+
+const SITEMAP_MAX_URLS = 50_000; // sitemaps.org protocol limit per file
+
+export async function sitemapCompanies(db: pg.ClientBase): Promise<{ isin: string; slug: string }[]> {
+  const { rows } = await db.query(
+    `SELECT i.isin, n.name FROM instrument i
+       LEFT JOIN instrument_name n ON n.isin = i.isin AND n.kind = 'legal' AND n.valid @> ${TODAY_IST}
+      ORDER BY i.isin LIMIT ${SITEMAP_MAX_URLS}`,
+  );
+  return rows.map((r) => ({ isin: String(r.isin).trim(), slug: companySlug(r.name) }));
+}
+
+// Months (IST) that have live stories, newest first.
+export async function sitemapMonths(db: pg.ClientBase): Promise<string[]> {
+  const { rows } = await db.query(
+    `SELECT DISTINCT to_char(first_seen_at AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM') AS m FROM story WHERE merged_into IS NULL ORDER BY m DESC`,
+  );
+  return rows.map((r) => r.m);
+}
+
+export async function sitemapStories(db: pg.ClientBase, month: string): Promise<{ story_id: string; updated_at: Date }[]> {
+  const { rows } = await db.query(
+    `SELECT public_id AS story_id, updated_at FROM story
+      WHERE merged_into IS NULL
+        AND first_seen_at >= ($1 || '-01')::date::timestamp AT TIME ZONE 'Asia/Kolkata'
+        AND first_seen_at < (($1 || '-01')::date + interval '1 month')::timestamp AT TIME ZONE 'Asia/Kolkata'
+      ORDER BY first_seen_at LIMIT ${SITEMAP_MAX_URLS}`,
+    [month],
+  );
+  return rows;
+}

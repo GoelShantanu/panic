@@ -214,7 +214,7 @@ export async function revokeAllSessions(db: pg.ClientBase, userId: string, now: 
 export async function loadMe(db: pg.ClientBase, userId: string) {
   const { rows } = await db.query(
     `SELECT u.public_id, u.username, u.email, u.created_at, u.email_verified_at IS NOT NULL AS email_verified,
-            t.tier, tr.ends_at AS trial_ends_at,
+            u.marketing_opt_in, u.google_sub IS NOT NULL AS google_linked, t.tier, tr.ends_at AS trial_ends_at,
             (SELECT row_to_json(x) FROM (SELECT plan, status, current_period_end AS renews_at, cancel_at_period_end
                FROM subscription s WHERE s.user_id = u.id AND s.status <> 'expired' ORDER BY s.created_at DESC LIMIT 1) x) AS subscription
        FROM app_user u JOIN user_tier t ON t.user_id = u.id LEFT JOIN trial tr ON tr.user_id = u.id
@@ -361,4 +361,38 @@ export async function getExport(db: pg.ClientBase, userId: string, exportId: str
   if (!r.ready_at) return { status: 'pending' as const };
   if (r.expires_at <= now) return { status: 'expired' as const };
   return { status: 'ready' as const, ready_at: r.ready_at, expires_at: r.expires_at, data: r.data };
+}
+
+export async function setMarketingOptIn(db: pg.ClientBase, userId: string, optIn: boolean): Promise<void> {
+  await db.query('UPDATE app_user SET marketing_opt_in = $2 WHERE id = $1', [userId, optIn]);
+}
+
+// ---------------------------------------------------------------- saved views (PRD-001 US-001.3 AC-2b, PRD-007 §2.1)
+
+export async function listSavedViews(db: pg.ClientBase, userId: string) {
+  const { rows } = await db.query('SELECT id, name, params, created_at FROM saved_view WHERE user_id = $1 ORDER BY created_at', [userId]);
+  return rows.map((r) => ({ id: String(r.id), name: r.name as string, params: r.params, created_at: r.created_at as Date }));
+}
+
+export async function createSavedView(db: pg.ClientBase, userId: string, name: string, params: unknown, limit: number): Promise<{ ok: true; id: string } | { ok: false; error: 'limit' | 'name_taken' }> {
+  await db.query('BEGIN');
+  try {
+    await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`saved_view:${userId}`]);
+    const n = (await db.query('SELECT count(*)::int AS n FROM saved_view WHERE user_id = $1', [userId])).rows[0].n;
+    if (n >= limit) {
+      await db.query('ROLLBACK');
+      return { ok: false, error: 'limit' };
+    }
+    const r = await db.query('INSERT INTO saved_view (user_id, name, params) VALUES ($1, $2, $3) ON CONFLICT (user_id, name) DO NOTHING RETURNING id', [userId, name, JSON.stringify(params)]);
+    await db.query('COMMIT');
+    return r.rows[0] ? { ok: true, id: String(r.rows[0].id) } : { ok: false, error: 'name_taken' };
+  } catch (err) {
+    await db.query('ROLLBACK');
+    throw err;
+  }
+}
+
+export async function deleteSavedView(db: pg.ClientBase, userId: string, id: string): Promise<boolean> {
+  if (!/^\d+$/.test(id)) return false;
+  return ((await db.query('DELETE FROM saved_view WHERE user_id = $1 AND id = $2', [userId, id])).rowCount ?? 0) > 0;
 }

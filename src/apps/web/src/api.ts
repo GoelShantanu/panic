@@ -59,6 +59,7 @@ import {
 import * as billing from './billing.ts';
 import * as community from './community.ts';
 import * as corrections from './corrections.ts';
+import { getSavedViews, postSavedView, removeSavedView } from './savedViews.ts';
 import { currentSubscription } from '@stockpanic/db';
 
 export interface ApiResponse {
@@ -336,6 +337,9 @@ export async function route(
     return postDelete(db, req.body, user, now);
   }
   if (path === 'billing/trial' && method === 'POST') return postTrial(db, user, now);
+  if (path === 'saved-views' && method === 'GET') return getSavedViews(db, user);
+  if (path === 'saved-views' && method === 'POST') return postSavedView(db, req.body, user);
+  if (resource === 'saved-views' && id && parts.length === 3 && method === 'DELETE') return removeSavedView(db, id, user);
   const bill = deps?.billing ?? null;
   if (path === 'billing' && method === 'GET') return billing.getBilling(db, user, now);
   if (path === 'billing/checkout' && method === 'POST') return billing.postCheckout(db, req.body, user, bill, now);

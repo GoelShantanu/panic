@@ -34,6 +34,7 @@ import {
   recentCodeCount,
   requestDeletion,
   revokeAllSessions,
+  setMarketingOptIn,
   revokeSession,
   sessionUser,
   startTrial,
@@ -179,6 +180,8 @@ export async function getMe(db: pg.ClientBase, viewer: SessionUser | null): Prom
       tier: me.tier,
       trial: { used: me.trial_ends_at !== null, ends_at: me.trial_ends_at },
       subscription: me.subscription,
+      marketing_opt_in: me.marketing_opt_in,
+      sign_in_methods: me.google_linked ? ['email', 'google'] : ['email'],
       entitlements: entitlementsPayload(me.tier),
     },
   };
@@ -187,6 +190,13 @@ export async function getMe(db: pg.ClientBase, viewer: SessionUser | null): Prom
 // PATCH /v1/me — username change (PRD-007 US-007.2 AC-3)
 export async function patchMe(db: pg.ClientBase, body: unknown, viewer: SessionUser | null, now: Date): Promise<AuthResponse> {
   if (!viewer) return authRequired;
+  // Marketing email is a separate opt-in, changeable any time (PRD-007 US-007.4 AC-5).
+  const marketing = field(body, 'marketing_opt_in');
+  if (marketing !== undefined) {
+    if (typeof marketing !== 'boolean') return invalid('marketing_opt_in');
+    await setMarketingOptIn(db, viewer.id, marketing);
+    if (field(body, 'username') === undefined) return getMe(db, viewer);
+  }
   const username = field(body, 'username');
   if (typeof username !== 'string' || !isValidUsername(username)) return invalid('username');
   if (username === viewer.username) return getMe(db, viewer);

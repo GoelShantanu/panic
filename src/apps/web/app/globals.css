@@ -270,3 +270,46 @@ kbd { font-family: var(--font-mono); font-size: var(--text-xs); border: 1px soli
 .opinion-note { font-size: var(--text-xs); margin-top: 4px !important; }
 .follow { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .button[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- accounts ---------- */
+.auth { max-width: 440px; margin: 32px auto; padding: 20px 24px; }
+.auth h1 { font-size: var(--text-xl); margin: 0 0 14px; }
+.form { display: grid; gap: 10px; }
+.form label:not(.check), .inline-form label { display: grid; gap: 4px; font-size: var(--text-sm); color: var(--muted); }
+.form input:not([type='checkbox']):not([type='radio']), .inline-form input { font: inherit; font-size: var(--text-md); padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.field-help { margin: -4px 0 4px; font-size: var(--text-xs); }
+.divider-text { text-align: center; color: var(--faint); margin: 14px 0; font-size: var(--text-sm); }
+.google-button { display: flex; justify-content: center; min-height: 44px; }
+.auth-legal { font-size: var(--text-xs); margin-top: 14px; }
+.settings { max-width: 760px; }
+.settings h1 { font-size: var(--text-xl); }
+.settings-section { padding: 14px 18px; margin-bottom: 12px; }
+.settings-section h2 { font-size: var(--text-lg); margin: 0 0 10px; }
+.sub-h { font-size: var(--text-md); margin: 14px 0 6px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 10px; }
+.kv dt { color: var(--faint); }
+.kv dd { margin: 0; }
+.inline-form { display: flex; gap: 8px; align-items: flex-end; }
+.row-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.confirm { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.button-danger { background: var(--bear); border-color: var(--bear); color: #fff; }
+.plain-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.choice { border: 0; padding: 0; margin: 6px 0 10px; display: grid; gap: 4px; }
+.choice legend { color: var(--muted); font-size: var(--text-sm); margin-bottom: 4px; }
+.invoice-text { padding: 16px; font-family: var(--font-mono); font-size: var(--text-sm); white-space: pre-wrap; }
+.plans { max-width: 820px; }
+.plans-table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; }
+.plans-table th, .plans-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+.plans-table thead th { color: var(--muted); font-weight: 600; }
+.plans-table tbody th { font-weight: 400; color: var(--muted); }
+.plan-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.plan-card { padding: 16px; }
+.plan-card h2 { margin: 0 0 4px; font-size: var(--text-lg); }
+.plan-price { font-size: var(--text-xl); margin: 0 0 12px; }
+.legal { max-width: 760px; line-height: 1.6; }
+.legal h1 { font-size: var(--text-xl); }
+.legal h2 { font-size: var(--text-lg); margin-top: 22px; }
+.legal-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.legal-table th, .legal-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.footer-links { display: flex; gap: 14px; margin-top: 6px; }
+.footer-links a { color: var(--faint); }

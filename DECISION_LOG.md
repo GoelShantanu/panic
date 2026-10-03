@@ -1435,6 +1435,52 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-043 — Accounts, billing UI, saved views, legal pages *(implements PRD-007 §1–2 in the browser; PRD-001 US-001.3 AC-2b)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | CTO, during Frontend F4. Founder may override (legal text and Grievance Officer especially) |
+
+**Decision**
+
+1. **Saved views API:**
+   - `GET/POST/DELETE /v1/saved-views`. Paid accounts get up to 10; free accounts get a 402.
+   - Names are unique per user. Params are validated as in the stream: view, event-type codes, filings only.
+   - After a downgrade, saved views are kept but shown as disabled, and return on re-subscribing (PRD-007 US-007.9 AC-2).
+   - In the browser: "Save view" and a "Saved views" menu on the stream; the list and deletion in settings.
+2. **`/v1/me` gains `marketing_opt_in` and `sign_in_methods`.** `PATCH /v1/me` accepts `marketing_opt_in` (PRD-007 US-007.4 AC-5, US-007.3 AC-1).
+3. **Sign-in and sign-up:**
+   - Sign-in is an email code, or "Sign in with Google" when `GOOGLE_CLIENT_ID` is set (Google's own script, loaded only then).
+   - The welcome step asks for username, 18+, Terms, and a separate unticked privacy consent. Marketing is its own optional checkbox.
+   - New accounts go on to watchlist setup (US-007.1 AC-5). Return paths are same-site only.
+4. **Checkout** uses Razorpay Checkout with the subscription from `POST /v1/billing/checkout`, and falls back to the provider-hosted page.
+   - After payment the page waits up to 60 s for the webhook to make the account paid, never trusting the browser (PRD-007 §6, D-036).
+   - Cancelling takes one confirmation (C-007.4). The plans page is a plain free-versus-paid comparison: no countdowns or scarcity (C-007.3).
+5. **Terms of Use and Privacy Notice** are plain-English drafts written from PRD-007 US-007.4 and PRD-006 US-006.7 `[INFERRED]`, with no counsel review, per D-018. Grievance Officer details come from `GRIEVANCE_OFFICER_NAME` / `GRIEVANCE_OFFICER_EMAIL`. Until those are set, the pages say they will be published before launch. Nothing is invented.
+6. **The stream page has no Suspense loading boundary.** A spinner shows during view changes through a transition instead.
+   - Found in F4: React reveals a streamed boundary on an animation frame, which hidden tabs never run. A stream opened in a background tab would never hydrate, so it would never go live.
+   - After the fix it hydrates in about 300 ms in a hidden tab (US-001.2 AC-5).
+
+**Reason**
+
+1. PRD-001 US-001.3 AC-2b promised saved views, and only the table existed.
+2. Settings must show sign-in methods and let marketing email be changed at any time.
+3. PRD-007 US-007.1 and US-007.4 AC-2 require these steps, with consent separate from the Terms.
+4. Only the webhook is authenticated (D-036); the browser's word is not proof of payment.
+5. A Grievance Officer cannot be invented; publishing someone's contact details is the founder's decision.
+6. A background tab is a common way to keep the stream open all day.
+
+**Consequences**
+
+- Founder: confirm or replace the Terms and Privacy text, and provide the Grievance Officer's name and email before launch.
+- Session listing (US-007.3 AC-1 "sessions") is limited to "Sign out" and "Sign out everywhere"; the API has no session list.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

@@ -30,10 +30,10 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
     api<StreamBody & Record<string, unknown>>(`/v1/stream${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
     api<{ stale_sources: StaleSource[]; directional_voting_enabled: boolean }>('/v1/session'),
-    api<{ entitlements: { multi_event_filter: boolean; stream_filings_only: boolean } }>('/v1/me'),
+    api<{ entitlements: { multi_event_filter: boolean; stream_filings_only: boolean; saved_views: number } }>('/v1/me'),
   ]);
   const signedIn = me.status === 200;
-  const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false };
+  const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false, saved_views: 0 };
   const watchlist = query.view === 'watchlist' && signedIn ? await api<{ instruments: { isin: string }[] }>('/v1/watchlist') : null;
   const eventTypes = types.status === 200 ? types.body.types : [];
   const clear = streamParams({ ...query, eventTypes: [], filingsOnly: false }).toString();
@@ -121,7 +121,7 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
   return (
     <>
       {session.status === 200 && <StaleBanner initial={session.body.stale_sources} />}
-      <Filters query={query} eventTypes={eventTypes} directionalEnabled={session.status === 200 ? session.body.directional_voting_enabled : true} entitlements={entitlements} />
+      <Filters query={query} eventTypes={eventTypes} directionalEnabled={session.status === 200 ? session.body.directional_voting_enabled : true} entitlements={entitlements} signedIn={signedIn} />
       {content}
     </>
   );

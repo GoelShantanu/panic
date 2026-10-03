@@ -196,7 +196,7 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       expect(body(await get('/v1/stream?cursor=garbage')).param).toBe('cursor');
       expect(body(await get('/v1/stream?event_types=order_win')).param).toBe('event_types');
       expect(await get('/v1/stream?view=watchlist')).toMatchObject({ status: 401, body: { error: 'auth_required' } });
-      expect((await get('/v1/stream?view=trending')).status).toBe(404);
+      expect((await get('/v1/stream?view=trending')).status).toBe(200); // B4b: served once the calendar exists (D-038)
     });
 
     it('session and stale tier-1 sources are reported', async () => {

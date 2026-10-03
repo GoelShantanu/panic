@@ -12,8 +12,9 @@ await db.connect();
 try {
   const r = await runMaintenance(db, new Date());
   console.log(
-    `dropped=${r.dropped.length ? r.dropped.join(',') : 'none'} default_rows_purged=${r.defaultRowsPurged} removed_content=${r.removedContent} revisions=${r.revisions} pending_signups=${r.pendingSignups}`,
+    `calendar_days_added=${r.calendarDaysAdded} dropped=${r.dropped.length ? r.dropped.join(',') : 'none'} default_rows_purged=${r.defaultRowsPurged} removed_content=${r.removedContent} revisions=${r.revisions} pending_signups=${r.pendingSignups}`,
   );
+  for (const w of r.calendarWarnings) console.warn(`WARN calendar ${w}`);
 } finally {
   await db.end();
 }

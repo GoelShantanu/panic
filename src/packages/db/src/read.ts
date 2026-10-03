@@ -213,7 +213,11 @@ export async function sessionInfo(db: pg.ClientBase, now: Date): Promise<Session
       WHERE tstzrange(starts_at, ends_at) @> $1::timestamptz ORDER BY starts_at DESC LIMIT 1`,
     [now],
   );
-  if (cur.rows[0]) return { state: cur.rows[0].session, exchange_date: cur.rows[0].exchange_date, next_transition_at: cur.rows[0].ends_at };
+  if (cur.rows[0]) {
+    // Days are stored separately, so the next transition is the next period of a different state.
+    const next = await db.query(`SELECT starts_at FROM trading_session WHERE starts_at >= $1 AND session <> $2 ORDER BY starts_at LIMIT 1`, [cur.rows[0].ends_at, cur.rows[0].session]);
+    return { state: cur.rows[0].session, exchange_date: cur.rows[0].exchange_date, next_transition_at: next.rows[0]?.starts_at ?? null };
+  }
   const next = await db.query(`SELECT starts_at FROM trading_session WHERE starts_at > $1 ORDER BY starts_at LIMIT 1`, [now]);
   const ist = new Date(now.getTime() + 5.5 * 3600_000).toISOString().slice(0, 10);
   return { state: 'closed', exchange_date: ist, next_transition_at: next.rows[0]?.starts_at ?? null };

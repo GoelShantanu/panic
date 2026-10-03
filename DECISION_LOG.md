@@ -1215,6 +1215,52 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-038 — Trading calendar source and the Trending score *(implements PRD-001 US-001.3 AC-7, US-001.7; system overview M1, M2; OQ-001.3)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Product · Architecture |
+| **Decided by** | Founder (calendar source, Muhurat time, one calendar for NSE and BSE); CTO (score details) |
+
+**Decision**
+
+1. **Calendar source.** The 2026 equity holidays come from NSE's published list `[VERIFIED: nseindia.com, read 2026-10-03]`. Muhurat runs **18:00–19:00 IST** every year (founder). **NSE and BSE share one calendar** (founder).
+2. **2027 onwards:**
+   - The founder asked for the 2026 calendar to be reused for later years.
+   - Fixed-date holidays repeat automatically: 26 Jan, 14 Apr, 1 May, 15 Aug, 2 Oct and 25 Dec.
+   - Lunar-calendar holidays and the Muhurat date move each year. They are entered from each year's official list with `admin.ts add-holiday` and `set-muhurat`.
+   - `maintenance.ts` warns from November until next year's list is entered, and keeps the calendar generated 60 days ahead.
+3. **Sessions:**
+   - Weekdays: pre-open 09:00–09:15 and open 09:15–15:30, closed otherwise `[VERIFIED: NSE "Market Timings"]`.
+   - Weekends are closed. A weekday holiday is `holiday` all day.
+   - Muhurat is `special`. A market-wide halt is recorded by an operator as `halted` (`admin.ts record-halt`; US-001.7 AC-3).
+4. **Trending score:**
+   - **Activity** in the trailing 2 h: each distinct source counts by its tier weight (tier 1 = 3, 2 = 2, 3 = 1, 4 = 0.5 `[ASSUMPTION]`), and each further item from the same source counts 0.5.
+   - **Qualifying:** at least 3 sources in the window (OQ-001.3).
+   - **Score:** activity ÷ the instrument's expected activity per 2 h in the **current session type**, using its weighted items over the last 28 days of that session type. The expected value never falls below 1 `[ASSUMPTION]`.
+   - **Multi-company stories** use the busiest instrument's baseline. Untagged stories use a market-wide baseline.
+   - No votes, tone or AI output are inputs (C-001.2).
+5. **Response:** Trending is one ranked page with no cursor. Each card carries a `trending` block: score, sources in the window, and the window length.
+
+**Reason**
+
+1. These are the founder's instructions, plus the exchange's own published data.
+2. Copying 2026's lunar dates would put Holi 2027 on 3 March, which will be wrong (correctness over speed). Entering one list a year is about 10 minutes of work.
+3. These are the exchange's published hours.
+4. PRD-001 requires scoring only on item count, source count and source tiers, against the company's own normal level, and never comparing in-session with out-of-session activity (US-001.7 AC-4).
+5. A ranked list has no stable keyset to page through.
+
+**Consequences**
+
+- Each December: enter next year's official holidays and the Muhurat date.
+- Trending is thin until about 4 weeks of real data build each company's baseline.
+- The tier weights and floor are assumptions, to tune on real data.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

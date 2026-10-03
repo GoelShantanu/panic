@@ -1,6 +1,8 @@
 // Partition lifecycle and retention purges (partitioning.md §3). Runs as the owner role.
 
 import type pg from 'pg';
+import { istDate } from '@stockpanic/core';
+import { ensureCalendar, officialListMissing } from './calendar.ts';
 import { purgeExpiredContent } from './community.ts';
 
 const RETENTION: ReadonlyArray<{ parent: string; scheme: 'monthly' | 'daily'; keepMs: number; timeColumn: string }> = [
@@ -17,6 +19,8 @@ function partitionEnd(name: string, parent: string, scheme: 'monthly' | 'daily')
 }
 
 export interface MaintenanceResult {
+  calendarDaysAdded: number;
+  calendarWarnings: string[];
   dropped: string[];
   defaultRowsPurged: number;
   removedContent: number;
@@ -47,7 +51,14 @@ export async function runMaintenance(db: pg.ClientBase, now: Date): Promise<Main
     const del = await db.query(`DELETE FROM ${r.parent}_default WHERE ${r.timeColumn} < $1`, [cutoff]);
     defaultRowsPurged += del.rowCount ?? 0;
   }
-  return { dropped, defaultRowsPurged, ...(await purgeExpiredContent(db, now)) };
+  // Calendar 60 days ahead (system overview M1). Lunar-date holidays need each year's official list.
+  const today = istDate(now);
+  const calendarDaysAdded = await ensureCalendar(db, istDate(new Date(now.getTime() - 7 * 86_400_000)), istDate(new Date(now.getTime() + 60 * 86_400_000)));
+  const calendarWarnings: string[] = [];
+  const year = Number(today.slice(0, 4));
+  if (await officialListMissing(db, year)) calendarWarnings.push(`${year}: official holiday list not entered; only fixed-date holidays are in the calendar`);
+  if (Number(today.slice(5, 7)) >= 11 && (await officialListMissing(db, year + 1))) calendarWarnings.push(`${year + 1}: enter the official holiday list (usually published in December)`);
+  return { calendarDaysAdded, calendarWarnings, dropped, defaultRowsPurged, ...(await purgeExpiredContent(db, now)) };
 }
 
 // Operator roles need two-factor enrolment first; the schema refuses otherwise (PRD-007 US-007.5 AC-2).

@@ -20,6 +20,7 @@ import {
   storyDetailExtras,
   streamPage,
   streamUnreadCount,
+  trendingPage,
 } from '@stockpanic/db';
 import type { SessionUser, StoryCard, StreamQuery, StreamView } from '@stockpanic/db';
 import {
@@ -147,7 +148,20 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
 
   if (view === 'watchlist' && viewer.userId === null) return { status: 401, body: { error: 'auth_required' } };
   if ((view === 'bullish' || view === 'bearish') && !(await directionalVotingEnabled(db))) return notFound(); // C-001.3
-  if (view === 'trending') return notFound(); // Backend B4b: needs the trading calendar
+  if (view === 'trending') {
+    // Ranked, not chronological: one page, no cursor (PRD-001 US-001.3 AC-7, D-038).
+    if (p.before) return invalid('cursor');
+    const ranked = await trendingPage(db, { eventTypes: p.eventTypes, filingsOnly: p.filingsOnly, notBefore: notBefore(viewer, now), watchlistUserId: null }, now, p.limit);
+    const cards = await loadStoryCards(db, ranked.map((r) => r.id));
+    const stories = await community.personaliseVotes(db, ranked.map((r) => cards.get(r.id)).filter((c): c is StoryCard => c !== undefined), user, now);
+    const info = new Map(ranked.map((r) => [cards.get(r.id)?.story_id, r]));
+    return ok({
+      stories: stories.map((s) => ({ ...s, trending: { score: info.get(s.story_id)!.score, sources_in_window: info.get(s.story_id)!.sourceCount, window_hours: 2 } })),
+      next_cursor: null,
+      session: await sessionInfo(db, now),
+      stale_sources: await staleTier1Sources(db),
+    });
+  }
 
   // The Watchlist view is Latest restricted to the viewer's instruments (PRD-001 US-001.3 AC-4).
   const baseView: StreamView = view === 'watchlist' ? 'latest' : (view as StreamView);

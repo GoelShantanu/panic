@@ -28,10 +28,11 @@ Building `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26.
 | B4b | Trending view (activity vs per-company baseline in the same session type) | PRD-001 US-001.3 AC-7, OQ-001.3 | ☐ — **blocked on trading-calendar source**; returns 404 until then |
 | B5 | Accounts, sessions, entitlements | PRD-007 | ✅ Done — migration 0004; 160/160 tests (16 account-flow, 7 Google verifier); sign-up → trial → export → deletion observed end-to-end through the real server. Email via ADR-007 (free Gmail or Workspace). Deferred: operator 2FA (with operator console), IP-level rate limiting, email-address change |
 | B6 | Watchlist and alerts | PRD-003 | ✅ Done — migration 0005; 195/195 tests (11 alert end-to-end, 9 watchlist web); sign-up → watchlist → ingest → pipeline → alert email → history → one-click unsubscribe observed end-to-end. Also: Watchlist view and exact unread count (PRD-001 US-001.3/001.4). D-032. Correction-notice trigger wired when the operator console exists |
-| B7 | Votes and comments, grievances | PRD-005, PRD-006 | ☐ Next |
-| B8 | AI layer: classification, summaries, safeguards, spend cap | ai-layer.md; D-025 | ☐ — needs Haiku feature check |
+| B7 | Votes and comments, grievances | PRD-005, PRD-006 | ✅ Done — migration 0006; 220/220 tests (18 community integration, 7 TOTP/eligibility unit); ingest → vote → comment → report → operator 2FA → takedown → notice observed end-to-end with real processes. Operator API + TOTP 2FA, maintenance and admin CLIs. D-033 |
+| B8 | AI layer: classification, summaries, safeguards, spend cap | ai-layer.md; D-025 | ☐ Next — needs Haiku feature check |
 | B9 | Filings adapter | ingestion.md §3 | ☐ — **blocked on feed vendor (OQ-6)** |
 | B10 | Billing | PRD-007 §2.2 | ☐ — needs payment-provider ADR |
+| B11 | Operator story corrections: merge, split, retag; correction notices to alert recipients | PRD-002 §6 (US-002.11), §8.4; PRD-003 §3.4 | ☐ (D-033) |
 
 ### Database plan
 
@@ -167,7 +168,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO builds B7 (votes, comments, grievances). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, trading-calendar source (blocks B4b), first curated aliases; before launch: Gmail app password, Google sign-in client ID, VAPID keys for browser push.
+**Single next action:** CTO builds B8 (AI layer). Founder, in parallel: exchange feed vendor (OQ-6), RSS feed list with terms checks, trading-calendar source (blocks B4b), first curated aliases; before launch: Gmail app password, Google sign-in client ID, VAPID keys for browser push; run the daily `maintenance.ts` job from the host scheduler.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.
@@ -254,3 +255,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **B4 done.** Read API: stream (views, filters, keyset cursor, free-tier depth and 402 rules, session, stale tier-1 sources), story detail (301 for merged), company + community opinion, company timeline, instrument as-of, search, event types. Live channel: SSE broadcast via LISTEN/NOTIFY, heartbeat, Last-Event-ID replay, resync. 126/126 tests; end-to-end SSE delivery observed (705 ms incl. process start-up). Trending split to B4b (needs trading calendar). | Phase 6 in progress |
 | 2026-10-03 | **B5 done; D-031 / ADR-007** (Google email: free Gmail or Workspace by config, per founder). Migration 0004 (pending sign-up, data export, deletion choice). Email-code sign-in (hashed codes, 5-attempt lock, 5/hour per email), Google sign-in (RS256 verification, account linking), pending sign-up → account with age/consent, hashed sessions (cookie or bearer, 30-day idle), sign-out everywhere, /v1/me with entitlements, trial, username change with holds, data export and account deletion as jobs, JSON-only writes. 160/160 tests; observed end-to-end. | Phase 6 in progress |
 | 2026-10-03 | **B6 done.** Migration 0005. Watchlist API (search-add, 402 at tier limit, CSV preview/confirm storing ISINs only), alert settings/history, push subscriptions (web-push), one-click unsubscribe (signed token, RFC 8058). Alert worker: eligibility (watchlist, tier rank, added-before-story, event prefs), budget/quiet hours/digest-only, email + push, undelivered → digest, daily digest, corrections, email-failure disabling. Pipeline queues alert evaluation per story change. Watchlist view + exact unread count. 195/195 tests; observed end-to-end. **D-032.** Found: pg cannot parse arrays of the isin_code domain (cast to text). | Phase 6 in progress |
+| 2026-10-03 | **B7 done.** Migration 0006. Votes (directional/quality, eligibility, 60/h, audit + IP log), `mine`/`can_vote` on cards; threaded comments (depth 3, 30 s / 20 per h, 10-min edit, author delete), reports → grievances (GR refs, urgent 24 h), public grievance form, noindex profiles, reply dot and notices. Operator API behind TOTP 2FA (12 h): takedowns (180-day retention, notice), suspension, vote revoke/discount, kill switches, grievance queue, audited voters list, abuse report. `maintenance.ts` (partitions, retention purges), `admin.ts grant-role`. 220/220 tests; e2e observed. **D-033.** Found in e2e: report and grievance references diverged — fixed. B11 added. | Phase 6 in progress |

@@ -143,11 +143,21 @@ export async function createSession(db: pg.ClientBase, tokenHash: string, userId
 
 export interface SessionUser extends UserRef {
   tier: Tier;
+  role: 'user' | 'operator' | 'admin';
+  emailVerified: boolean;
+  createdAt: Date;
+  votingRevoked: boolean;
+  commentSuspended: boolean;
+  totpEnabled: boolean;
+  mfaVerifiedAt: Date | null;
+  sessionHash: string;
 }
 
 export async function sessionUser(db: pg.ClientBase, tokenHash: string, now: Date): Promise<SessionUser | null> {
   const { rows } = await db.query(
-    `SELECT u.id, u.public_id, u.username, t.tier, s.last_seen_at
+    `SELECT u.id, u.public_id, u.username, t.tier, u.role, u.email_verified_at IS NOT NULL AS email_verified, u.created_at,
+            u.voting_revoked_at IS NOT NULL AS voting_revoked, u.comment_suspended_at IS NOT NULL AS comment_suspended,
+            u.totp_enabled, s.mfa_verified_at, s.last_seen_at
        FROM user_session s JOIN app_user u ON u.id = s.user_id JOIN user_tier t ON t.user_id = u.id
       WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND u.deleted_at IS NULL AND u.deletion_requested_at IS NULL
         AND s.last_seen_at > $2::timestamptz - make_interval(days => $3)`,
@@ -158,7 +168,37 @@ export async function sessionUser(db: pg.ClientBase, tokenHash: string, now: Dat
   if (now.getTime() - new Date(r.last_seen_at).getTime() > 5 * 60_000) {
     await db.query('UPDATE user_session SET last_seen_at = $2 WHERE token_hash = $1', [tokenHash, now]);
   }
-  return { ...userRef(r), tier: r.tier };
+  return {
+    ...userRef(r),
+    tier: r.tier,
+    role: r.role,
+    emailVerified: r.email_verified,
+    createdAt: r.created_at,
+    votingRevoked: r.voting_revoked,
+    commentSuspended: r.comment_suspended,
+    totpEnabled: r.totp_enabled,
+    mfaVerifiedAt: r.mfa_verified_at,
+    sessionHash: tokenHash,
+  };
+}
+
+// ---------------------------------------------------------------- operator 2FA (PRD-007 US-007.5)
+
+export async function setTotpSecret(db: pg.ClientBase, userId: string, encrypted: string): Promise<void> {
+  await db.query('UPDATE app_user SET totp_secret_enc = $2 WHERE id = $1 AND NOT totp_enabled', [userId, encrypted]);
+}
+
+export async function totpSecretOf(db: pg.ClientBase, userId: string): Promise<string | null> {
+  const { rows } = await db.query('SELECT totp_secret_enc FROM app_user WHERE id = $1', [userId]);
+  return rows[0]?.totp_secret_enc ?? null;
+}
+
+export async function enableTotp(db: pg.ClientBase, userId: string): Promise<void> {
+  await db.query('UPDATE app_user SET totp_enabled = true WHERE id = $1 AND totp_secret_enc IS NOT NULL', [userId]);
+}
+
+export async function markSessionMfa(db: pg.ClientBase, tokenHash: string, now: Date): Promise<void> {
+  await db.query('UPDATE user_session SET mfa_verified_at = $2 WHERE token_hash = $1', [tokenHash, now]);
 }
 
 export async function revokeSession(db: pg.ClientBase, tokenHash: string, now: Date): Promise<void> {

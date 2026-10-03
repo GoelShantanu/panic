@@ -992,6 +992,44 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-033 — Operator two-factor and moderation mechanics *(implements PRD-005 §6, PRD-006 US-006.7/8, PRD-007 US-007.5)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture · Security |
+| **Decided by** | CTO, during Backend B7. Founder may override |
+
+**Decision**
+
+1. **Operator 2FA is an authenticator app (TOTP, RFC 6238):** 6 digits, 30-second steps, ±1 step of drift. The secret is stored AES-256-GCM-encrypted with a key derived from `AUTH_SECRET`. Any signed-in user may enrol, but the operator and admin roles can only be granted after enrolment, by the `admin.ts grant-role` CLI (the schema refuses otherwise). Every `/v1/admin/*` call needs that role **and** a code entered within the last **12 hours** in this session. Five wrong codes lock the account for 15 minutes.
+2. **A comment report opens its grievance under the report's own reference** (GR-YYYY-NNNNNN). Later reports on the same comment join that open grievance, and each reporter's reference resolves to it.
+3. **Rate limits come from the audit trail:** 60 vote actions per hour; comments need 30 s between posts and at most 20 per hour.
+4. **Client IP is the TCP peer address.** No proxy header is trusted until the deployment puts a known proxy in front.
+5. **Abuse-report thresholds are `[ASSUMPTION]`s:**
+   - a burst is ≥ 20 directional votes in 15 minutes, half of them from accounts younger than 30 days;
+   - ≥ 5 accounts voting on one story from one IP in 24 h;
+   - a user casting ≥ 80% of ≥ 10 weekly votes on one company.
+6. **Story corrections (merge, split, retag) become Backend milestone B11.** They are not part of B7.
+
+**Reason**
+
+1. TOTP needs no SMS vendor or cost and works offline. Encrypting the secret means a database dump alone cannot mint codes. A 12-hour window covers a working day.
+2. One number per complaint, which the operator can use directly.
+3. The audit trail already records every action, so there is no second counter to keep in step.
+4. Trusting `X-Forwarded-For` without a proxy lets anyone forge their IP.
+5. No baseline exists yet (PRD-005 §11).
+
+**Consequences**
+
+- Rotating `AUTH_SECRET` invalidates enrolled TOTP secrets; operators re-enrol.
+- A reply to a level-3 comment is re-parented to the level-2 comment, so the reply dot goes to that comment's author.
+- The B7 operator endpoints have no screens yet; the Frontend phase builds them.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

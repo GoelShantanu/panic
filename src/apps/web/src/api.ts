@@ -21,7 +21,7 @@ import {
   streamPage,
   streamUnreadCount,
 } from '@stockpanic/db';
-import type { StoryCard, StreamQuery, StreamView } from '@stockpanic/db';
+import type { SessionUser, StoryCard, StreamQuery, StreamView } from '@stockpanic/db';
 import {
   getExportStatus,
   getMe,
@@ -53,6 +53,7 @@ import {
   putAlertSettings,
   unsubscribe,
 } from './watchlist.ts';
+import * as community from './community.ts';
 
 export interface ApiResponse {
   status: number;
@@ -135,7 +136,7 @@ async function page(db: pg.ClientBase, view: StreamView, isin: string | null, p:
 }
 
 // GET /v1/stream (PRD-001 §4.1)
-export async function getStream(db: pg.ClientBase, params: URLSearchParams, now: Date = new Date(), viewer: Viewer = ANONYMOUS): Promise<ApiResponse> {
+export async function getStream(db: pg.ClientBase, params: URLSearchParams, now: Date = new Date(), viewer: Viewer = ANONYMOUS, user: SessionUser | null = null): Promise<ApiResponse> {
   const view = params.get('view') ?? 'latest';
   if (!(VIEWS as readonly string[]).includes(view)) return invalid('view');
   const p = parseListParams(params, viewer, true);
@@ -148,7 +149,9 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
   // The Watchlist view is Latest restricted to the viewer's instruments (PRD-001 US-001.3 AC-4).
   const baseView: StreamView = view === 'watchlist' ? 'latest' : (view as StreamView);
   const watchlistUserId = view === 'watchlist' ? viewer.userId : null;
-  const { stories, next_cursor } = await page(db, baseView, null, p, viewer, now, watchlistUserId);
+  const result = await page(db, baseView, null, p, viewer, now, watchlistUserId);
+  const stories = await community.personaliseVotes(db, result.stories, user, now);
+  const next_cursor = result.next_cursor;
 
   // Unread marker for signed-in viewers (PRD-001 US-001.4); signed-out browsers keep their own.
   let unread: { is_unread: (s: StoryCard) => boolean; unread_count: number } | null = null;
@@ -167,12 +170,14 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
 }
 
 // GET /v1/stories/{story_id} (PRD-004 §6.1)
-export async function getStory(db: pg.ClientBase, publicId: string): Promise<ApiResponse> {
+export async function getStory(db: pg.ClientBase, publicId: string, user: SessionUser | null = null, now: Date = new Date()): Promise<ApiResponse> {
   const found = await lookupStory(db, publicId);
   if (found.kind === 'missing') return notFound();
   if (found.kind === 'merged') return { status: 301, body: { redirect: found.survivor }, headers: { location: `/v1/stories/${found.survivor}` } };
 
-  const card = (await loadStoryCards(db, [found.id])).get(found.id);
+  const loaded = (await loadStoryCards(db, [found.id])).get(found.id);
+  if (!loaded) return notFound();
+  const [card] = await community.personaliseVotes(db, [loaded], user, now);
   if (!card) return notFound();
   const extras = await storyDetailExtras(db, found.id);
   return ok({
@@ -228,6 +233,7 @@ export async function getCompanyTimeline(
   params: URLSearchParams,
   now: Date = new Date(),
   viewer: Viewer = ANONYMOUS,
+  user: SessionUser | null = null,
 ): Promise<ApiResponse> {
   const inst = await knownInstrument(db, rawIsin);
   if (!inst) return notFound();
@@ -236,7 +242,7 @@ export async function getCompanyTimeline(
   const result = await page(db, 'latest', inst.isin, p, viewer, now);
   const cutoff = notBefore(viewer, now);
   return ok({
-    stories: result.stories,
+    stories: await community.personaliseVotes(db, result.stories, user, now),
     next_cursor: result.next_cursor,
     depth_limit_reached: result.exhausted && cutoff !== null && (await olderStoriesExist(db, inst.isin, cutoff)),
   });
@@ -266,6 +272,7 @@ export async function getEventTypes(db: pg.ClientBase): Promise<ApiResponse> {
 export interface RequestCtx {
   body: unknown;
   sessionToken: string | null;
+  ip?: string | null;
 }
 
 const NO_REQUEST: RequestCtx = { body: null, sessionToken: null };
@@ -293,6 +300,7 @@ export async function route(
     if (path === 'auth/google') return postGoogle(db, req.body, deps, now);
     if (path === 'auth/signup/complete') return postSignupComplete(db, req.body, req.sessionToken, now);
     if (path === 'auth/signout') return postSignout(db, req.body, req.sessionToken, user, now);
+    if (path === 'auth/mfa') return community.postMfaVerify(db, req.body, user, deps.authSecret, now);
     return notFound();
   }
   if (path === 'me' && method === 'GET') return getMe(db, user);
@@ -316,14 +324,65 @@ export async function route(
   if (path === 'push/subscriptions' && method === 'POST') return postPushSubscription(db, req.body, user);
   if (path === 'push/subscriptions' && method === 'DELETE') return deletePushSubscriptionApi(db, req.body, user);
 
+  // Votes (PRD-005 §9.2) and comments (PRD-006 §7).
+  const ip = req.ip ?? null;
+  if (resource === 'stories' && id && sub === 'votes') {
+    const kind = parts[4];
+    if (kind === 'directional' && parts.length === 5 && (method === 'PUT' || method === 'DELETE')) {
+      return community.putDirectionalVote(db, id, req.body, user, ip, now, method === 'DELETE');
+    }
+    if (kind === 'quality' && parts[5] && parts.length === 6 && (method === 'PUT' || method === 'DELETE')) {
+      return community.putQualityVote(db, id, parts[5], req.body, user, ip, now, method === 'DELETE');
+    }
+    return notFound();
+  }
+  if (resource === 'stories' && id && sub === 'comments' && parts.length === 4) {
+    if (method === 'GET') return community.getComments(db, id, url.searchParams, user, now);
+    if (method === 'POST') return community.postComment(db, id, req.body, user, now);
+  }
+  if (resource === 'comments' && id && parts.length === 3 && method === 'PATCH') return community.patchComment(db, id, req.body, user, now);
+  if (resource === 'comments' && id && parts.length === 3 && method === 'DELETE') return community.deleteComment(db, id, user, now);
+  if (resource === 'comments' && id && sub === 'reports' && parts.length === 4 && method === 'POST') return community.postReport(db, id, req.body, user, now);
+  if (path === 'grievances' && method === 'POST') return community.postGrievance(db, req.body, now);
+  if (path === 'me/replies' && method === 'GET') return community.getReplies(db, user, now);
+  if (path === 'me/notifications' && method === 'GET') return community.getNotifications(db, user);
+  if (resource === 'users' && id && parts.length === 3 && method === 'GET') return community.getProfile(db, id);
+  if ((path === 'me/totp/enrol' || path === 'me/totp/confirm') && method === 'POST') {
+    if (!deps) return { status: 503, body: { error: 'auth_unavailable' } };
+    return path === 'me/totp/enrol' ? community.postTotpEnrol(db, user, deps.authSecret) : community.postTotpConfirm(db, req.body, user, deps.authSecret, now);
+  }
+  if (resource === 'admin') return adminRoute(db, method, parts, url, req.body, user, now);
+
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();
-  if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now, viewer);
+  if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now, viewer, user);
   if (resource === 'event-types' && parts.length === 2) return getEventTypes(db);
-  if (resource === 'stories' && id && parts.length === 3) return getStory(db, id);
+  if (resource === 'stories' && id && parts.length === 3) return getStory(db, id, user, now);
   if (resource === 'companies' && id && parts.length === 3) return getCompany(db, id, now);
-  if (resource === 'companies' && id && sub === 'timeline' && parts.length === 4) return getCompanyTimeline(db, id, url.searchParams, now, viewer);
+  if (resource === 'companies' && id && sub === 'timeline' && parts.length === 4) return getCompanyTimeline(db, id, url.searchParams, now, viewer, user);
   if (resource === 'instruments' && id === 'search' && parts.length === 3) return getInstrumentSearch(db, url.searchParams);
   if (resource === 'instruments' && id && parts.length === 3) return getInstrument(db, id, url.searchParams);
+  return notFound();
+}
+
+// Operator endpoints: operator or admin role, plus an authenticator code within 12 h (PRD-007 US-007.5).
+async function adminRoute(db: pg.ClientBase, method: string, parts: string[], url: URL, body: unknown, user: SessionUser | null, now: Date): Promise<ApiResponse> {
+  const gate = community.operatorGate(user, now);
+  if (gate) return gate;
+  const op = user!;
+  const [, , kind, id, action] = parts;
+  const n = parts.length;
+  if (kind === 'stories' && id && action === 'voters' && n === 5 && method === 'GET') return community.adminVoters(db, id, url.searchParams, op, now);
+  if (kind === 'comments' && id && action === 'takedown' && n === 5 && method === 'POST') return community.adminTakedown(db, id, body, op, now);
+  if (kind === 'users' && id && n === 5 && method === 'POST') {
+    if (action === 'comment-suspension') return community.adminUserRestriction(db, id, 'commenting', body, op, now);
+    if (action === 'voting') return community.adminUserRestriction(db, id, 'voting', body, op, now);
+    if (action === 'vote-discount') return community.adminUserRestriction(db, id, 'discount', body, op, now);
+  }
+  if (kind === 'settings' && id === 'comments' && n === 4 && method === 'PUT') return community.adminCommentSettings(db, body, op, now);
+  if (kind === 'settings' && id === 'directional-voting' && n === 4 && method === 'PUT') return community.adminDirectionalSetting(db, body, op, now);
+  if (kind === 'grievances' && n === 3 && method === 'GET') return community.adminGrievances(db, now);
+  if (kind === 'grievances' && id && n === 4 && method === 'POST') return community.adminGrievanceUpdate(db, id, body, op, now);
+  if (kind === 'abuse' && n === 3 && method === 'GET') return community.adminAbuse(db, now);
   return notFound();
 }

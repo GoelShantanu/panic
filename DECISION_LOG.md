@@ -1030,6 +1030,55 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-034 — AI layer build: model refines after publication; no model tags before calibration *(amends ai-layer.md §1, §2.1, §3.1)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture |
+| **Decided by** | CTO, during Backend B8. Founder may override |
+
+**Decision**
+
+1. **Classification runs after publication, as a queued job.** It does not run inline with a 10-second timeout.
+   - The pipeline commits every story with rule output first.
+   - The `ai` worker then classifies every article, and only those filings whose rules found nothing.
+   - If the event types change, the worker recomputes the story, broadcasts `story.updated` and re-evaluates alerts.
+2. **The model's candidate scores are stored as evaluation data** (`item_analysis.model_scores`). No `model` tag is written until a calibration exists, which is the entity-resolution.md §5 launch rule. Candidates come only from registry search on unresolved mentions.
+3. **Summaries read `filing_detail.extracted_text`.** Fetching and extracting PDFs, and the scanned-PDF path (§3.3), arrive with the filings adapter (B9). With no text, there is no call.
+4. **No prompt caching.** Both prompts are below Haiku 4.5's 4,096-token cache minimum `[VERIFIED: claude-api reference, prompt-caching minimums]`, so caching would silently do nothing.
+5. **G1 grounding exempts two things:**
+   - the filing company's own name, which G5 checks instead;
+   - attribution verbs such as "reported" and "stated".
+
+   Every other content word and every number must appear in the sentence's cited spans.
+6. **AI is off until credentials exist.** The `ai_enabled` setting defaults to false and is switched on with `admin.ts set-setting ai_enabled true`. Prices are a setting (Haiku 4.5 list prices: $1 / $5 per MTok). The rupee rate is a setting at 84 `[ASSUMPTION]`, which the founder updates.
+7. **Founder alerts** go by email to `OPS_EMAIL`, once per key: 80% and 100% of the cap once a month; over-pace and withhold rate above 20% once a day. The audit log records each alert.
+
+**Reason**
+
+1. An inline model call would hold the clustering lock for up to 10 seconds on every article. The ai-layer.md design already publishes on timeout, so publishing first always gives the same user outcome with a simpler pipeline.
+2. Raw model confidence is not calibrated precision. Showing tags at τ = 0.95 without calibration would break PRD-002's precision promise.
+3. The filing document format depends on the feed vendor (OQ-6).
+4. This follows the Anthropic docs for Haiku 4.5.
+5. Without the exemptions, any summary naming the company would be withheld.
+6. There is no API key yet. Off-by-default avoids a growing queue of failing jobs.
+
+**Feature check (ADR-006 §2 item 10)**
+
+- Structured outputs on Haiku 4.5: `[VERIFIED]` from the Anthropic reference, which lists Haiku 4.5 as supported.
+- Citations on plain-text documents: `[INFERRED]` from the reference, which documents citations as a general Messages API feature with no model restriction.
+- Neither was exercised against the live API, because no credentials are configured. Run a live check (one classify and one summarise call) when the key exists.
+
+**Consequences**
+
+- Model-refined event types appear seconds after a story first shows.
+- Recall of tags stays low until about 2,000 labelled article tags allow calibration.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

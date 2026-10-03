@@ -6,3 +6,4 @@ export * from './accounts.ts';
 export * from './alerts.ts';
 export * from './community.ts';
 export * from './maintenance.ts';
+export * from './ai.ts';

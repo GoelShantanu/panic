@@ -87,6 +87,8 @@ DATABASE_URL=postgres://… node src/apps/worker/src/cli/account.ts [--once]    
 DATABASE_URL=postgres://… AUTH_SECRET=… PUBLIC_BASE_URL=… node src/apps/worker/src/cli/alerts.ts [--once]   # alerts + digests (PUSH=web + VAPID_* for browser push)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/maintenance.ts        # daily, owner role: partitions ahead, drops expired ip_log/live_event/ai_call, purges
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts grant-role <username> operator   # after the user enrols TOTP (/v1/me/totp/enrol, /confirm)
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-setting ai_enabled true      # once Anthropic credentials exist (D-034)
+DATABASE_URL=postgres://… ANTHROPIC_API_KEY=… OPS_EMAIL=… node src/apps/worker/src/cli/ai.ts [--once]   # AI classify + summarise jobs (Haiku 4.5)
 ```
 
 Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=test -p 127.0.0.1:55432:5432 postgres:17`. Schema constraint tests: run `docs/database/tests/0001_constraints_test.sql` with `psql` inside that container.

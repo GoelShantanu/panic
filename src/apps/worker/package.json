@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@stockpanic/core": "*",
     "@stockpanic/db": "*",
-    "fast-xml-parser": "^5.11.2",
-    "pg": "^8.23.1",
     "@stockpanic/mail": "*",
-    "@stockpanic/push": "*"
+    "@stockpanic/push": "*",
+    "fast-xml-parser": "^5.11.2",
+    "pg": "^8.23.1"
   }
 }

@@ -18,9 +18,11 @@ import {
 import type { FilingFeatures, ItemFeatures } from '@stockpanic/core';
 import {
   addItemToStory,
+  aiEnabled,
   candidateStoryIds,
   createStory,
   emitStoryEvent,
+  enqueueAiJob,
   enqueueAlertEvaluation,
   loadPipelineItem,
   loadStoryItems,
@@ -175,5 +177,13 @@ export async function processItem(db: pg.ClientBase, itemId: string, ctx: Pipeli
   await saveStoryBands(db, storyId, bands, new Date(at.getTime() + CLUSTER_WINDOW_MS));
   await emitStoryEvent(db, target ? 'story.updated' : 'story.created', storyId);
   await enqueueAlertEvaluation(db, storyId); // PRD-003 US-003.5
+  // The model refines after publication (D-034): articles always, filings only when rules found
+  // nothing; summaries for filing stories (the AI job re-checks eligibility).
+  if (await aiEnabled(db)) {
+    if (!item.filing || (analysis.eventTypes.length === 1 && analysis.eventTypes[0] === 'other')) {
+      await enqueueAiJob(db, 'classify', { item_id: itemId }, item.filing ? 20 : 5);
+    }
+    if (item.filing) await enqueueAiJob(db, 'summarise', { story_id: storyId }, 0);
+  }
   return { storyId, created: target === null, skipped: false };
 }

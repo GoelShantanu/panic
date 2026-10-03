@@ -70,3 +70,25 @@ export async function grantRole(db: pg.ClientBase, username: string, role: 'user
   }
   return 'granted';
 }
+
+// Founder-side settings changes from the host (e.g. `ai_enabled` once API credentials exist).
+export async function setSettingFromCli(db: pg.ClientBase, key: string, value: unknown, now: Date): Promise<boolean> {
+  await db.query('BEGIN');
+  try {
+    const prev = await db.query('SELECT value FROM setting WHERE key = $1 FOR UPDATE', [key]);
+    if (!prev.rows[0]) {
+      await db.query('ROLLBACK');
+      return false;
+    }
+    await db.query('UPDATE setting SET value = $2, updated_at = $3, updated_by = NULL WHERE key = $1', [key, JSON.stringify(value), now]);
+    await db.query(
+      `INSERT INTO audit_log (at, actor_type, actor_id, action, entity_type, entity_id, before, after) VALUES ($1, 'system', NULL, 'setting.changed', 'setting', $2, $3, $4)`,
+      [now, key, { value: prev.rows[0].value }, { value, via: 'admin_cli' }],
+    );
+    await db.query('COMMIT');
+    return true;
+  } catch (err) {
+    await db.query('ROLLBACK');
+    throw err;
+  }
+}

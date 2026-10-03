@@ -12,6 +12,8 @@
 
 > No legal review applies to AI output (D-018). The checks in §4 are the only safeguard on text users read.
 
+> *Amended by [D-034](../../DECISION_LOG.md): classification runs as a job after publication (§1, §2.1); summaries read `filing_detail.extracted_text` (§3.1); no `model` tags before calibration; no prompt caching (prompts are below Haiku 4.5's 4,096-token minimum).*
+
 ---
 
 ## 1. Jobs

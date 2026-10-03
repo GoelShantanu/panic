@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { SESSION_COOKIE } from '@stockpanic/core';
 import { route } from './api.ts';
 import type { AuthDeps } from './auth.ts';
+import { INGEST_PREFIX, MAX_PUSH_BYTES, receivePush } from './ingest.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_IMPORT_BODY_BYTES = 1536 * 1024; // CSV text (≤ 1 MB) inside JSON
@@ -56,11 +57,32 @@ async function readJson(req: IncomingMessage, pathname: string): Promise<unknown
   }
 }
 
+async function readRaw(req: IncomingMessage, limit: number): Promise<string> {
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > limit) throw new HttpError(413, 'payload_too_large');
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
 export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null): Server {
   return createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     let client: pg.PoolClient | undefined;
     try {
+      // Vendor push: signed raw body, verified before parsing (ingestion.md §3).
+      if (req.method === 'POST' && url.pathname.startsWith(INGEST_PREFIX)) {
+        const raw = await readRaw(req, MAX_PUSH_BYTES);
+        client = await pool.connect();
+        const sig = req.headers['x-sp-signature'];
+        const r = await receivePush(client, decodeURIComponent(url.pathname.slice(INGEST_PREFIX.length)), raw, typeof sig === 'string' ? sig : null, process.env, new Date());
+        res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+        res.end(JSON.stringify(r.body));
+        return;
+      }
       const body = await readJson(req, url.pathname);
       client = await pool.connect();
       const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken: sessionTokenFrom(req), ip: req.socket.remoteAddress ?? null }, deps);

@@ -251,7 +251,8 @@ export async function lookupStory(db: pg.ClientBase, publicId: string): Promise<
 
 export async function storyDetailExtras(db: pg.ClientBase, storyId: string) {
   const items = await db.query(
-    `SELECT i.public_id, i.kind, src.source_id, src.name, src.tier, i.headline, i.url, f.attachment_url, i.published_at, i.status
+    `SELECT i.public_id, i.kind, src.source_id, src.name, src.tier, i.headline, i.url, f.attachment_url, i.published_at, i.status,
+            (SELECT max(r.revised_at) FROM item_revision r WHERE r.item_id = i.id) AS revised_at
        FROM story_item si JOIN item i ON i.id = si.item_id JOIN source src ON src.source_id = i.source_id
        LEFT JOIN filing_detail f ON f.item_id = i.id
       WHERE si.story_id = $1
@@ -294,6 +295,7 @@ export async function storyDetailExtras(db: pg.ClientBase, storyId: string) {
       ...(r.attachment_url ? { attachment_url: r.attachment_url } : {}),
       published_at: r.published_at,
       status: r.status,
+      ...(r.revised_at ? { revised_at: r.revised_at } : {}), // PRD-002 §9: revision time shown
     })),
     summary: sm
       ? { text: sm.body, label: `AI summary of the ${sm.exchange} filing`, source_item_id: sm.source_item_id, generated_at: sm.generated_at }

@@ -69,12 +69,13 @@ export interface PipelineItem {
   publishedAt: Date | null;
   firstSeenAt: Date;
   filing: { exchange: string; scripCode: string; category: string | null } | null;
+  backfilled: boolean;
 }
 
 export async function loadPipelineItem(db: pg.ClientBase, itemId: string): Promise<PipelineItem | null> {
   const { rows } = await db.query(
     `SELECT i.id, i.kind, i.source_id, s.kind AS source_kind, s.tier, i.headline, i.published_at, i.first_seen_at,
-            f.exchange, f.scrip_code, f.category
+            f.exchange, f.scrip_code, f.category, EXISTS (SELECT 1 FROM reconciliation_backfill b WHERE b.item_id = i.id) AS backfilled
        FROM item i JOIN source s USING (source_id) LEFT JOIN filing_detail f ON f.item_id = i.id
       WHERE i.id = $1`,
     [itemId],
@@ -91,6 +92,7 @@ export async function loadPipelineItem(db: pg.ClientBase, itemId: string): Promi
     publishedAt: r.published_at,
     firstSeenAt: r.first_seen_at,
     filing: r.exchange ? { exchange: r.exchange, scripCode: r.scrip_code, category: r.category } : null,
+    backfilled: r.backfilled,
   };
 }
 
@@ -140,7 +142,7 @@ export async function saveItemAnalysis(db: pg.ClientBase, itemId: string, a: Ite
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (item_id) DO UPDATE SET event_types = EXCLUDED.event_types, tags = EXCLUDED.tags,
        unresolved = EXCLUDED.unresolved, numbers = EXCLUDED.numbers, shingles = EXCLUDED.shingles,
-       rules_version = EXCLUDED.rules_version, analysed_at = now()`,
+       rules_version = EXCLUDED.rules_version, classifier = 'rules', model_scores = NULL, analysed_at = now()`,
     [itemId, a.eventTypes, JSON.stringify(a.tags), a.unresolved, a.numbers, a.shingles, a.rulesVersion],
   );
 }

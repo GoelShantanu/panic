@@ -1079,6 +1079,43 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-035 — Filings adapter built vendor-neutral; payment provider Razorpay *(implements ingestion.md §3; decides the PRD-007 payment aggregator)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture · Business |
+| **Decided by** | Founder (both choices); CTO (contract details) |
+
+**Decision**
+
+1. **B9 is built against an internal filing envelope (v1)** before a feed vendor is chosen (OQ-6). A vendor is connected later by a small mapping adapter or proxy that serves the same contract.
+   - **Envelope fields:** exchange, announcement_id, scrip_code, subject (verbatim), category, published_at, url, attachment_url, status (`live` | `withdrawn`).
+   - **Poll:** `GET <url>?cursor=` returns `{announcements, next_cursor}`, with a bearer token from the variable named in `token_env`. The cursor is kept in `source_fetch_state.cursor`.
+   - **Push:** `POST /v1/ingest/filings/{source_id}`, signed with `x-sp-signature: t=<unix>,v1=<HMAC-SHA256 of "t.body">`. Signatures older than 5 minutes are rejected. The secret comes from the variable named in `secret_env` and must be at least 32 characters. Verified payloads are stored in `raw_inbox`, acknowledged at once, then processed by the ingestion worker.
+   - **Reconciliation:** `GET <reconcile_url>?date=` returns the full list for an IST date. Run by `reconcile.ts` at 23:30 IST, and at 07:30 IST for the previous day.
+2. **Revisions** re-run analysis on the same item and story, and record the previous version in `item_revision`. A changed attachment drops the old extracted text and summary, and the AI job regenerates them. A withdrawal is a status that is never undone.
+3. **Backfilled filings** are recorded in `reconciliation_backfill`. Their stories take the original published time, so a day-old filing never surfaces as new. They are excluded from the latency metric.
+4. **Attachment text** is extracted locally with pdf.js (`pdfjs-dist`, Mozilla); HTML and plain text are also handled. Limits are 20 MB and the first 60 pages `[ASSUMPTION]`. A PDF with no text layer stores `''` and gets no summary; the scanned-PDF path (ai-layer.md §3.3) is still not built.
+5. **Payment provider: Razorpay** (B10). This closes the payment-aggregator ADR that Architecture deferred (D-026).
+
+**Reason**
+
+1. The vendor decision is the founder's and is still open. A neutral contract lets B9 be built and tested now. Each vendor's real format and behaviour (revisions, withdrawals, duplicates) are `[ASSUMPTION]` until the feed is procured (PRD-002 §11).
+2. PRD-002 §9 requires both behaviours.
+3. A day-old filing shown as new would mislead users.
+4. pdf.js is boring and verifiable, needs no native build, and is maintained by Mozilla.
+5. Razorpay was the founder's choice, and the CTO's recommendation.
+
+**Consequences**
+
+- When a vendor is chosen, write its mapping adapter and confirm its revision, withdrawal and duplicate-delivery behaviour against PRD-002 §9.
+- Founder setup for Razorpay: account, KYC, plans, webhook secret.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

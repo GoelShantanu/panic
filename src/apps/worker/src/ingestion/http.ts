@@ -13,6 +13,7 @@ export interface ConditionalGetOptions {
   timeoutMs?: number;
   maxBytes?: number;
   fetchImpl?: FetchLike;
+  headers?: Record<string, string>;
 }
 
 export const USER_AGENT = 'StockPanicBot/0.1';
@@ -31,6 +32,7 @@ export async function conditionalGet(url: string, opts: ConditionalGetOptions): 
     'user-agent': USER_AGENT,
     accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.1',
   };
+  Object.assign(headers, opts.headers ?? {});
   if (opts.etag) headers['if-none-match'] = opts.etag;
   if (opts.lastModified) headers['if-modified-since'] = opts.lastModified;
 

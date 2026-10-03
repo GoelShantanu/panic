@@ -35,7 +35,7 @@ export async function drainPipeline(
     try {
       if (typeof itemId !== 'string' && typeof itemId !== 'number') throw new PermanentJobError('payload has no item_id');
       await db.query('BEGIN');
-      const r = await processItem(db, String(itemId), ctx);
+      const r = await processItem(db, String(itemId), ctx, { revised: job.payload['revised'] === true });
       await completeJob(db, job.id);
       await db.query('COMMIT');
       result.processed++;

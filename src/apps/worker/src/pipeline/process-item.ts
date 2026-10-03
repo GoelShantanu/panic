@@ -153,14 +153,34 @@ export interface ProcessResult {
 }
 
 // Runs inside the caller's transaction, which also completes the job.
-export async function processItem(db: pg.ClientBase, itemId: string, ctx: PipelineContext): Promise<ProcessResult> {
+async function queueAi(db: pg.ClientBase, item: PipelineItem, analysis: ItemAnalysis, storyId: string): Promise<void> {
+  // The model refines after publication (D-034): articles always, filings only when rules found
+  // nothing; summaries for filing stories (the AI job re-checks eligibility).
+  if (!(await aiEnabled(db))) return;
+  if (!item.filing || (analysis.eventTypes.length === 1 && analysis.eventTypes[0] === 'other')) {
+    await enqueueAiJob(db, 'classify', { item_id: item.id }, item.filing ? 20 : 5);
+  }
+  if (item.filing) await enqueueAiJob(db, 'summarise', { story_id: storyId }, 0);
+}
+
+// `revised`: the exchange changed a filing already in a story (PRD-002 §9). It keeps its item and
+// story; analysis and story are recomputed.
+export async function processItem(db: pg.ClientBase, itemId: string, ctx: PipelineContext, opts: { revised?: boolean } = {}): Promise<ProcessResult> {
   const item = await loadPipelineItem(db, itemId);
   if (!item) throw new PermanentJobError(`item ${itemId} not found`);
   const existing = await storyOfItem(db, itemId);
-  if (existing) return { storyId: existing, created: false, skipped: true };
+  if (existing && !opts.revised) return { storyId: existing, created: false, skipped: true };
 
   const analysis = await analyse(db, item, ctx);
   await saveItemAnalysis(db, itemId, analysis);
+  if (existing) {
+    await db.query('SELECT pg_advisory_xact_lock($1)', [CLUSTER_LOCK_KEY]);
+    await recomputeStory(db, existing);
+    await emitStoryEvent(db, 'story.updated', existing);
+    await enqueueAlertEvaluation(db, existing);
+    await queueAi(db, item, analysis, existing);
+    return { storyId: existing, created: false, skipped: false };
+  }
 
   await db.query('SELECT pg_advisory_xact_lock($1)', [CLUSTER_LOCK_KEY]);
   const at = itemTime(item);
@@ -171,19 +191,13 @@ export async function processItem(db: pg.ClientBase, itemId: string, ctx: Pipeli
   );
 
   const target = chooseTarget(item, analysis, candidates, ctx);
-  const storyId = target ?? (await createStory(db, itemId, item.firstSeenAt));
+  // A filing found late by reconciliation takes its original time, so it does not surface as new.
+  const storyId = target ?? (await createStory(db, itemId, item.backfilled && item.publishedAt ? item.publishedAt : item.firstSeenAt));
   if (target) await addItemToStory(db, target, itemId);
   await recomputeStory(db, storyId);
   await saveStoryBands(db, storyId, bands, new Date(at.getTime() + CLUSTER_WINDOW_MS));
   await emitStoryEvent(db, target ? 'story.updated' : 'story.created', storyId);
   await enqueueAlertEvaluation(db, storyId); // PRD-003 US-003.5
-  // The model refines after publication (D-034): articles always, filings only when rules found
-  // nothing; summaries for filing stories (the AI job re-checks eligibility).
-  if (await aiEnabled(db)) {
-    if (!item.filing || (analysis.eventTypes.length === 1 && analysis.eventTypes[0] === 'other')) {
-      await enqueueAiJob(db, 'classify', { item_id: itemId }, item.filing ? 20 : 5);
-    }
-    if (item.filing) await enqueueAiJob(db, 'summarise', { story_id: storyId }, 0);
-  }
+  await queueAi(db, item, analysis, storyId);
   return { storyId, created: target === null, skipped: false };
 }

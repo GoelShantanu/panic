@@ -2,6 +2,8 @@ import type pg from 'pg';
 import { evaluateHealth } from '@stockpanic/core';
 import type { HealthState, SessionType } from '@stockpanic/core';
 import { currentSession, listEnabledSources, setHealthState } from '@stockpanic/db';
+import { drainInbox, fetchFilingsOnce } from './filings.ts';
+import type { FilingsDeps } from './filings.ts';
 import { fetchSourceOnce } from './run-source.ts';
 import type { FetchDeps, FetchSummary } from './run-source.ts';
 
@@ -10,16 +12,21 @@ export interface TickResult {
   calendarMissing: boolean;
   fetched: FetchSummary[];
   healthChanges: { sourceId: string; from: HealthState; to: HealthState }[];
+  inbox: { payloads: number; inserted: number; errors: string[] };
 }
 
 // One scheduler pass: fetch every due source, then re-evaluate every source's health.
-export async function tick(db: pg.ClientBase, now: Date, deps: FetchDeps = {}): Promise<TickResult> {
+export async function tick(db: pg.ClientBase, now: Date, deps: FetchDeps & FilingsDeps = {}): Promise<TickResult> {
   const { session, calendarMissing } = await currentSession(db, now);
 
+  // Push deliveries first: they are already here.
+  const inbox = await drainInbox(db, now);
   const fetched: FetchSummary[] = [];
   for (const source of await listEnabledSources(db)) {
+    const type = source.adapter['type'];
+    if (type === 'filings_push') continue; // arrives through the web receiver (ingestion.md §3)
     if (source.fetch.nextFetchAt === null || source.fetch.nextFetchAt <= now) {
-      fetched.push(await fetchSourceOnce(db, source, session, now, deps));
+      fetched.push(type === 'filings_poll' ? await fetchFilingsOnce(db, source, session, now, deps) : await fetchSourceOnce(db, source, session, now, deps));
     }
   }
 
@@ -40,5 +47,5 @@ export async function tick(db: pg.ClientBase, now: Date, deps: FetchDeps = {}): 
     }
   }
 
-  return { session, calendarMissing, fetched, healthChanges };
+  return { session, calendarMissing, fetched, healthChanges, inbox: { payloads: inbox.payloads, inserted: inbox.inserted, errors: inbox.errors } };
 }

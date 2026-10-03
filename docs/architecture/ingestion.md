@@ -40,6 +40,8 @@ Adding a source means writing one adapter and one configuration row. Adapters sh
 
 The vendor is not chosen (OQ-6), so the adapter supports both delivery models behind the same contract:
 
+> *Built in Backend B9 against the internal filing envelope v1, with poll, push and reconciliation contracts defined in [D-035](../../DECISION_LOG.md). A vendor connects through a mapping adapter.*
+
 | Vendor model | Behaviour |
 | --- | --- |
 | **Push** (webhook or socket) | Receiver endpoint verifies the vendor signature, writes the raw payload to `raw_inbox`, acknowledges immediately; the adapter processes the inbox. |

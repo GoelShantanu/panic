@@ -23,6 +23,7 @@ import {
   enqueueAlertEvaluation,
   recordAiCall,
   registryNames,
+  saveExtractedText,
   saveSummary,
   searchInstruments,
   summaryTarget,
@@ -33,17 +34,20 @@ import type { Mailer } from '@stockpanic/mail';
 import { CLUSTER_LOCK_KEY, recomputeStory } from '../pipeline/process-item.ts';
 import { buildClassifyRequest } from './client.ts';
 import type { AiClient, AiOutcome } from './client.ts';
+import type { DocumentFetcher } from './documents.ts';
 import { CLASSIFY_PROMPT_VERSION, SUMMARISE_PROMPT_VERSION } from './prompts.ts';
 
 export const CLASSIFY_TIMEOUT_MS = 10_000;
 export const SUMMARISE_TIMEOUT_MS = 60_000;
 export const SUMMARY_SOURCE_MAX_CHARS = 30_000; // ai-layer.md §3.1 step 4 [ASSUMPTION]
 const CANDIDATES_PER_MENTION = 3;
+const MIN_SOURCE_CHARS = 200;
 const WITHHOLD_ALERT_SHARE = 0.2;
 const WITHHOLD_ALERT_MIN_CALLS = 5;
 
 export interface AiDeps {
   client: AiClient;
+  documents?: DocumentFetcher;
   mailer: Mailer | null;
   opsEmail: string | null;
   log: (line: string) => void;
@@ -147,10 +151,20 @@ export async function runSummarise(db: pg.ClientBase, deps: AiDeps, storyId: str
   const t = await summaryTarget(db, storyId);
   if (!s.enabled || !t || !t.isFiling || t.hasSummary) return 'skipped';
   if (!t.eventTypes.some((e) => SUMMARISABLE_EVENT_TYPES.has(e as EventTypeCode))) return 'skipped'; // D-025
-  if (!t.extractedText || t.extractedText.trim().length < 200) return 'skipped'; // no text layer yet (scanned PDFs: ai-layer.md §3.3, not built)
   if ((await checkSpend(db, deps, s, now)) === 'capped') return 'capped';
 
-  const documentText = t.extractedText.slice(0, SUMMARY_SOURCE_MAX_CHARS);
+  let text = t.extractedText;
+  if (text === null && t.attachmentUrl && deps.documents) {
+    const doc = await deps.documents.fetchText(t.attachmentUrl);
+    if (!doc.ok) throw new Error(`attachment: ${doc.error}`); // retried with backoff
+    text = doc.text.trim().length >= MIN_SOURCE_CHARS ? doc.text : '';
+    await saveExtractedText(db, t.primaryItemId, text);
+    if (!text) deps.log(`summarise story ${storyId}: attachment has no text layer (${doc.kind}${doc.pages ? `, ${doc.pages} pages` : ''})`);
+  }
+  // No text layer: no summary (scanned PDFs, ai-layer.md §3.3, are not built yet).
+  if (!text || text.trim().length < MIN_SOURCE_CHARS) return 'skipped';
+
+  const documentText = text.slice(0, SUMMARY_SOURCE_MAX_CHARS);
   const req = { documentText, documentTitle: t.headline };
   const base = { job: 'summarise' as const, itemId: t.primaryItemId, storyId, promptVersion: SUMMARISE_PROMPT_VERSION, inputHash: hash(req), at: now };
 

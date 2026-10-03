@@ -31,6 +31,8 @@ try {
           ` next=${f.nextFetchAt.toISOString()}`,
       );
     }
+    if (result.inbox.payloads) console.log(`inbox: payloads=${result.inbox.payloads} inserted=${result.inbox.inserted}`);
+    for (const e of result.inbox.errors) console.error(`inbox: ${e}`);
     for (const h of result.healthChanges) console.log(`${h.sourceId}: health ${h.from} -> ${h.to}`);
     if (!once && !stopping) await new Promise((r) => setTimeout(r, TICK_MS));
   } while (!once && !stopping);

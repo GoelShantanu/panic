@@ -9,6 +9,7 @@
     "@stockpanic/mail": "*",
     "@stockpanic/push": "*",
     "fast-xml-parser": "^5.11.2",
+    "pdfjs-dist": "^6.3.289",
     "pg": "^8.23.1"
   }
 }

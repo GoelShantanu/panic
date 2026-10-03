@@ -133,6 +133,7 @@ export interface SummaryTarget {
   exchange: string | null;
   headline: string;
   extractedText: string | null;
+  attachmentUrl: string | null;
   eventTypes: string[];
   filingIsin: string | null;
   hasSummary: boolean;
@@ -140,7 +141,7 @@ export interface SummaryTarget {
 
 export async function summaryTarget(db: pg.ClientBase, storyId: string): Promise<SummaryTarget | null> {
   const { rows } = await db.query(
-    `SELECT s.id, s.primary_item_id, f.item_id IS NOT NULL AS is_filing, f.exchange, i.headline, f.extracted_text,
+    `SELECT s.id, s.primary_item_id, f.item_id IS NOT NULL AS is_filing, f.exchange, i.headline, f.extracted_text, f.attachment_url,
             ARRAY(SELECT code FROM story_event_type e WHERE e.story_id = s.id) AS event_types,
             (SELECT a.tags -> 0 ->> 'isin' FROM item_analysis a WHERE a.item_id = s.primary_item_id) AS filing_isin,
             EXISTS (SELECT 1 FROM story_summary sm WHERE sm.story_id = s.id) AS has_summary
@@ -157,10 +158,16 @@ export async function summaryTarget(db: pg.ClientBase, storyId: string): Promise
     exchange: r.exchange,
     headline: r.headline,
     extractedText: r.extracted_text,
+    attachmentUrl: r.attachment_url,
     eventTypes: r.event_types,
     filingIsin: r.filing_isin,
     hasSummary: r.has_summary,
   };
+}
+
+// '' records that the attachment had no usable text layer, so it is not fetched again.
+export async function saveExtractedText(db: pg.ClientBase, itemId: string, text: string): Promise<void> {
+  await db.query('UPDATE filing_detail SET extracted_text = $2 WHERE item_id = $1', [itemId, text]);
 }
 
 export async function saveSummary(

@@ -3,6 +3,7 @@ import pg from 'pg';
 import { aiSettings } from '@stockpanic/db';
 import { mailerFromEnv } from '@stockpanic/mail';
 import { AnthropicAiClient } from '../ai/client.ts';
+import { HttpDocumentFetcher } from '../ai/documents.ts';
 import { drainAi } from '../ai/runner.ts';
 
 // Needs Anthropic API credentials (ANTHROPIC_API_KEY, or an `ant auth login` profile) and the
@@ -24,6 +25,7 @@ try {
   if (!settings.enabled) console.log('ai_enabled is off: queued jobs complete without calling the model');
   const deps = {
     client: new AnthropicAiClient(settings.model),
+    documents: new HttpDocumentFetcher(),
     mailer: process.env['OPS_EMAIL'] ? mailerFromEnv(process.env) : null,
     opsEmail: process.env['OPS_EMAIL'] ?? null,
     log: (line: string) => console.log(line),

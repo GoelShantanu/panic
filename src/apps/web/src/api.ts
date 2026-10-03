@@ -386,6 +386,8 @@ export async function route(
 
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();
+  // Page header state (PRD-001 US-001.7 AC-1, US-001.6): session and stale tier-1 sources (D-040).
+  if (path === 'session') return ok({ session: await sessionInfo(db, now), stale_sources: await staleTier1Sources(db) });
   if (resource === 'stream' && parts.length === 2) return getStream(db, url.searchParams, now, viewer, user);
   if (resource === 'event-types' && parts.length === 2) return getEventTypes(db);
   if (resource === 'stories' && id && parts.length === 3) return getStory(db, id, user, now);

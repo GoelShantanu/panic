@@ -27,3 +27,7 @@ desktop.ini
 node_modules/
 coverage/
 *.tsbuildinfo
+
+# Next.js build output (src/apps/web)
+.next/
+next-env.d.ts

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { mailerFromEnv } from '@stockpanic/mail';
 import { createGoogleVerifier } from '../google.ts';
@@ -35,13 +36,31 @@ const billing =
         log: (l: string) => console.log(l),
       }
     : null;
-const server = createApiServer(pool, {
-  mailer,
-  authSecret,
-  google: googleClientId ? createGoogleVerifier(googleClientId) : null,
-  billing,
-});
+// Pages (ADR-002, D-040): Next.js renders every non-/v1 path in this same process. PAGES=off runs the
+// API alone. Pages read the API over loopback (SP_INTERNAL_ORIGIN); /v1/live passes through to apps/live.
+let pages: ((req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>) | undefined;
+let upgrade: ((req: import('node:http').IncomingMessage, socket: import('node:stream').Duplex, head: Buffer) => Promise<void>) | undefined;
+if (process.env['PAGES'] !== 'off') {
+  process.env['SP_INTERNAL_ORIGIN'] = `http://127.0.0.1:${port}`;
+  type Handler = (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>;
+  type Upgrade = (req: import('node:http').IncomingMessage, socket: import('node:stream').Duplex, head: Buffer) => Promise<void>;
+  const mod = (await import('next')) as unknown as {
+    default: (o: { dev: boolean; dir: string }) => { prepare(): Promise<void>; getRequestHandler(): Handler; getUpgradeHandler(): Upgrade };
+  };
+  const site = mod.default({ dev: process.env['NODE_ENV'] !== 'production', dir: fileURLToPath(new URL('../..', import.meta.url)) });
+  await site.prepare();
+  const handle = site.getRequestHandler();
+  pages = (req, res) => handle(req, res);
+  upgrade = site.getUpgradeHandler();
+}
+const server = createApiServer(
+  pool,
+  { mailer, authSecret, google: googleClientId ? createGoogleVerifier(googleClientId) : null, billing },
+  { ...(pages ? { pages } : {}), ...(process.env['LIVE_ORIGIN'] ? { liveOrigin: process.env['LIVE_ORIGIN'] } : {}) },
+);
 if (!billing) console.log('billing disabled: Razorpay or seller settings unset');
+// Next.js development reload runs over a WebSocket; without it the page never hydrates.
+if (upgrade) server.on('upgrade', (req, socket, head) => void upgrade(req, socket, head));
 server.listen(port, () => console.log(`api listening on :${port}${googleClientId ? '' : ' (Google sign-in disabled: GOOGLE_CLIENT_ID unset)'}`));
 
 const shutdown = () => server.close(() => void pool.end());

@@ -1,5 +1,5 @@
-import { createServer } from 'node:http';
-import type { IncomingMessage, Server } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
+import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import type pg from 'pg';
 import { SESSION_COOKIE } from '@stockpanic/core';
 import { route } from './api.ts';
@@ -68,9 +68,44 @@ async function readRaw(req: IncomingMessage, limit: number, enforce = true): Pro
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null): Server {
+export interface SiteOptions {
+  // Renders every non-API path (the Next.js page handler, ADR-002).
+  pages?: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+  // The SSE live channel runs in apps/live (ADR-005); /v1/live is passed through so pages stay same-origin.
+  liveOrigin?: string;
+}
+
+function proxyLive(req: IncomingMessage, res: ServerResponse, origin: string) {
+  const target = new URL(req.url ?? '/v1/live', origin);
+  const headers: Record<string, string> = { accept: 'text/event-stream' };
+  const lastId = req.headers['last-event-id'];
+  if (typeof lastId === 'string') headers['last-event-id'] = lastId;
+  const upstream = httpRequest(target, { method: 'GET', headers }, (up) => {
+    res.writeHead(up.statusCode ?? 502, { ...up.headers, 'x-accel-buffering': 'no' });
+    up.pipe(res);
+  });
+  upstream.on('error', () => {
+    if (!res.headersSent) res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'live_unavailable' }));
+  });
+  req.on('close', () => upstream.destroy());
+  upstream.end();
+}
+
+export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, site: SiteOptions = {}): Server {
   return createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
+    if (site.liveOrigin && url.pathname === '/v1/live') return proxyLive(req, res, site.liveOrigin);
+    if (site.pages && !url.pathname.startsWith('/v1/')) {
+      try {
+        await site.pages(req, res);
+      } catch (err) {
+        console.error(`page ${url.pathname}:`, err);
+        if (!res.headersSent) res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('Something went wrong.');
+      }
+      return;
+    }
     let client: pg.PoolClient | undefined;
     try {
       // Vendor push: signed raw body, verified before parsing (ingestion.md §3).

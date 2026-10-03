@@ -11,11 +11,27 @@
 
 ## Current Phase
 
-**Phase 6 — Backend: complete** *(opened 2026-10-02; exited 2026-10-03 — [D-039](DECISION_LOG.md))*. **Phase 7 — Frontend** is next, on founder go-ahead.
+**Phase 7 — Frontend** *(opened 2026-10-03 on founder go-ahead)*. Phase 6 — Backend: complete *(exited 2026-10-03 — [D-039](DECISION_LOG.md))*.
+
+### Frontend plan
+
+Next.js (ADR-002) inside `apps/web`, one process with the API. Each milestone driven in a real browser before the next (WORKFLOW §7 DoD).
+
+| # | Milestone | Covers | Status |
+| --- | --- | --- | --- |
+| F1 | Foundation: Next.js in `apps/web` behind the existing server, design tokens (light/dark), shell with session state, API client, component tests | ADR-002 | ✅ Done — Next.js 16 + React 19 in-process; `/v1/session`; light/dark tokens with no-flash boot; header with live session label; error/empty/not-found states; demo seeder; 326/326 tests (7 component); driven in the browser (hydration, theme persistence); production build serves in 0.3 s cold. D-040 |
+| F2 | Live stream: rows, views, filters, load more, unread divider, live updates without layout shift, keyboard model, loading/empty/error/stale states | PRD-001 | ☐ Next |
+| F3 | Story and company pages (SSR, indexable), sources, summary label, voting, community opinion, timeline, search | PRD-004, PRD-005 | ☐ |
+| F4 | Accounts and billing: sign-in, sign-up, settings, trial, upgrade panel, Razorpay checkout, invoices | PRD-007 | ☐ |
+| F5 | Watchlist and alerts: search-add, CSV import, alert settings and history, browser push | PRD-003 | ☐ |
+| F6 | Comments, reports, grievance form, profiles, reply dot and notices | PRD-006 | ☐ |
+| F7 | Operator console: grievances, takedowns, corrections queue, kill switches, 2FA | PRD-005/006/002 | ☐ |
+| F8 | Phone view, accessibility, performance (NFR-001.1), exit review | PRD-001 §2.7 | ☐ |
+
 
 `src/` per ADR-002: npm workspaces, TypeScript run natively by Node 26. Built in milestones, each verified end-to-end before the next.
 
-**Phase gate status:** ✅ **Exited.** All WORKFLOW §6 criteria met with evidence (D-039 exit check); four launch parameters accepted by the founder; billing held until the accountant confirms GST.
+**Backend gate:** ✅ Exited — all WORKFLOW §6 criteria met with evidence (D-039); four launch parameters accepted; billing held until the accountant confirms GST.
 
 ### Backend plan
 
@@ -168,7 +184,7 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** Backend exited (D-039). Next: open the Frontend phase (WORKFLOW §7) on founder go-ahead. Founder, outstanding:
+**Single next action:** CTO builds F2 (the live stream).
 - accountant confirmation of GST treatment (release blocker for billing, D-039);
 - each December, next year's holidays and Muhurat date (D-038);
 - exchange feed vendor (OQ-6);
@@ -271,3 +287,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **B11 done.** Migration 0010. Retag with stored overrides (survive recomputation), merge (older survives, items/comments/votes/overrides move, redirect), split (new story at its own time with bands), all atomic under the clustering lock, audited, labelled, broadcast; alert re-evaluation and correction notices queued to the alerts worker; review queue by distinct reporters with dismissal. `recomputeStory` moved to `packages/db`. 300/300 tests; e2e observed. **D-037.** | Phase 6 in progress |
 | 2026-10-03 | **B4b done.** Founder: NSE page as the source, Muhurat 18:00–19:00 every year, one calendar for NSE and BSE, reuse for later years (recurring fixed dates automatic; lunar dates entered yearly — Holi etc. move). Migration 0011. Calendar generated 60 days ahead by maintenance with year-end warning; admin calendar commands; session header skips same-state midnights. Trending: ≥ 3 sources in 2 h, tier-weighted activity ÷ company's own expected activity in the current session type over 28 days; no vote input. 315/315 tests; e2e observed (found and fixed an invalid-date crash). **D-038.** | Phase 6 in progress |
 | 2026-10-03 | **Backend exit review — approved (D-039).** Checked every WORKFLOW §6 criterion against evidence. Hostile-input probe (9,427 requests): 0 5xx after fixes. Found and fixed 6 defects (session.changed never broadcast; source changes unaudited; ai_call mutable; stale constraint fixture; AI spend rate 84→96.5; oversized uploads reset). Migration 0012. 319/319 tests, 56/56 constraint tests. Founder accepted 4 launch parameters (rules/clustering, GST with billing held, grievance deadlines, Trending weights). **Phase 6 complete.** | **Phase 6 exited** |
+| 2026-10-03 | **Frontend opened; F1 done.** Next.js 16 / React 19 inside the existing server (pages for non-/v1 paths, live pass-through, dev WebSocket forwarding), pages read the API over loopback, `GET /v1/session`, design tokens with light/dark and no-flash theme, header with live market state, states, demo seeder (fictional, guarded). Found while driving it: pages never hydrated (dev WebSocket not forwarded, then Next 16 blocking 127.0.0.1 as a dev origin) — both fixed. 326/326 tests. **D-040.** | Phase 7 in progress |

@@ -5,7 +5,11 @@
   "dependencies": {
     "@stockpanic/core": "*",
     "@stockpanic/db": "*",
+    "@stockpanic/mail": "*",
+    "next": "^16.3.8",
     "pg": "^8.23.1",
-    "@stockpanic/mail": "*"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1"
   }
 }

@@ -1317,6 +1317,50 @@ Founder preference for Google, and confirmation that free Gmail is acceptable. F
 
 ---
 
+## D-040 — Frontend architecture inside `apps/web` *(implements ADR-002 §3)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Architecture |
+| **Decided by** | CTO, during Frontend F1. Founder may override |
+
+**Decision**
+
+1. **One process.** `src/cli/serve.ts` starts Next.js 16 (App Router, React 19) inside the existing HTTP server:
+   - `/v1/*` keeps going to the tested API handlers, webhooks and push receiver.
+   - Every other path is rendered by Next.js.
+   - `/v1/live` is passed through to `apps/live` (`LIVE_ORIGIN`), so pages stay same-origin.
+   - `PAGES=off` runs the API alone.
+   - In development, WebSocket upgrades are forwarded to Next.js; without them the page never hydrates.
+2. **Pages read the API over loopback** (`SP_INTERNAL_ORIGIN`), carrying the visitor's cookie. Page code never imports `@stockpanic/db`, so the browser bundle cannot contain backend code, and pages exercise exactly the contracts clients use.
+3. **Every page renders on request** (`dynamic = 'force-dynamic'`). Pages show live data and the visitor's session.
+4. **Contract addition:** `GET /v1/session` returns `{session, stale_sources}` for the header on every page (PRD-001 US-001.7 AC-1, US-001.6), rather than piggybacking on the stream.
+5. **Styling is plain CSS with design tokens** (custom properties), not a CSS framework. There are light and dark themes:
+   - Dark follows the system setting, with a manual override saved per browser.
+   - An inline boot script applies the saved theme before first paint.
+   - Colour never carries meaning alone.
+6. **Type checking** of frontend code runs in `npm run typecheck` (TypeScript 7, separate `src/apps/web/tsconfig.json`), not inside `next build`. Component tests use Vitest with jsdom and Testing Library (`*.test.tsx`).
+7. **`seed-demo.ts`** loads fictional companies, filings and articles through the real pipeline, for development and screenshots. It refuses to run on a database that has any non-demo source.
+
+**Reason**
+
+1. A single process matches the C1 web app in system-overview.md, and keeps every tested backend behaviour unchanged.
+2. Isolation, and the contracts stay the only interface.
+3. Pages show live data and the visitor's session; nothing is safe to render at build time.
+4. The header appears on every page and needs only session and source-health state.
+5. Boring, verifiable, and no build plugins needed.
+6. Next.js's built-in checker expects the TypeScript 5 API.
+7. Realistic data, with no chance of mixing with real sources.
+
+**Consequences**
+
+- In production, a reverse proxy sends `/v1/live` straight to `apps/live` for scale. The pass-through is for development and small deployments.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

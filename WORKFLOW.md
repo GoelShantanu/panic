@@ -173,6 +173,8 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 
 ~~**Blocking:** no AI-layer release without SEBI-competent counsel (GUARDRAILS §3.5).~~ Removed 2026-10-02 — D-018.
 
+**Status:** ✅ Exited 2026-10-03 — [D-054](DECISION_LOG.md).
+
 ---
 
 ## 10. Release

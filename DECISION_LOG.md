@@ -1878,6 +1878,44 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-054 — Security review approved; residual risks accepted; Phase 9 exits
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-03 |
+| **Category** | Security · Process |
+| **Decided by** | CTO (WORKFLOW §9 reviewer); founder accepted the residual risks in writing (chat, 2026-10-03) |
+
+**Exit check (WORKFLOW §9)**
+
+| Criterion | Result | Evidence |
+| --- | --- | --- |
+| Threat model updated | ✅ | `docs/security/threat-model.md` |
+| Findings triaged; each fixed or accepted with a rationale | ✅ | F1–F10 fixed (D-053); A1–A8 accepted (below) |
+| Abuse vectors assessed: publisher-weight gaming, coordinated voting `[Research R6]` | ✅ | threat-model.md §5; `abuse.integration.test.ts`; sponsored content dropped at ingestion |
+| Tests | ✅ | 428/428 (47 files) |
+
+**Accepted residual risks** (review.md §4, each with a revisit trigger):
+
+- A1: CSP allows inline scripts.
+- A2: a patient voting brigade can reach the Bullish view until an operator acts.
+- A3: rate limits are per process.
+- A4: email-code guessing bound (25 guesses per email per hour).
+- A5: plus-address folding on all domains.
+- A6: AI prompt injection under grounding checks.
+- A7: the external penetration test and host hardening move to Release.
+- A8: secrets in server environment files.
+
+**Carried to Release (WORKFLOW §10):**
+
+- External penetration test and host hardening (TLS, firewall, SSH, backups).
+- The deployment requirements in review.md §5.
+- The QA carry-overs in D-052.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

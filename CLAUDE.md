@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend: complete** (2026-10-03, D-048). **Phase 8 — QA: complete** (2026-10-03, D-052). **Phase 9 — Security review** in progress (`docs/security/`, D-053).
+**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend: complete** (2026-10-03, D-048). **Phase 8 — QA: complete** (2026-10-03, D-052). **Phase 9 — Security review: complete** (2026-10-03, D-054). **Phase 10 — Release** next (PROJECT_STATE).
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 

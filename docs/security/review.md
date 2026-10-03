@@ -5,7 +5,7 @@
 | **Phase** | 9 — Security review (WORKFLOW §9) |
 | **Reviewer** | CTO (security role) |
 | **Threat model** | [threat-model.md](threat-model.md) |
-| **Status** | ◐ Findings fixed; residual risks below await founder acceptance |
+| **Status** | ✅ Exited 2026-10-03 — findings fixed (D-053); residual risks accepted by the founder (D-054) |
 | **Decisions** | D-053 |
 | **Date** | 2026-10-03 |
 

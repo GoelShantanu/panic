@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { istInstant, isinCheckDigit, newPublicId } from '@stockpanic/core';
-import { addCalendarException, addHoliday, calendarDay, createStory, ensureCalendar, migrate, removeHoliday, runMaintenance, setStoryDerived } from '@stockpanic/db';
+import { addCalendarException, addHoliday, calendarDay, createStory, emitSessionIfChanged, ensureCalendar, migrate, removeHoliday, runMaintenance, setStoryDerived } from '@stockpanic/db';
 import { route } from './api.ts';
 
 // All companies and headlines are fictional. The clock is fixed: Monday 5 October 2026, 11:00 IST.
@@ -91,6 +91,14 @@ describe.skipIf(!adminUrl)('trading calendar and Trending (PostgreSQL)', () => {
       await removeHoliday(db, '2027-01-26', new Date());
       await ensureCalendar(db, '2027-01-28', '2027-01-29');
       expect((await calendarDay(db, '2027-01-26')).holiday).toBeNull(); // removal sticks
+    });
+
+    it('session changes are broadcast once each (PRD-001 §4.2)', async () => {
+      expect(await emitSessionIfChanged(db, istInstant('2026-10-05', '09:05'))).toBe(true); // pre-open
+      expect(await emitSessionIfChanged(db, istInstant('2026-10-05', '09:10'))).toBe(false);
+      expect(await emitSessionIfChanged(db, istInstant('2026-10-05', '09:15'))).toBe(true); // open
+      const last = (await db.query(`SELECT payload FROM live_event WHERE type = 'session.changed' ORDER BY id DESC LIMIT 1`)).rows[0].payload;
+      expect(last).toMatchObject({ state: 'open', exchange_date: '2026-10-05', next_transition_at: istInstant('2026-10-05', '15:30').toISOString() });
     });
 
     it('maintenance keeps 60 days ahead and asks for next year’s official list from November', async () => {

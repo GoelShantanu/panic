@@ -453,6 +453,7 @@ export async function discountUserVotes(db: pg.ClientBase, userId: string, disco
 
 export async function changeSetting(db: pg.ClientBase, key: string, value: unknown, operatorId: string, reason: string, now: Date): Promise<boolean> {
   return tx(db, async () => {
+    await db.query(`SET LOCAL stockpanic.audited = 'on'`); // this path writes the audit row itself (migration 0012)
     const prev = await db.query('SELECT value FROM setting WHERE key = $1 FOR UPDATE', [key]);
     if (!prev.rows[0]) return false;
     await db.query('UPDATE setting SET value = $2, updated_at = $3, updated_by = $4 WHERE key = $1', [key, JSON.stringify(value), now, operatorId]);

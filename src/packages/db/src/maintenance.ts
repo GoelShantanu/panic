@@ -86,6 +86,7 @@ export async function grantRole(db: pg.ClientBase, username: string, role: 'user
 export async function setSettingFromCli(db: pg.ClientBase, key: string, value: unknown, now: Date): Promise<boolean> {
   await db.query('BEGIN');
   try {
+    await db.query(`SET LOCAL stockpanic.audited = 'on'`); // this path writes the audit row itself (migration 0012)
     const prev = await db.query('SELECT value FROM setting WHERE key = $1 FOR UPDATE', [key]);
     if (!prev.rows[0]) {
       await db.query('ROLLBACK');

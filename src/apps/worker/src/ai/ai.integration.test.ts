@@ -139,7 +139,7 @@ describe.skipIf(!adminUrl)('AI layer jobs (PostgreSQL, fake model)', () => {
     expect((await db.query(`SELECT count(*)::int AS n FROM live_event WHERE type = 'story.updated'`)).rows[0].n).toBe(1);
     expect((await db.query(`SELECT count(*)::int AS n FROM job WHERE queue = 'alerts' AND payload->>'story_id' = $1`, [String(story_id)])).rows[0].n).toBe(2);
     const call = (await db.query(`SELECT outcome, prompt_version, model_id, cost_inr::float8 AS cost, input_hash FROM ai_call WHERE item_id = $1`, [item_id])).rows[0];
-    expect(call).toMatchObject({ outcome: 'accepted', prompt_version: 'classify-v1', model_id: 'claude-haiku-4-5', cost: 0.126 });
+    expect(call).toMatchObject({ outcome: 'accepted', prompt_version: 'classify-v1', model_id: 'claude-haiku-4-5', cost: 0.1448 }); // 1,000 in + 100 out tokens at Haiku prices, ₹96.5 per USD
     expect(call.input_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 

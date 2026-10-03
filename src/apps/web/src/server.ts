@@ -36,36 +36,35 @@ async function readJson(req: IncomingMessage, pathname: string): Promise<unknown
   if (req.method === 'GET' || req.method === 'HEAD') return null;
   const type = (req.headers['content-type'] ?? '').toLowerCase();
   if (pathname === UNSUBSCRIBE_PATH && type.startsWith('application/x-www-form-urlencoded')) {
-    for await (const _ of req) void _;
+    await readRaw(req, 0, false);
     return null;
   }
   if (!type.startsWith('application/json')) {
+    await readRaw(req, 0, false);
     throw new HttpError(415, 'unsupported_media_type');
   }
-  const limit = pathname === '/v1/watchlist/import/preview' ? MAX_IMPORT_BODY_BYTES : MAX_BODY_BYTES;
-  let size = 0;
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    size += (chunk as Buffer).length;
-    if (size > limit) throw new HttpError(413, 'payload_too_large');
-    chunks.push(chunk as Buffer);
-  }
-  if (size === 0) return {};
+  const raw = await readRaw(req, pathname === '/v1/watchlist/import/preview' ? MAX_IMPORT_BODY_BYTES : MAX_BODY_BYTES);
+  if (raw === '') return {};
   try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    return JSON.parse(raw);
   } catch {
     throw new HttpError(400, 'invalid_json');
   }
 }
 
-async function readRaw(req: IncomingMessage, limit: number): Promise<string> {
+// Over the limit, the rest of the upload is read and discarded so the client receives the 413;
+// stopping mid-upload resets the connection instead. Past DRAIN_CAP_BYTES the connection is cut.
+const DRAIN_CAP_BYTES = 32 * 1024 * 1024;
+
+async function readRaw(req: IncomingMessage, limit: number, enforce = true): Promise<string> {
   let size = 0;
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     size += (chunk as Buffer).length;
-    if (size > limit) throw new HttpError(413, 'payload_too_large');
-    chunks.push(chunk as Buffer);
+    if (size <= limit) chunks.push(chunk as Buffer);
+    else if (size > DRAIN_CAP_BYTES) break;
   }
+  if (enforce && size > limit) throw new HttpError(413, 'payload_too_large');
   return Buffer.concat(chunks).toString('utf8');
 }
 

@@ -4,6 +4,8 @@
 import type pg from 'pg';
 import { RECURRING_HOLIDAYS, buildDay, datesBetween, istDate } from '@stockpanic/core';
 import type { CalendarException } from '@stockpanic/core';
+import { LIVE_CHANNEL } from './ingestion.ts';
+import { sessionInfo } from './read.ts';
 
 // Fixed-date holidays for a year, once (so an operator's removal is not undone).
 async function ensureRecurring(db: pg.ClientBase, year: number): Promise<void> {
@@ -113,4 +115,15 @@ export async function calendarDay(db: pg.ClientBase, date: string) {
 export async function officialListMissing(db: pg.ClientBase, year: number): Promise<boolean> {
   const { rows } = await db.query(`SELECT count(*)::int AS n FROM market_holiday WHERE source = 'official' AND extract(year FROM holiday_date) = $1`, [year]);
   return rows[0].n === 0;
+}
+
+// Broadcasts session.changed when the session state or exchange date differs from the last one
+// broadcast (PRD-001 §4.2, US-001.7 AC-1/AC-3). Called on every ingestion tick.
+export async function emitSessionIfChanged(db: pg.ClientBase, now: Date): Promise<boolean> {
+  const info = await sessionInfo(db, now);
+  const last = (await db.query(`SELECT payload FROM live_event WHERE type = 'session.changed' ORDER BY id DESC LIMIT 1`)).rows[0]?.payload;
+  if (last && last.state === info.state && last.exchange_date === info.exchange_date) return false;
+  const { rows } = await db.query(`INSERT INTO live_event (type, payload) VALUES ('session.changed', $1) RETURNING id`, [JSON.stringify(info)]);
+  await db.query('SELECT pg_notify($1, $2)', [LIVE_CHANNEL, rows[0].id]);
+  return true;
 }

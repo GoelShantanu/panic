@@ -127,7 +127,8 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
 
     const ev = await db.query(`SELECT type, payload FROM live_event WHERE type = 'source.health'`);
     expect(ev.rows).toEqual([{ type: 'source.health', payload: { source_id: 'src_test_desk', health: 'stale' } }]);
-    const audit = await db.query(`SELECT action, before, after FROM audit_log WHERE entity_id = 'src_test_desk'`);
+    // Source configuration changes are audited too (migration 0012); this test is about health.
+    const audit = await db.query(`SELECT action, before, after FROM audit_log WHERE entity_id = 'src_test_desk' AND action = 'source.health_changed'`);
     expect(audit.rows).toEqual([{ action: 'source.health_changed', before: { state: 'healthy' }, after: { state: 'stale' } }]);
   });
 

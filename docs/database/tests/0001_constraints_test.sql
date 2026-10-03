@@ -1,5 +1,5 @@
 -- 0001_constraints_test.sql — proves the constraints in 0001_initial.sql hold.
--- Run against a throwaway database after applying 0001_initial.sql, as a superuser:
+-- Run against a throwaway database after applying all migrations (see the erratum at the fixture), as a superuser:
 --   psql -v ON_ERROR_STOP=1 -f 0001_constraints_test.sql
 -- Every test prints "PASS <name>". Any failure stops the run with "FAIL <name>".
 
@@ -38,9 +38,12 @@ INSERT INTO instrument_code (isin, exchange, code, valid) VALUES
   ('INE000A01011', 'NSE', 'NEWCO', '[2026-06-01,)'),
   ('INE000A01011', 'BSE', '500001', '[2020-01-01,)'),
   ('INE000B01012', 'NSE', 'BETA',  '[2021-01-01,)');
-INSERT INTO source (source_id, name, kind, tier, access_basis, access_checked_on, enabled, cadence)
-VALUES ('src_bse_ann', 'BSE Announcements', 'filing', 1, 'licence:TEST', '2026-10-01', true, '{}'),
-       ('src_pub_a',   'Publisher A',       'article', 3, 'https://example.invalid/terms', '2026-10-01', true, '{}');
+-- Erratum (Backend exit review, D-039): from migration 0002 an enabled source must declare an
+-- adapter; the fixture sets one so this file runs against the current schema. Under 0001 alone the
+-- column does not exist: run it against the full migration set (npm run db:migrate).
+INSERT INTO source (source_id, name, kind, tier, access_basis, access_checked_on, enabled, cadence, adapter)
+VALUES ('src_bse_ann', 'BSE Announcements', 'filing', 1, 'licence:TEST', '2026-10-01', true, '{}', '{"type": "test"}'),
+       ('src_pub_a',   'Publisher A',       'article', 3, 'https://example.invalid/terms', '2026-10-01', true, '{}', '{"type": "test"}');
 INSERT INTO item (id, public_id, kind, source_id, dedup_key, headline, url) OVERRIDING SYSTEM VALUE VALUES
   (1, 'it_01J9Z3M4R7ABCDEFGHJKMNPQRS', 'filing',  'src_bse_ann', 'BSE:1', 'Outcome of Board Meeting', 'https://example.invalid/1'),
   (2, 'it_01J9Z3M4R7ABCDEFGHJKMNPQRT', 'article', 'src_pub_a',   'u:2',   'Company A declares dividend', 'https://example.invalid/2'),

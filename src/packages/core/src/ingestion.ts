@@ -118,6 +118,20 @@ const ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z]+);/gi;
 
 // Publishers often escape entities twice ('&amp;amp;', or '&amp;' inside CDATA), so the parsed title
 // still contains them; zero-width characters also ride along. Both are removed before storage.
+// Publisher blurb from a feed description (PRD-002 US-002.5 AC-8; D-055): markup removed, entities
+// decoded, cut at a word boundary. Stored and shown only for sources whose terms permit excerpts.
+export const EXCERPT_MAX_CHARS = 320;
+export function cleanExcerpt(raw: string | null, headline: string): string | null {
+  if (!raw) return null;
+  const strip = (s: string) => s.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' ');
+  // Twice: markup that was itself escaped only appears after entities are decoded.
+  const text = normaliseHeadline(strip(normaliseHeadline(strip(raw))));
+  if (text.length < 20 || text.toLowerCase() === headline.toLowerCase()) return null;
+  if (text.length <= EXCERPT_MAX_CHARS) return text;
+  const cut = text.slice(0, EXCERPT_MAX_CHARS);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), EXCERPT_MAX_CHARS - 40)).replace(/[\s,;:.\-–]+$/, '')}…`;
+}
+
 export function normaliseHeadline(raw: string): string {
   let s = raw;
   for (let i = 0; i < 2; i++) {

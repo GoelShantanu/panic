@@ -16,11 +16,15 @@ export interface RowProps {
   onVotes: (v: VoteDisplay) => void;
   followed?: ReadonlySet<string> | null;
   onFollow?: (isin: string, follow: boolean) => void;
+  // Wide screens: open the story in the side panel instead of leaving the stream (D-055).
+  onOpen?: () => void;
+  // Inline vote and Follow controls; hidden while the side panel shows them.
+  actions?: boolean;
 }
 
 // PRD-001 US-001.1 AC-2: headline, source, age, symbols, event types, source count, comment count,
 // compact community opinion at ≥ 3 votes; the selected row carries vote controls.
-export function StoryRow({ story: s, selected, labels, signedIn, message, onSelect, onVotes, followed, onFollow }: RowProps) {
+export function StoryRow({ story: s, selected, labels, signedIn, message, onSelect, onVotes, followed, onFollow, onOpen, actions = true }: RowProps) {
   const symbols = s.instruments.map((i) => i.display_symbol ?? i.exchange_codes.bse ?? i.isin);
   const unresolved = s.instruments.length === 0 && s.unresolved_mentions.length > 0;
   return (
@@ -30,7 +34,11 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
       data-selected={selected || undefined}
       data-unread={s.is_unread || undefined}
       aria-current={selected ? 'true' : undefined}
-      onClick={onSelect}
+      onClick={(e) => {
+        // Links (the headline handles its own clicks), buttons and menus keep their own behaviour.
+        if ((e.target as HTMLElement).closest('a, button, details, input')) return;
+        onSelect();
+      }}
     >
       <div className="row-main">
         <time className="row-age mono" dateTime={s.first_seen_at} title={`${istDateTime(s.first_seen_at)} IST`}>
@@ -39,7 +47,18 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
         <div className="row-body">
           <div className="row-line">
             {s.primary_item.kind === 'filing' && <span className="badge badge-filing">Filing</span>}
-            <Link href={`/s/${s.story_id}`} className="row-headline" tabIndex={-1}>
+            <Link
+              href={`/s/${s.story_id}`}
+              className="row-headline"
+              tabIndex={-1}
+              onClick={(e) => {
+                // A plain click opens the panel; Ctrl/Cmd/middle click still opens the page in a new tab.
+                if (!onOpen || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onOpen();
+              }}
+            >
               {s.headline}
             </Link>
           </div>
@@ -65,7 +84,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
         </div>
       </div>
       {selected && <PhoneNote />}
-      {selected && (
+      {selected && actions && (
         <div className="row-actions desktop-only">
           <VoteControls storyId={s.story_id} votes={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} />
           {signedIn && followed && onFollow && s.instruments.length > 0 && (

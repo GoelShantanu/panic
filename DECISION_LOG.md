@@ -1916,6 +1916,47 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-055 — Stream side panel and publisher blurbs, CryptoPanic-style *(amends PRD-004 US-004.2 presentation; implements PRD-002 US-002.5 AC-8 excerpts)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-04 |
+| **Category** | Product · UX |
+| **Decided by** | Founder (chat, 2026-10-04): "summary for all news articles like CryptoPanic" and the side panel instead of a full page; chose publisher blurbs (not AI article summaries) and side panel plus full page |
+
+**Decision**
+
+1. **Side panel.** On screens at least 1100 px wide, a plain click on a stream row or headline (or Enter) opens the story in a right-hand panel. The list stays on the left.
+   - The panel shows: vote bar on top; headline with a link out to the source; age and source; company tags; publisher blurb or AI summary; "Read full story" and "Open story page"; sources when there are more than one; comments.
+   - The address bar shows `/s/{id}` (history state). J and K move the panel with the selection. Esc, ✕ and Back close it.
+   - Ctrl, Cmd and middle clicks still open the full page in a new tab.
+   - Direct links, search engines and screens under 1100 px get the full story page, unchanged. Narrowing the window while the panel is open hands over to the full page.
+   - While the panel is open, the vote keys act on the panel's story only; it reports votes back to the row.
+   - Both surfaces render the same `StoryView` component.
+2. **Publisher blurbs.** For articles, the feed's own description is shown under the headline with "From {source}", the way CryptoPanic shows them.
+   - It is stored and shown only while the source's `excerpt_allowed` is on. The schema trigger refuses storage otherwise, and the read query hides stored text if permission is later withdrawn.
+   - The text is cleaned (markup removed, including escaped markup) and cut at about 320 characters.
+   - Operators turn it on per source after checking the publisher's terms: `admin.ts set-source-excerpt <source_id> on "<terms URL or licence>"` (audited by the source trigger). `admin.ts list-sources` shows the state.
+   - Filings keep their AI summary; a story shows one or the other.
+3. **No AI summaries of news articles.**
+
+**Reason**
+
+- The founder wants the CryptoPanic reading flow: scan the list, read beside it.
+- CryptoPanic's text under a headline is the publisher's feed description, not an AI summary.
+- Summarising full articles would mean fetching publisher text that their terms usually forbid (PRD-004 US-004.4 AC-1 rationale), at an AI cost per article.
+- Keeping `/s/{id}` preserves shareable links and indexing (PRD-004 AC-8).
+
+**Consequences**
+
+- Every real source starts headline-only. Blurbs appear as each source's terms are checked and switched on, a release-checklist item.
+- Demo sources and demo articles carry fictional blurbs (seed-demo).
+- Verified: browser at 1440 and 1000 px (open, J/K, Esc, Back, Enter, single vote, filing summary, narrow handover); axe shows 0 violations with the panel open in both themes; 432/432 tests.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

@@ -52,6 +52,8 @@ for (const [id, name, kind, tier] of [
      VALUES ($1, $2, $3, $4, 'demo data', current_date, false, $5, '{}') ON CONFLICT DO NOTHING`,
     [id, name, kind, tier, cadence],
   );
+  // Demo publishers "permit" excerpts so the publisher blurb shows (D-055).
+  if (kind === 'article') await db.query('UPDATE source SET excerpt_allowed = true WHERE source_id = $1', [id]);
 }
 
 const now = Date.now();
@@ -69,11 +71,31 @@ async function filing(minAgo: number, exchange: 'BSE' | 'NSE', company: number, 
   ]);
   await db.query(`INSERT INTO job (queue, priority, payload) VALUES ('pipeline', 10, $1)`, [{ item_id: r.rows[0].id }]);
 }
+// Fictional publisher blurbs (D-055).
+const BLURBS: Record<string, string> = {
+  "Velora Pharma reports quarterly results, board recommends dividend": "Velora Pharma posted a 14% rise in quarterly revenue on stronger domestic sales, and its board recommended a final dividend of Rs 3 per share, subject to shareholder approval.",
+  "Rupee ends weaker against the dollar as crude prices firm": "The rupee slipped 18 paise against the US dollar as Brent crude climbed for a third session, with importers buying dollars ahead of month-end payments.",
+  "Saffron Foods wins export order from Gulf distributor": "Saffron Foods said it has signed a two-year supply agreement with a Gulf distributor for packaged snacks, its largest export order so far.",
+  "Saffron Foods bags export order from Gulf distributor": "The packaged-foods maker will supply snacks to a Gulf distributor over two years; deliveries begin next quarter from its Pune plant.",
+  "Asterion Industries board approves interim dividend": "Asterion Industries board approved an interim dividend for the year at its meeting on Friday and fixed the record date for eligible shareholders.",
+  "Asterion Industries board approves interim dividend of Rs 4": "The board of Asterion Industries declared an interim dividend of Rs 4 per share; the record date is 14 November.",
+  "Sensex and Nifty open higher; banking stocks lead": "Benchmark indices opened higher, led by private banks, as overseas investors turned net buyers for the first time in a week.",
+  "Kestrel Power wins Rs 900 crore transmission order": "Kestrel Power said it won a Rs 900 crore order to build a 400 kV transmission line and two substations for a state utility.",
+  "Kestrel Power secures Rs 900 crore transmission order": "The order, from a state transmission utility, covers a 400 kV line and substations, and is to be completed within 24 months.",
+  "Kestrel Power bags Rs 900 crore transmission order": "Kestrel Power added a Rs 900 crore transmission project to its order book, which the company says now stands at about Rs 6,200 crore.",
+  "Orion Cables board approves Rs 250 crore capex plan": "Orion Cables board approved capital expenditure of Rs 250 crore over two years to add capacity for high-voltage cables at its Gujarat plant.",
+  "Nimbus Infra Projects shares in focus after fund raising plan": "Nimbus Infra Projects said its board will meet next week to consider raising funds through a qualified institutional placement.",
+  "Velora Pharma receives USFDA approval for generic tablet": "Velora Pharma received final approval from the US drug regulator to market a generic tablet used to treat hypertension.",
+  "Trident Finserv board to consider bond issue on Thursday": "Trident Finserv said its board will meet on Thursday to consider raising funds through non-convertible debentures on a private placement basis.",
+  "Saffron Foods to set up new plant in Andhra Pradesh": "Saffron Foods plans to invest in a new manufacturing plant in Andhra Pradesh to serve southern markets, the company said in a statement.",
+  "Meridian Textiles promoter releases pledge on 5% stake": "A promoter entity of Meridian Textiles released a pledge on shares equal to about 5% of the company, according to a disclosure."
+};
+
 async function article(minAgo: number, source: string, headline: string) {
   const r = await db.query(
-    `INSERT INTO item (public_id, kind, source_id, dedup_key, headline, url, published_at, first_seen_at)
-     VALUES ($1, 'article', $2, $3, $4, $5, $6, $6) RETURNING id`,
-    [newPublicId('it'), source, `demo-${++n}`, headline, `https://example.invalid/news/${n}`, ago(minAgo)],
+    `INSERT INTO item (public_id, kind, source_id, dedup_key, headline, url, published_at, first_seen_at, excerpt)
+     VALUES ($1, 'article', $2, $3, $4, $5, $6, $6, $7) RETURNING id`,
+    [newPublicId('it'), source, `demo-${++n}`, headline, `https://example.invalid/news/${n}`, ago(minAgo), BLURBS[headline] ?? null],
   );
   await db.query(`INSERT INTO job (queue, priority, payload) VALUES ('pipeline', 0, $1)`, [{ item_id: r.rows[0].id }]);
 }

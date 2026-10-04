@@ -6,8 +6,13 @@ import type { Instrument, VoteDisplay } from '../types.ts';
 import { useVoteAction, VoteControls } from '../votes/VoteControls.tsx';
 
 // Story page votes (PRD-005 US-005.1 AC-1/AC-2): the controls, plus + − 0 I acting on the open story.
-export function StoryVotes({ storyId, initial, instruments, signedIn }: { storyId: string; initial: VoteDisplay; instruments: Instrument[]; signedIn: boolean }) {
-  const [votes, setVotes] = useState(initial);
+export function StoryVotes({ storyId, initial, instruments, signedIn, onVotes }: { storyId: string; initial: VoteDisplay; instruments: Instrument[]; signedIn: boolean; onVotes?: (v: VoteDisplay) => void }) {
+  const [votes, setLocal] = useState(initial);
+  // The stream side panel passes onVotes so the row behind it shows the same counts (D-055).
+  const setVotes = (v: VoteDisplay) => {
+    setLocal(v);
+    onVotes?.(v);
+  };
   const { act, message } = useVoteAction(storyId, votes, setVotes);
   const guard = (fn: () => void) => () => (signedIn ? fn() : undefined);
   useShortcuts({

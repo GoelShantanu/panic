@@ -327,6 +327,16 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     expect((await route(db, 'POST', new URL('http://test/v1/stream'))).status).toBe(405);
   });
 
+  it('publisher blurbs are returned only while the source permits excerpts (PRD-002 US-002.5 AC-8, D-055)', async () => {
+    const itemOf = async (story: string) => body(await get(`/v1/stories/${story}`)).items.find((i: any) => i.source.source_id === 'src_desk');
+    await expect(db.query(`UPDATE item SET excerpt = 'Fictional blurb.' WHERE source_id = 'src_desk'`)).rejects.toThrow(); // the schema refuses it while not permitted
+    await db.query(`UPDATE source SET excerpt_allowed = true WHERE source_id = 'src_desk'`);
+    await db.query(`UPDATE item SET excerpt = 'Asterion reported higher quarterly profit on strong demand.' WHERE source_id = 'src_desk' AND dedup_key = 'ast-q2'`);
+    expect((await itemOf(ids['S1']!.pub)).excerpt).toBe('Asterion reported higher quarterly profit on strong demand.');
+    await db.query(`UPDATE source SET excerpt_allowed = false WHERE source_id = 'src_desk'`); // permission withdrawn: stored text stays hidden
+    expect((await itemOf(ids['S1']!.pub)).excerpt).toBeUndefined();
+  });
+
   it('article tags can be switched off after a failed audit; filing tags stay (US-002.8 AC-5, D-051)', async () => {
     await db.query(`UPDATE setting SET value = 'false' WHERE key = 'article_tags_enabled'`);
     try {

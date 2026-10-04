@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShortcuts } from '../keyboard.ts';
 import { useLiveEvent } from '../live.tsx';
 import { ShortcutHelp } from '../ShortcutHelp.tsx';
+import { StoryPanel } from '../story/StoryPanel.tsx';
 import type { Direction, QualityKind, StoryCard, StreamQuery, VoteDisplay } from '../types.ts';
 import { optimistic, sendVote } from '../votes/vote.ts';
 import type { VoteAction } from '../votes/vote.ts';
@@ -19,7 +20,13 @@ export interface StreamProps {
   watchlistIsins: string[] | null;
   // Company timeline (PRD-004 US-004.3 AC-3): pages from its own endpoint, takes only its company's stories.
   timeline?: { isin: string; depthLimitReached: boolean };
+  // The signed-in reader's username, so their own comments show Edit and Delete in the side panel.
+  viewerUsername?: string | null;
 }
+
+// Wide enough for list and side panel side by side (D-055); narrower screens open the full page.
+export const PANEL_QUERY = '(min-width: 1100px)';
+const panelState = () => (typeof history !== 'undefined' ? ((history.state as { spStory?: string } | null)?.spStory ?? null) : null);
 
 const SEEN_KEY = (view: string) => `sp-seen:${view}`;
 const VISIBLE_BEFORE_SEEN_MS = 10_000; // US-001.4 AC-3
@@ -33,7 +40,7 @@ function readLocalSeen(view: string): string | null {
   }
 }
 
-export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline }: StreamProps) {
+export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline, viewerUsername = null }: StreamProps) {
   const router = useRouter();
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const watchlist = useMemo(() => (watchlistIsins ? new Set(watchlistIsins) : null), [watchlistIsins]);
@@ -46,6 +53,56 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [help, setHelp] = useState(false);
+  // Side panel (D-055): the open story, and whether the screen is wide enough for it.
+  const [panel, setPanel] = useState<string | null>(null);
+  // Read on the first client render (it only changes click handlers, never markup), so a click right
+  // after load already opens the panel.
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(PANEL_QUERY).matches === true);
+  const streamUrl = useRef<string | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia?.(PANEL_QUERY);
+    if (!mq) return;
+    setWide(mq.matches);
+    const on = () => setWide(mq.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  // The address bar shows the story's own URL while it is open, so it can be copied or shared; Back closes it.
+  const panelRef = useRef<string | null>(null);
+  const openPanel = useCallback((id: string) => {
+    setSelected(id);
+    const cur = panelRef.current;
+    if (cur === null) {
+      streamUrl.current = window.location.pathname + window.location.search;
+      history.pushState({ spStory: id }, '', `/s/${id}`);
+    } else if (cur !== id) history.replaceState({ spStory: id }, '', `/s/${id}`);
+    panelRef.current = id;
+    setPanel(id);
+  }, []);
+  const closePanel = useCallback(() => {
+    if (panelState()) history.back(); // popstate below clears the panel
+    else {
+      panelRef.current = null;
+      setPanel(null);
+    }
+  }, []);
+  useEffect(() => {
+    const onPop = () => {
+      panelRef.current = panelState();
+      setPanel(panelRef.current);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  const panelOpen = panel !== null && wide;
+  useEffect(() => {
+    document.body.classList.toggle('panel-open', panelOpen);
+    return () => document.body.classList.remove('panel-open');
+  }, [panelOpen]);
+  // Narrowed while open: the panel gives way to the full page.
+  useEffect(() => {
+    if (panel && !wide && streamUrl.current !== null) window.location.assign(`/s/${panel}`);
+  }, [panel, wide]);
   // Follow from any stream row (PRD-003 US-003.1 AC-3).
   const [followed, setFollowed] = useState<Set<string> | null>(watchlistIsins ? new Set(watchlistIsins) : null);
   async function follow(isin: string, on: boolean) {
@@ -141,7 +198,13 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     });
     setPending((p) => applyUpdate(p, e.story_id, e.changes));
   });
-  useLiveEvent('resync', () => router.refresh());
+  useLiveEvent('resync', () => {
+    // A refresh renders the URL in the address bar; put the stream's back first if a story is open.
+    if (panelState() && streamUrl.current) history.replaceState({}, '', streamUrl.current);
+    panelRef.current = null;
+    setPanel(null);
+    router.refresh();
+  });
 
   function showPending() {
     window.scrollTo({ top: 0 });
@@ -198,6 +261,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     const i = selected === null ? -1 : stories.findIndex((s) => s.story_id === selected);
     const next = stories[Math.max(0, Math.min(stories.length - 1, i + delta))]!;
     setSelected(next.story_id);
+    if (panel !== null && wide) openPanel(next.story_id); // the panel follows J/K
     const row = document.getElementById(`row-${next.story_id}`);
     row?.scrollIntoView({ block: 'nearest' });
     // Focus follows the selection so screen readers announce the headline.
@@ -213,19 +277,18 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     ArrowUp: () => move(-1),
     Enter: () => {
       const s = current();
-      if (s) router.push(`/s/${s.story_id}`);
+      if (!s) return;
+      if (wide) openPanel(s.story_id);
+      else router.push(`/s/${s.story_id}`);
     },
     o: () => {
       const s = current();
       if (s) window.open(`/v1/out/${s.primary_item.item_id}?from=stream`, '_blank', 'noopener,noreferrer');
     },
     '?': () => setHelp(true),
-    Escape: () => (help ? setHelp(false) : setSelected(null)),
-    '+': dir('bullish'),
-    '=': dir('bullish'),
-    '-': dir('bearish'),
-    '0': dir('neutral'),
-    i: qual('important'),
+    Escape: () => (help ? setHelp(false) : panelOpen ? closePanel() : setSelected(null)),
+    // While the panel is open its vote buttons own these keys, so a vote is never cast twice.
+    ...(panelOpen ? {} : { '+': dir('bullish'), '=': dir('bullish'), '-': dir('bearish'), '0': dir('neutral'), i: qual('important') }),
   });
 
   const divider = unreadDividerIndex(stories);
@@ -250,7 +313,9 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
             labels={labels}
             signedIn={signedIn}
             message={messages[s.story_id] ?? null}
-            onSelect={() => setSelected(s.story_id)}
+            onSelect={() => (wide ? openPanel(s.story_id) : setSelected(s.story_id))}
+            onOpen={wide ? () => openPanel(s.story_id) : undefined}
+            actions={!panelOpen}
             onVotes={(v) => setVotes(s.story_id, v)}
             followed={followed}
             onFollow={(isin, on) => void follow(isin, on)}
@@ -277,6 +342,9 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
         )}
       </div>
       {help && <ShortcutHelp onClose={() => setHelp(false)} />}
+      {panelOpen && (
+        <StoryPanel storyId={panel!} eventLabels={eventLabels} signedIn={signedIn} me={viewerUsername} onClose={closePanel} onVotes={(v) => setVotes(panel!, v)} />
+      )}
     </div>
   );
 }

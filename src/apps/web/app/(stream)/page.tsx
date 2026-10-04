@@ -31,7 +31,7 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
     api<StreamBody & Record<string, unknown>>(`/v1/stream${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
     api<{ stale_sources: StaleSource[]; directional_voting_enabled: boolean }>('/v1/session'),
-    api<{ entitlements: { multi_event_filter: boolean; stream_filings_only: boolean; saved_views: number } }>('/v1/me'),
+    api<{ username: string | null; entitlements: { multi_event_filter: boolean; stream_filings_only: boolean; saved_views: number } }>('/v1/me'),
   ]);
   const signedIn = me.status === 200;
   const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false, saved_views: 0 };
@@ -118,6 +118,7 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
         query={query}
         eventLabels={eventTypes.map((t) => [t.code, t.label])}
         signedIn={signedIn}
+        viewerUsername={signedIn ? me.body.username : null}
         watchlistIsins={watchlist?.status === 200 ? watchlist.body.instruments.map((i) => i.isin) : null}
       />
     );

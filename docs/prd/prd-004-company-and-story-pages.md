@@ -59,6 +59,8 @@ The taxonomy is anchored to exchange filing categories where possible, so filing
 
 **US-004.2** As a user, I open a story and see everything about it in one place.
 
+*(Amended by [D-055](../../DECISION_LOG.md): on wide screens the stream opens this view in a side panel beside the list; `/s/{id}` stays the full page for direct links, search engines and phones. Articles show the publisher's blurb where its terms permit.)*
+
 | AC | Criterion |
 | --- | --- |
 | AC-1 | The page shows, in order: headline; primary item source and time; tagged instruments (each linking to its company page) and unresolved mentions; event-type labels; AI summary if one exists (§5); **Read full story** link to the primary item; full source list; votes (PRD-005); comments (PRD-006). |

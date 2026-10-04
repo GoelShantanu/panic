@@ -7,6 +7,8 @@ import {
   isProbablyEnglish,
   nextFetchDelaySeconds,
   normaliseHeadline,
+  cleanExcerpt,
+  EXCERPT_MAX_CHARS,
   parseCadence,
 } from './index.ts';
 import type { HealthInput } from './index.ts';
@@ -126,6 +128,13 @@ describe('English-only check (N14)', () => {
 
   it('normalises whitespace in headlines', () => {
     expect(normaliseHeadline('  Kestrel   Power\n wins order ')).toBe('Kestrel Power wins order');
+    // Publisher blurbs (D-055): markup, escaped markup and repeats of the headline removed; long text cut.
+    expect(cleanExcerpt('<p>The board of <b>Kestrel Power</b> approved a ₹900 crore order.</p><img src=x>', 'Kestrel wins order')).toBe('The board of Kestrel Power approved a ₹900 crore order.');
+    expect(cleanExcerpt('&lt;img src=x onerror=alert(1)&gt;Kestrel Power wins a large transmission order', 'x')).toBe('Kestrel Power wins a large transmission order');
+    expect(cleanExcerpt('Kestrel wins order', 'Kestrel wins order')).toBeNull();
+    const long = cleanExcerpt('word '.repeat(200), 'x')!;
+    expect(long.length).toBeLessThanOrEqual(EXCERPT_MAX_CHARS + 1);
+    expect(long.endsWith('…')).toBe(true);
     // Double-escaped entities and zero-width characters, as real feeds send them (QA, D-049).
     expect(normaliseHeadline('​Bonus issues &amp; stock split: F&amp;amp;O &#8377;5 &lt;b&gt;')).toBe('Bonus issues & stock split: F&O ₹5 <b>');
     expect(normaliseHeadline('Kept &unknown; &#0; as written')).toBe('Kept &unknown; &#0; as written');

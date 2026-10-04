@@ -20,6 +20,7 @@ describe('parseFeed', () => {
       link: 'https://regulator.example.in/orders/2026/101',
       guid: 'urn:example:order:101',
       published: '2026-10-05T06:30:00Z',
+      description: null,
     });
   });
 

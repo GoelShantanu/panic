@@ -1,5 +1,5 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
-import { canonicalUrl, isProbablyEnglish, isSponsoredUrl, normaliseHeadline } from '@stockpanic/core';
+import { canonicalUrl, cleanExcerpt, isProbablyEnglish, isSponsoredUrl, normaliseHeadline } from '@stockpanic/core';
 import type { CandidateRow } from '@stockpanic/db';
 
 export class FeedParseError extends Error {}
@@ -9,6 +9,7 @@ export interface FeedEntry {
   link: string | null;
   guid: string | null;
   published: string | null;
+  description: string | null;
 }
 
 const parser = new XMLParser({
@@ -52,6 +53,7 @@ export function parseFeed(xml: string): FeedEntry[] {
         link: Array.isArray(links) ? text(links[0]) : text(links),
         guid: text(it['guid']),
         published: text(it['pubDate']) ?? text(it['dc:date']),
+        description: text(it['description']) ?? text(it['content:encoded']),
       };
     });
   }
@@ -64,6 +66,7 @@ export function parseFeed(xml: string): FeedEntry[] {
         link: atomLink(e['link']),
         guid: text(e['id']),
         published: text(e['published']) ?? text(e['updated']),
+        description: text(e['summary']) ?? text(e['content']),
       };
     });
   }
@@ -109,7 +112,7 @@ export function toCandidates(entries: readonly FeedEntry[]): CandidateSummary {
       headline,
       url,
       publishedAt: Number.isNaN(ms) ? null : new Date(ms),
-      excerpt: null,
+      excerpt: cleanExcerpt(e.description, headline), // kept only where the source permits (storeCandidates)
     });
   }
   return { candidates, discardedNonEnglish, discardedInvalid, discardedSponsored };

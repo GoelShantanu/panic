@@ -92,6 +92,7 @@ DATABASE_URL=postgres://… AUTH_SECRET=… PUBLIC_BASE_URL=… node src/apps/wo
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/maintenance.ts        # daily, owner role: partitions ahead, drops expired ip_log/live_event/ai_call, purges
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts grant-role <username> operator   # after the user enrols TOTP (/v1/me/totp/enrol, /confirm)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-setting ai_enabled true      # once Anthropic credentials exist (D-034)
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-source-excerpt <source_id> on "<terms>"   # publisher blurbs once terms permit (D-055); list-sources shows state
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts add-holiday|set-muhurat|record-halt|show-day …   # trading calendar (D-038); run without args for usage
 DATABASE_URL=postgres://… ANTHROPIC_API_KEY=… OPS_EMAIL=… node src/apps/worker/src/cli/ai.ts [--once]   # AI classify + summarise jobs (Haiku 4.5)
 DATABASE_URL=postgres://… OPS_EMAIL=… node src/apps/worker/src/cli/reconcile.ts [--date YYYY-MM-DD]  # filings reconciliation, 23:30 + 07:30 IST (D-035)

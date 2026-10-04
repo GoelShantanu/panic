@@ -82,7 +82,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
   const [timeline, types, me] = await Promise.all([
     api<{ stories: StoryCard[]; next_cursor: string | null; depth_limit_reached: boolean }>(`/v1/companies/${c.isin}/timeline${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
-    api<{ entitlements: { multi_event_filter: boolean; stream_filings_only: boolean } }>('/v1/me'),
+    api<{ username: string | null; entitlements: { multi_event_filter: boolean; stream_filings_only: boolean } }>('/v1/me'),
   ]);
   const signedIn = me.status === 200;
   const eventTypes = types.status === 200 ? types.body.types : [];
@@ -166,6 +166,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
           query={query}
           eventLabels={eventTypes.map((t) => [t.code, t.label])}
           signedIn={signedIn}
+          viewerUsername={signedIn ? me.body.username : null}
           watchlistIsins={null}
           timeline={{ isin: c.isin, depthLimitReached: timeline.body.depth_limit_reached }}
         />

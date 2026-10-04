@@ -5,6 +5,8 @@ import { addCalendarException, addHoliday, calendarDay, clearCalendarExceptions,
 const USAGE = `usage: admin.ts <command>
   grant-role <username> <user|operator|admin>
   set-setting <key> <json value>                  e.g. set-setting ai_enabled true
+  list-sources                                    id, tier, enabled, excerpts
+  set-source-excerpt <source_id> on|off [terms]   publisher blurbs for a source, once its terms permit (D-055)
   add-holiday <YYYY-MM-DD> <name>                 an exchange trading holiday (NSE and BSE)
   remove-holiday <YYYY-MM-DD>
   set-muhurat <YYYY-MM-DD> [HH:MM HH:MM]          default ${MUHURAT_DEFAULT.start}-${MUHURAT_DEFAULT.end} IST
@@ -36,6 +38,27 @@ try {
       if (r === 'granted') console.log(`${a} is now ${b}`);
       else {
         console.error(r === 'unknown_user' ? `no user named ${a}` : `${a} must enrol an authenticator app first: signed in, open /admin/enrol`);
+        process.exitCode = 1;
+      }
+      break;
+    }
+    case 'list-sources': {
+      const { rows } = await db.query('SELECT source_id, name, kind, tier, enabled, excerpt_allowed, access_basis, access_checked_on::text AS checked FROM source ORDER BY tier, source_id');
+      for (const r of rows) console.log(`${r.source_id.padEnd(22)} tier ${r.tier} ${r.kind.padEnd(7)} ${r.enabled ? 'on ' : 'off'}  excerpts ${r.excerpt_allowed ? 'on ' : 'off'}  ${r.name}${r.access_basis ? `  [${r.access_basis}, ${r.checked}]` : ''}`);
+      break;
+    }
+    case 'set-source-excerpt': {
+      // Only after the publisher's terms were checked: record where (PRD-002 US-002.5 AC-1/AC-8). The
+      // source table's trigger audits the change.
+      if (!a || (b !== 'on' && b !== 'off')) fail();
+      if (b === 'on' && !c) fail(`turning excerpts on needs the terms reference: set-source-excerpt <source_id> on "<terms URL or licence>"\n${USAGE}`);
+      const r = await db.query(
+        `UPDATE source SET excerpt_allowed = $2, access_basis = coalesce($3, access_basis), access_checked_on = CASE WHEN $3::text IS NULL THEN access_checked_on ELSE current_date END WHERE source_id = $1`,
+        [a, b === 'on', b === 'on' ? [c, ...rest].join(' ') : null],
+      );
+      if (r.rowCount) console.log(`${a}: publisher blurbs ${b}`);
+      else {
+        console.error(`no source ${a}`);
         process.exitCode = 1;
       }
       break;

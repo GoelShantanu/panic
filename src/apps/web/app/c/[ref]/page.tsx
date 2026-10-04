@@ -6,6 +6,7 @@ import { FollowButton } from '../../../site/FollowButton.tsx';
 import { PhoneNote } from '../../../site/Phone.tsx';
 import { Filters } from '../../../site/stream/Filters.tsx';
 import { parseQuery, streamParams } from '../../../site/stream/logic.ts';
+import { loadReader } from '../../../site/story/loadReader.ts';
 import { Stream } from '../../../site/stream/Stream.tsx';
 import type { EventType, StoryCard, VoteDisplay } from '../../../site/types.ts';
 import { CommunityOpinion } from '../../../site/votes/VoteControls.tsx';
@@ -90,6 +91,12 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
   const name = c.name ?? c.display_symbol ?? c.isin;
   const symbol = c.display_symbol ?? c.exchange_codes.bse ?? c.isin;
   const base = `/c/${c.slug}-${c.isin}`;
+  const newsHeader = (
+    <>
+      <h2 className="section-h">News and filings</h2>
+      <Filters query={query} eventTypes={eventTypes} directionalEnabled={false} entitlements={signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false }} basePath={base} views={false} />
+    </>
+  );
 
   return (
     <div className="company">
@@ -141,8 +148,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
         </section>
       )}
 
-      <h2 className="section-h">News and filings</h2>
-      <Filters query={query} eventTypes={eventTypes} directionalEnabled={false} entitlements={signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false }} basePath={base} views={false} />
+      {timeline.status !== 200 || timeline.body.stories.length === 0 ? newsHeader : null}
       {timeline.status !== 200 ? (
         <div className="state">
           <h2>Couldn&apos;t load this company&apos;s news</h2>
@@ -169,6 +175,8 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
           viewerUsername={signedIn ? me.body.username : null}
           watchlistIsins={null}
           timeline={{ isin: c.isin, depthLimitReached: timeline.body.depth_limit_reached }}
+          header={newsHeader}
+          reader={await loadReader(timeline.body.stories[0]?.story_id)}
         />
       )}
     </div>

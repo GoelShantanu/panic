@@ -20,11 +20,13 @@ export interface RowProps {
   onOpen?: () => void;
   // Inline vote and Follow controls; hidden while the side panel shows them.
   actions?: boolean;
+  // The story in the reader column (D-055); marked on wide screens only, by CSS.
+  shown?: boolean;
 }
 
 // PRD-001 US-001.1 AC-2: headline, source, age, symbols, event types, source count, comment count,
 // compact community opinion at ≥ 3 votes; the selected row carries vote controls.
-export function StoryRow({ story: s, selected, labels, signedIn, message, onSelect, onVotes, followed, onFollow, onOpen, actions = true }: RowProps) {
+export function StoryRow({ story: s, selected, labels, signedIn, message, onSelect, onVotes, followed, onFollow, onOpen, actions = true, shown = false }: RowProps) {
   const symbols = s.instruments.map((i) => i.display_symbol ?? i.exchange_codes.bse ?? i.isin);
   const unresolved = s.instruments.length === 0 && s.unresolved_mentions.length > 0;
   return (
@@ -32,6 +34,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
       className="row"
       id={`row-${s.story_id}`}
       data-selected={selected || undefined}
+      data-shown={shown || undefined}
       data-unread={s.is_unread || undefined}
       aria-current={selected ? 'true' : undefined}
       onClick={(e) => {
@@ -52,7 +55,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
               className="row-headline"
               tabIndex={-1}
               onClick={(e) => {
-                // A plain click opens the panel; Ctrl/Cmd/middle click still opens the page in a new tab.
+                // A plain click opens the reader; Ctrl/Cmd/middle click still opens the page in a new tab.
                 if (!onOpen || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                 e.preventDefault();
                 e.stopPropagation();
@@ -79,7 +82,7 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
                 </span>
               ))}
             {s.comment_count > 0 && <span className="faint">{s.comment_count === 1 ? '1 comment' : `${s.comment_count} comments`}</span>}
-            {!selected && <CommunityOpinion votes={s.votes} compact />}
+            {!(selected && actions) && <CommunityOpinion votes={s.votes} compact />}
           </div>
         </div>
       </div>

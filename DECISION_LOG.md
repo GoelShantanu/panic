@@ -1953,6 +1953,46 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 - Demo sources and demo articles carry fictional blurbs (seed-demo).
 - Verified: browser at 1440 and 1000 px (open, J/K, Esc, Back, Enter, single vote, filing summary, narrow handover); axe shows 0 violations with the panel open in both themes; 432/432 tests.
 
+**Status** — Item 1 (overlay side panel) **Superseded by D-056**: the reader is a column beside the list, open on landing. Items 2–3 Active.
+
+---
+
+## D-056 — Reader column beside the stream, open on landing *(supersedes D-055 item 1)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-04 |
+| **Category** | Product · UX |
+| **Decided by** | Founder (chat, 2026-10-04): "why a pop-up modal? why not like cryptopanic?" — the first story should already be showing beside the list on the home page, as on CryptoPanic, not an overlay opened by a click |
+
+**Decision**
+
+1. **The reader is part of the page, not an overlay.** On screens at least 1100 px wide, the stream (and a company's timeline) is two columns: the list on the left (about 55%), the reader on the right (about 45%).
+   - The page opens with the first story already in the reader. It is server-rendered with the page, so it shows before any script runs and is in the HTML search engines see.
+   - The reader stays in view while the list scrolls (sticky), and scrolls on its own when the story is long.
+   - The story being read is marked in the list.
+2. **Changing the story.** A plain click, J/K or Enter shows a story in the reader. The address bar shows `/s/{id}` so the story can be copied or shared; J/K replace that entry rather than adding history. Back returns to the stream's own address and the first story.
+   - There is nothing to close: no ✕, and Esc only clears the keyboard selection.
+   - J/K start from the story being read.
+3. **Unchanged from D-055:** Ctrl, Cmd and middle clicks open the full page in a new tab. Direct links, search engines and screens under 1100 px get the full `/s/{id}` page. Narrowing the window while a chosen story is in the address bar hands over to its full page. On wide screens the vote keys act on the reader's story only. Both surfaces render the same `StoryView`.
+4. **Narrow screens fetch nothing for the reader.** The column is hidden there. Its server-rendered first story costs no extra requests, and a story chosen later is fetched only while the column is visible.
+
+**Reason**
+
+- The founder wants CryptoPanic's reading flow as it actually is: land, and a story is already open beside the list.
+- An overlay that must be opened and closed adds a step and hides part of the list. A column does neither.
+
+**Consequences**
+
+- Each stream and company page render makes two more internal API calls (the first story and its comments).
+- The stream page gains a heading for screen readers ("Latest Indian market news" and similar per view); before, it had no `h1`.
+- Verified:
+  - Browser at 1440 px on the stream and a company page: first story shown on landing, click, J, Back, no console errors.
+  - Browser at 1000 px: single column, no reader requests, a click opens the full page.
+  - axe (WCAG 2.x A/AA and best practice): 0 violations on both pages in both themes.
+  - Tests: 434/434. Production build passes.
+- The static snapshot now shows the reader in `stream.html` and `company.html`; the separate `stream-panel.html` is gone.
+
 **Status** — Active
 
 ---

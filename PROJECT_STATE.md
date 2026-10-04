@@ -1,6 +1,6 @@
 # PROJECT_STATE.md — Live Project Memory
 
-**Last updated:** 2026-10-02
+**Last updated:** 2026-10-04
 **Updated by:** Founding CTO
 **Update cadence:** every session, before ending.
 
@@ -303,3 +303,4 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-03 | **Security review run (D-053).** Threat model and review record in `docs/security/`. npm audit clean; SQL interpolation traced; hostile probes against localhost passed (CSRF 415, stored payload escaped, operator API needs 2FA, IDOR 404/403, forged unsubscribe 404). Ten findings fixed: SSRF via attachments and push endpoints, no security headers, per-IP limits on sign-in codes and grievances, client IP blind behind the proxy, log mailer default in production, email aliases opening extra accounts (migration 0016), sponsored content entering as news, patient-brigade visibility for operators. Abuse vectors simulated: a fast brigade is caught; a patient brigade evades automatic signals (residual A2). A clock-dependent test fixed. 428/428 tests. Residual risks A1–A8 await the founder. | Phase 9 in progress |
 | 2026-10-03 | **Security review approved (D-054).** Founder accepted residual risks A1–A8. Pen test, host hardening and deployment requirements carried to Release. **Phase 9 complete.** | **Phase 9 exited** |
 | 2026-10-04 | **CryptoPanic-style reading (D-055, founder request).** Stream side panel on wide screens (list left, story right, address bar shows the story link, J/K follow, Esc/Back close; full page kept for links, search and phones); publisher blurbs from feed descriptions where the source permits excerpts (per-source switch `set-source-excerpt`, schema-enforced; demo data has fictional blurbs); no AI summaries of articles. Found while testing: a Ctrl-click on a headline also opened the panel — fixed. axe 0 violations with the panel open; 432/432 tests. Snapshot gains `ui-snapshot/stream-panel.html`. | Phase 10 |
+| 2026-10-04 | **Reader column replaces the overlay (D-056, founder request).** On wide screens the stream and company timelines are two columns, with the first story already in the reader on landing (server-rendered); click/J/K/Enter change it, the address bar shows its link, Back returns to the first story; nothing to close. Narrow screens: single column, no reader requests, full page on click. Stream page gains a screen-reader `h1`. axe 0 violations (both pages, both themes, incl. best practice); 434/434 tests; production build passes. Snapshot regenerated. | Phase 10 |

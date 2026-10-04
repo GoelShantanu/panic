@@ -2,10 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useShortcuts } from '../keyboard.ts';
 import { useLiveEvent } from '../live.tsx';
 import { ShortcutHelp } from '../ShortcutHelp.tsx';
 import { StoryPanel } from '../story/StoryPanel.tsx';
+import type { ReaderData } from '../story/StoryPanel.tsx';
 import type { Direction, QualityKind, StoryCard, StreamQuery, VoteDisplay } from '../types.ts';
 import { optimistic, sendVote } from '../votes/vote.ts';
 import type { VoteAction } from '../votes/vote.ts';
@@ -20,11 +22,15 @@ export interface StreamProps {
   watchlistIsins: string[] | null;
   // Company timeline (PRD-004 US-004.3 AC-3): pages from its own endpoint, takes only its company's stories.
   timeline?: { isin: string; depthLimitReached: boolean };
-  // The signed-in reader's username, so their own comments show Edit and Delete in the side panel.
+  // The signed-in reader's username, so their own comments show Edit and Delete in the reader.
   viewerUsername?: string | null;
+  // Tabs, filters and banners: the top of the list column, beside the reader (D-055).
+  header?: ReactNode;
+  // The first story, server-rendered into the reader so wide screens open with it showing (D-055).
+  reader?: ReaderData | null;
 }
 
-// Wide enough for list and side panel side by side (D-055); narrower screens open the full page.
+// Wide enough for list and reader side by side (D-055); narrower screens hide the reader and open the full page.
 export const PANEL_QUERY = '(min-width: 1100px)';
 const panelState = () => (typeof history !== 'undefined' ? ((history.state as { spStory?: string } | null)?.spStory ?? null) : null);
 
@@ -40,7 +46,7 @@ function readLocalSeen(view: string): string | null {
   }
 }
 
-export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline, viewerUsername = null }: StreamProps) {
+export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline, viewerUsername = null, header, reader = null }: StreamProps) {
   const router = useRouter();
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const watchlist = useMemo(() => (watchlistIsins ? new Set(watchlistIsins) : null), [watchlistIsins]);
@@ -53,10 +59,12 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [help, setHelp] = useState(false);
-  // Side panel (D-055): the open story, and whether the screen is wide enough for it.
-  const [panel, setPanel] = useState<string | null>(null);
+  // Reader column (D-055): always beside the list on wide screens, showing the first story until the
+  // reader picks another. CSS hides it on narrow screens, where a click opens the full page instead.
+  const defaultStory = reader?.story.story_id ?? initial.stories[0]?.story_id ?? null;
+  const [shown, setShown] = useState<string | null>(defaultStory);
   // Read on the first client render (it only changes click handlers, never markup), so a click right
-  // after load already opens the panel.
+  // after load already uses the reader.
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(PANEL_QUERY).matches === true);
   const streamUrl = useRef<string | null>(null);
   useEffect(() => {
@@ -67,42 +75,28 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     mq.addEventListener?.('change', on);
     return () => mq.removeEventListener?.('change', on);
   }, []);
-  // The address bar shows the story's own URL while it is open, so it can be copied or shared; Back closes it.
-  const panelRef = useRef<string | null>(null);
+  // A chosen story puts its own URL in the address bar, so it can be copied or shared; Back returns.
   const openPanel = useCallback((id: string) => {
     setSelected(id);
-    const cur = panelRef.current;
-    if (cur === null) {
+    if (panelState() === null) {
       streamUrl.current = window.location.pathname + window.location.search;
       history.pushState({ spStory: id }, '', `/s/${id}`);
-    } else if (cur !== id) history.replaceState({ spStory: id }, '', `/s/${id}`);
-    panelRef.current = id;
-    setPanel(id);
-  }, []);
-  const closePanel = useCallback(() => {
-    if (panelState()) history.back(); // popstate below clears the panel
-    else {
-      panelRef.current = null;
-      setPanel(null);
-    }
+    } else if (panelState() !== id) history.replaceState({ spStory: id }, '', `/s/${id}`);
+    setShown(id);
   }, []);
   useEffect(() => {
     const onPop = () => {
-      panelRef.current = panelState();
-      setPanel(panelRef.current);
+      const id = panelState();
+      setShown(id ?? defaultStory);
+      setSelected(id);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
-  const panelOpen = panel !== null && wide;
+  }, [defaultStory]);
+  // Narrowed while a chosen story is in the address bar: hand over to its full page.
   useEffect(() => {
-    document.body.classList.toggle('panel-open', panelOpen);
-    return () => document.body.classList.remove('panel-open');
-  }, [panelOpen]);
-  // Narrowed while open: the panel gives way to the full page.
-  useEffect(() => {
-    if (panel && !wide && streamUrl.current !== null) window.location.assign(`/s/${panel}`);
-  }, [panel, wide]);
+    if (!wide && shown && panelState() && streamUrl.current !== null) window.location.assign(`/s/${shown}`);
+  }, [shown, wide]);
   // Follow from any stream row (PRD-003 US-003.1 AC-3).
   const [followed, setFollowed] = useState<Set<string> | null>(watchlistIsins ? new Set(watchlistIsins) : null);
   async function follow(isin: string, on: boolean) {
@@ -201,8 +195,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   useLiveEvent('resync', () => {
     // A refresh renders the URL in the address bar; put the stream's back first if a story is open.
     if (panelState() && streamUrl.current) history.replaceState({}, '', streamUrl.current);
-    panelRef.current = null;
-    setPanel(null);
+    setShown(defaultStory);
     router.refresh();
   });
 
@@ -258,10 +251,11 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
 
   const move = (delta: number) => {
     if (stories.length === 0) return;
-    const i = selected === null ? -1 : stories.findIndex((s) => s.story_id === selected);
+    const from = selected ?? (wide ? shown : null); // on wide screens J/K start from the story being read
+    const i = from === null ? -1 : stories.findIndex((s) => s.story_id === from);
     const next = stories[Math.max(0, Math.min(stories.length - 1, i + delta))]!;
     setSelected(next.story_id);
-    if (panel !== null && wide) openPanel(next.story_id); // the panel follows J/K
+    if (wide) openPanel(next.story_id); // the reader follows J/K
     const row = document.getElementById(`row-${next.story_id}`);
     row?.scrollIntoView({ block: 'nearest' });
     // Focus follows the selection so screen readers announce the headline.
@@ -286,64 +280,70 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
       if (s) window.open(`/v1/out/${s.primary_item.item_id}?from=stream`, '_blank', 'noopener,noreferrer');
     },
     '?': () => setHelp(true),
-    Escape: () => (help ? setHelp(false) : panelOpen ? closePanel() : setSelected(null)),
-    // While the panel is open its vote buttons own these keys, so a vote is never cast twice.
-    ...(panelOpen ? {} : { '+': dir('bullish'), '=': dir('bullish'), '-': dir('bearish'), '0': dir('neutral'), i: qual('important') }),
+    Escape: () => (help ? setHelp(false) : setSelected(null)),
+    // On wide screens the reader's vote buttons own these keys (for the story it shows), so a vote is never cast twice.
+    ...(wide ? {} : { '+': dir('bullish'), '=': dir('bullish'), '-': dir('bearish'), '0': dir('neutral'), i: qual('important') }),
   });
 
   const divider = unreadDividerIndex(stories);
   return (
-    <div className="stream">
-      {/* Zero-height sticky anchor: the control floats over the list and never moves it (WORKFLOW §7). */}
-      <div className="new-stories-anchor">
-        {pending.length > 0 && (
-          <button type="button" className="new-stories" onClick={showPending}>
-            {pending.length === 1 ? '1 new story' : `${pending.length} new stories`}
-          </button>
-        )}
+    <div className="stream-layout">
+      <div className="stream-col">
+        {header}
+        <div className="stream">
+          {/* Zero-height sticky anchor: the control floats over the list and never moves it (WORKFLOW §7). */}
+          <div className="new-stories-anchor">
+            {pending.length > 0 && (
+              <button type="button" className="new-stories" onClick={showPending}>
+                {pending.length === 1 ? '1 new story' : `${pending.length} new stories`}
+              </button>
+            )}
+          </div>
+          <ol className="rows panel" ref={listRef} aria-label="Stories">
+            {stories.map((s, i) => (
+              <StoryRowWithDivider
+                key={s.story_id}
+                showDivider={i === divider}
+                unreadCount={unreadCount}
+                story={s}
+                selected={s.story_id === selected}
+                shown={s.story_id === shown}
+                labels={labels}
+                signedIn={signedIn}
+                message={messages[s.story_id] ?? null}
+                onSelect={() => (wide ? openPanel(s.story_id) : setSelected(s.story_id))}
+                onOpen={wide ? () => openPanel(s.story_id) : undefined}
+                actions={!wide}
+                onVotes={(v) => setVotes(s.story_id, v)}
+                followed={followed}
+                onFollow={(isin, on) => void follow(isin, on)}
+              />
+            ))}
+          </ol>
+          <div ref={sentinel} className="stream-end">
+            {loadingMore && <span className="spinner" aria-label="Loading more stories" />}
+            {loadError && (
+              <span className="notice notice-error">
+                Couldn&apos;t load more stories.{' '}
+                <button type="button" className="button" onClick={() => void loadMore()}>
+                  Retry
+                </button>
+              </span>
+            )}
+            {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
+              <span className="faint">{depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}</span>
+            )}
+            {cursor && !loadingMore && !loadError && (
+              <button type="button" className="button" onClick={() => void loadMore()}>
+                Load more
+              </button>
+            )}
+          </div>
+          {help && <ShortcutHelp onClose={() => setHelp(false)} />}
+        </div>
       </div>
-      <ol className="rows panel" ref={listRef} aria-label="Stories">
-        {stories.map((s, i) => (
-          <StoryRowWithDivider
-            key={s.story_id}
-            showDivider={i === divider}
-            unreadCount={unreadCount}
-            story={s}
-            selected={s.story_id === selected}
-            labels={labels}
-            signedIn={signedIn}
-            message={messages[s.story_id] ?? null}
-            onSelect={() => (wide ? openPanel(s.story_id) : setSelected(s.story_id))}
-            onOpen={wide ? () => openPanel(s.story_id) : undefined}
-            actions={!panelOpen}
-            onVotes={(v) => setVotes(s.story_id, v)}
-            followed={followed}
-            onFollow={(isin, on) => void follow(isin, on)}
-          />
-        ))}
-      </ol>
-      <div ref={sentinel} className="stream-end">
-        {loadingMore && <span className="spinner" aria-label="Loading more stories" />}
-        {loadError && (
-          <span className="notice notice-error">
-            Couldn&apos;t load more stories.{' '}
-            <button type="button" className="button" onClick={() => void loadMore()}>
-              Retry
-            </button>
-          </span>
-        )}
-        {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
-          <span className="faint">{depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}</span>
-        )}
-        {cursor && !loadingMore && !loadError && (
-          <button type="button" className="button" onClick={() => void loadMore()}>
-            Load more
-          </button>
-        )}
-      </div>
-      {help && <ShortcutHelp onClose={() => setHelp(false)} />}
-      {panelOpen && (
-        <StoryPanel storyId={panel!} eventLabels={eventLabels} signedIn={signedIn} me={viewerUsername} onClose={closePanel} onVotes={(v) => setVotes(panel!, v)} />
+      {shown && (
+        <StoryPanel storyId={shown} initial={reader} eventLabels={eventLabels} signedIn={signedIn} me={viewerUsername} active={wide} onVotes={(v) => setVotes(shown, v)} />
       )}
     </div>
   );

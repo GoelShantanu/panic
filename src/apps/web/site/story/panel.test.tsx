@@ -44,68 +44,105 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const wide = (matches: boolean) =>
   vi.stubGlobal('matchMedia', (q: string) => ({ matches: matches && q === '(min-width: 1100px)', media: q, addEventListener() {}, removeEventListener() {} }));
 
-describe('story side panel (D-055)', () => {
+describe('stream reader column (D-055)', () => {
   const live = { reconnecting: false, subscribe: () => () => undefined };
-  const mount = () =>
+  const noComments = { comments: [], next_cursor: null, posting: { enabled: true } };
+  let fetchMock: ReturnType<typeof vi.fn>;
+  const fetched = (i: number) => fetchMock.mock.calls.some(([u]) => u === `/v1/stories/${card(i).story_id}`);
+  const reader = () => screen.getByRole('complementary', { name: 'Story' });
+  const mount = (withReader = true) =>
     render(
       <LiveContext.Provider value={live as never}>
-        <Stream initial={{ stories: [card(2), card(1)], next_cursor: null }} query={{ view: 'latest', eventTypes: [], filingsOnly: false }} eventLabels={[['results', 'Results']]} signedIn={false} watchlistIsins={null} />
+        <Stream
+          initial={{ stories: [card(2), card(1)], next_cursor: null }}
+          query={{ view: 'latest', eventTypes: [], filingsOnly: false }}
+          eventLabels={[['results', 'Results']]}
+          signedIn={false}
+          watchlistIsins={null}
+          reader={withReader ? { story: detail(2), comments: noComments as never } : null}
+        />
       </LiveContext.Provider>,
     );
   beforeEach(() => {
     Element.prototype.scrollIntoView = () => undefined;
     history.replaceState({}, '', '/?view=latest');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string) => {
-        const m = /\/v1\/stories\/(st_\d+)(\/comments)?$/.exec(url);
-        if (!m) return json({}, 404);
-        const i = Number(m[1]!.slice(3));
-        return m[2] ? json({ comments: [], next_cursor: null, posting: { enabled: true } }) : json(detail(i));
-      }),
-    );
+    fetchMock = vi.fn(async (url: string) => {
+      const m = /\/v1\/stories\/(st_\d+)(\/comments)?$/.exec(url);
+      if (!m) return json({}, 404);
+      return m[2] ? json(noComments) : json(detail(Number(m[1]!.slice(3))));
+    });
+    vi.stubGlobal('fetch', fetchMock);
   });
   afterEach(() => (cleanup(), vi.unstubAllGlobals()));
 
-  it('wide screens: a plain click opens the story beside the list; the address bar shows its link; Esc and Back close it', async () => {
+  it('opens with the first story already in the reader, server-rendered, and the list beside it', () => {
     wide(true);
     mount();
-    const link = screen.getByText('Invented story 2');
-    await act(async () => void fireEvent.click(link, { button: 0 }));
-    const panel = await screen.findByRole('complementary', { name: 'Story' });
-    await within(panel).findByText('Blurb for story 2 from the publisher feed.');
-    expect(within(panel).getByText('From Example Desk')).toBeTruthy();
-    expect(location.pathname).toBe(`/s/${card(2).story_id}`);
-    expect(document.body.classList.contains('panel-open')).toBe(true);
-    expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0); // the list stays
+    expect(within(reader()).getByText('Blurb for story 2 from the publisher feed.')).toBeTruthy();
+    expect(within(reader()).getByText('From Example Desk')).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(location.pathname + location.search).toBe('/?view=latest'); // landing does not change the address
+    expect(document.getElementById(`row-${card(2).story_id}`)!.hasAttribute('data-shown')).toBe(true);
+    expect(screen.getAllByRole('listitem').length).toBe(2);
+  });
 
-    // J moves the selection and the panel follows, replacing (not adding) the history entry.
-    const depth = history.length;
+  it('without server data the reader fetches the first story itself, but only while it is visible', async () => {
+    wide(false);
+    mount(false);
+    await act(async () => undefined);
+    expect(fetchMock).not.toHaveBeenCalled(); // phones: the column is hidden
+    cleanup();
+    wide(true);
+    mount(false);
+    await within(reader()).findByText('Blurb for story 2 from the publisher feed.');
+    expect(fetched(2)).toBe(true);
+  });
+
+  it('click, J and K change the story; the address bar shows its link; Back returns to the first story; Esc keeps the reader', async () => {
+    wide(true);
+    mount();
+    // J starts from the story being read.
     await act(async () => void fireEvent.keyDown(window, { key: 'j' }));
-    await within(panel).findByText('Blurb for story 1 from the publisher feed.');
+    await within(reader()).findByText('Blurb for story 1 from the publisher feed.');
     expect(location.pathname).toBe(`/s/${card(1).story_id}`);
-    expect(history.length).toBe(depth);
+    expect(document.getElementById(`row-${card(1).story_id}`)!.hasAttribute('data-shown')).toBe(true);
 
-    // Esc goes back to the stream's own URL.
+    // K moves back, replacing (not adding) the history entry; story 2 comes from the server data.
+    const depth = history.length;
+    await act(async () => void fireEvent.keyDown(window, { key: 'k' }));
+    await within(reader()).findByText('Blurb for story 2 from the publisher feed.');
+    expect(location.pathname).toBe(`/s/${card(2).story_id}`);
+    expect(history.length).toBe(depth);
+    expect(fetched(2)).toBe(false);
+
+    // A plain click on a headline.
+    await act(async () => void fireEvent.click(screen.getByText('Invented story 1'), { button: 0 }));
+    await within(reader()).findByText('Blurb for story 1 from the publisher feed.');
+    expect(location.pathname).toBe(`/s/${card(1).story_id}`);
+
+    await act(async () => void fireEvent.keyDown(window, { key: 'Escape' }));
+    expect(within(reader()).getByText('Blurb for story 1 from the publisher feed.')).toBeTruthy();
+
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'Escape' });
+      history.back();
       await new Promise((r) => setTimeout(r, 50)); // history.back() is asynchronous
     });
     expect(location.pathname + location.search).toBe('/?view=latest');
-    expect(screen.queryByRole('complementary', { name: 'Story' })).toBeNull();
-    expect(document.body.classList.contains('panel-open')).toBe(false);
+    await within(reader()).findByText('Blurb for story 2 from the publisher feed.');
   });
 
   it('modifier clicks and narrow screens leave the link alone (new tab, or the full page)', async () => {
     wide(true);
     mount();
-    await act(async () => void fireEvent.click(screen.getByText('Invented story 2'), { button: 0, ctrlKey: true }));
-    expect(screen.queryByRole('complementary', { name: 'Story' })).toBeNull();
+    await act(async () => void fireEvent.click(screen.getByText('Invented story 1'), { button: 0, ctrlKey: true }));
+    expect(location.pathname).toBe('/');
+    expect(fetched(1)).toBe(false);
     cleanup();
     wide(false);
     mount();
-    await act(async () => void fireEvent.click(screen.getByText('Invented story 2'), { button: 0 }));
-    expect(screen.queryByRole('complementary', { name: 'Story' })).toBeNull();
+    await act(async () => void fireEvent.click(screen.getByText('Invented story 1'), { button: 0 }));
+    expect(location.pathname).toBe('/');
+    expect(fetched(1)).toBe(false);
   });
 });
 

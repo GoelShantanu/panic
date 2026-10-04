@@ -47,8 +47,8 @@ export interface RelatedGroup {
 
 const out = (itemId: string, from: 'story' | 'stream') => `/v1/out/${itemId}?from=${from}`;
 
-// One story, in the PRD-004 order. The full page (/s/{id}) and the stream's side panel (D-055) both
-// render it; the panel puts votes on top and leaves out "More news", the way readers scan a panel.
+// One story, in the PRD-004 order. The full page (/s/{id}) and the stream's reader column (D-055) both
+// render it; the reader puts votes on top and leaves out "More news", the way CryptoPanic's does.
 export function StoryView({
   story: s,
   eventLabels,
@@ -57,8 +57,8 @@ export function StoryView({
   comments,
   related = [],
   variant,
-  onClose,
   onVotes,
+  shortcuts = true,
 }: {
   story: StoryDetail;
   eventLabels: [string, string][];
@@ -67,8 +67,8 @@ export function StoryView({
   comments: CommentPage | null;
   related?: RelatedGroup[];
   variant: 'page' | 'panel';
-  onClose?: () => void;
   onVotes?: (v: VoteDisplay) => void;
+  shortcuts?: boolean;
 }) {
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const panel = variant === 'panel';
@@ -80,20 +80,13 @@ export function StoryView({
   const Title = panel ? 'h2' : 'h1';
   const votes = (
     <div className="desktop-only">
-      <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} />
+      <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} shortcuts={shortcuts} />
     </div>
   );
 
   return (
     <article className={panel ? 'story story-panel-body' : 'story'}>
-      {panel && (
-        <div className="panel-bar">
-          {votes}
-          <button type="button" className="icon-button panel-close" aria-label="Close story" onClick={onClose}>
-            ✕
-          </button>
-        </div>
-      )}
+      {panel && <div className="panel-bar">{votes}</div>}
       {withdrawn && (
         <div className="notice notice-warn" role="status">
           Withdrawn by exchange. The exchange has withdrawn this filing; it is kept here for the record.

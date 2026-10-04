@@ -59,7 +59,7 @@ The taxonomy is anchored to exchange filing categories where possible, so filing
 
 **US-004.2** As a user, I open a story and see everything about it in one place.
 
-*(Amended by [D-055](../../DECISION_LOG.md): on wide screens the stream opens this view in a side panel beside the list; `/s/{id}` stays the full page for direct links, search engines and phones. Articles show the publisher's blurb where its terms permit.)*
+*(Amended by [D-055](../../DECISION_LOG.md) and [D-056](../../DECISION_LOG.md): on wide screens the stream shows this view in a reader column beside the list, open on the first story from landing; `/s/{id}` stays the full page for direct links, search engines and phones. Articles show the publisher's blurb where its terms permit.)*
 
 | AC | Criterion |
 | --- | --- |

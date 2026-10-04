@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { api } from '../../site/api.ts';
 import { StaleBanner } from '../../site/LiveStatus.tsx';
+import { loadReader } from '../../site/story/loadReader.ts';
 import { Filters } from '../../site/stream/Filters.tsx';
 import type { SavedView } from '../../site/stream/Filters.tsx';
 import { parseQuery, streamParams } from '../../site/stream/logic.ts';
@@ -13,6 +14,16 @@ interface StreamBody {
   unread_count?: number;
 }
 
+// The page's heading for screen readers; the tabs show the view visually.
+const VIEW_TITLES: Record<string, string> = {
+  latest: 'Latest Indian market news',
+  watchlist: 'News for your watchlist',
+  important: 'Important Indian market news',
+  bullish: 'Bullish Indian market news',
+  bearish: 'Bearish Indian market news',
+  trending: 'Trending Indian market news',
+};
+
 function State({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
     <div className="state">
@@ -22,8 +33,8 @@ function State({ title, children }: { title: string; children?: React.ReactNode 
   );
 }
 
-// PRD-001: the stream. Server-rendered first page; the client takes over for live updates,
-// pagination and the keyboard model.
+// PRD-001: the stream. Server-rendered first page, with its first story open in the reader column
+// beside it (D-055); the client takes over for live updates, pagination and the keyboard model.
 export default async function StreamPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = parseQuery(await searchParams);
   const qs = streamParams(query).toString();
@@ -42,6 +53,13 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
   const savedViews = saved?.status === 200 && !saved.body.disabled ? saved.body.views : signedIn ? [] : undefined;
   const eventTypes = types.status === 200 ? types.body.types : [];
   const clear = streamParams({ ...query, eventTypes: [], filingsOnly: false }).toString();
+  const header = (
+    <>
+      <h1 className="sr-only">{VIEW_TITLES[query.view] ?? 'Indian market news'}</h1>
+      {session.status === 200 && <StaleBanner initial={session.body.stale_sources} />}
+      <Filters query={query} eventTypes={eventTypes} directionalEnabled={session.status === 200 ? session.body.directional_voting_enabled : true} entitlements={entitlements} signedIn={signedIn} savedViews={savedViews} />
+    </>
+  );
 
   let content: React.ReactNode;
   if (stream.status === 401) {
@@ -111,7 +129,7 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
         <State title="No stories in this view yet" />
       );
   } else {
-    content = (
+    return (
       <Stream
         key={qs}
         initial={stream.body}
@@ -120,14 +138,15 @@ export default async function StreamPage({ searchParams }: { searchParams: Promi
         signedIn={signedIn}
         viewerUsername={signedIn ? me.body.username : null}
         watchlistIsins={watchlist?.status === 200 ? watchlist.body.instruments.map((i) => i.isin) : null}
+        header={header}
+        reader={await loadReader(stream.body.stories[0]?.story_id)}
       />
     );
   }
 
   return (
     <>
-      {session.status === 200 && <StaleBanner initial={session.body.stale_sources} />}
-      <Filters query={query} eventTypes={eventTypes} directionalEnabled={session.status === 200 ? session.body.directional_voting_enabled : true} entitlements={entitlements} signedIn={signedIn} savedViews={savedViews} />
+      {header}
       {content}
     </>
   );

@@ -408,22 +408,26 @@ kbd { font-family: var(--font-mono); font-size: var(--text-xs); border: 1px soli
 /* Links inside running text are underlined: colour alone does not mark them (WCAG 1.4.1). */
 p a:not(.button):not(.symbol), .comment-body a, .grievance-comment a { text-decoration: underline; }
 
-/* ---------- stream side panel (D-055): list left, story right, like CryptoPanic's reader ---------- */
-:root { --panel-w: min(48vw, 760px); }
-body.panel-open .main, body.panel-open .footer { max-width: none; margin-left: 0; margin-right: var(--panel-w); }
-.story-panel {
-  position: fixed; top: 44px; right: 0; bottom: 0; z-index: 15;
-  width: var(--panel-w); overflow-y: auto; overscroll-behavior: contain;
-  background: var(--surface); border-left: 1px solid var(--border); box-shadow: -4px 0 16px rgb(0 0 0 / 0.06);
+/* ---------- stream reader column (D-055): list left, story right, like CryptoPanic's home page ---------- */
+.story-panel { display: none; }
+@media (min-width: 1100px) {
+  .main:has(.stream-layout) { max-width: 1640px; }
+  .stream-layout { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 16px; align-items: start; }
+  .story-panel {
+    display: block; position: sticky; top: 60px; max-height: calc(100vh - 76px);
+    overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .row[data-shown] { background: var(--row-selected); box-shadow: inset 3px 0 0 var(--accent); }
 }
 .story-panel-body { max-width: none; padding: 0 20px 24px; }
+.panel-status { padding-top: 16px; }
 .panel-bar {
   position: sticky; top: 0; z-index: 2;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   margin: 0 -20px 10px; padding: 8px 20px; background: var(--surface); border-bottom: 1px solid var(--border);
 }
 .panel-bar .story-votes { margin: 0; }
-.panel-close { font-size: 16px; }
 .story-panel .story-headline { font-size: 20px; }
 .headline-out { font-size: 15px; color: var(--muted); text-decoration: none; }
 .headline-out:hover { color: var(--accent); }

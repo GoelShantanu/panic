@@ -98,8 +98,9 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
     </>
   );
 
-  return (
-    <div className="company">
+  // The company's header and filters head the list pane; its stories open in the reader beside it (D-057).
+  const companyHead = (
+    <div className="company-head">
       {c.status !== 'listed' && (
         <div className="notice notice-warn" role="status">
           {STATUS[c.status]}.
@@ -141,14 +142,39 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
       </header>
 
       {c.community_opinion && (
-        <section className="opinion-block panel" aria-label={c.community_opinion.label}>
-          <p className="faint">Community opinion on stories about {symbol}, last {c.community_opinion.window_days} days.</p>
-          <CommunityOpinion votes={{ directional: c.community_opinion.display, important_count: 0 }} emptyText="No votes on recent stories yet." />
+        <section className="opinion-block" aria-label={c.community_opinion.label}>
+          <p>
+            <span className="faint">
+              Community opinion on stories about {symbol}, last {c.community_opinion.window_days} days:
+            </span>{' '}
+            <CommunityOpinion votes={{ directional: c.community_opinion.display, important_count: 0 }} emptyText="No votes on recent stories yet." />
+          </p>
           <p className="faint opinion-note">What users voted on these stories. Not StockPanic&apos;s assessment, and not advice.</p>
         </section>
       )}
+      {newsHeader}
+    </div>
+  );
 
-      {timeline.status !== 200 || timeline.body.stories.length === 0 ? newsHeader : null}
+  if (timeline.status === 200 && timeline.body.stories.length > 0) {
+    return (
+      <Stream
+        key={qs}
+        initial={timeline.body}
+        query={query}
+        eventLabels={eventTypes.map((t) => [t.code, t.label])}
+        signedIn={signedIn}
+        viewerUsername={signedIn ? me.body.username : null}
+        watchlistIsins={null}
+        timeline={{ isin: c.isin, depthLimitReached: timeline.body.depth_limit_reached }}
+        header={companyHead}
+        reader={await loadReader(timeline.body.stories[0]?.story_id)}
+      />
+    );
+  }
+  return (
+    <div className="company">
+      {companyHead}
       {timeline.status !== 200 ? (
         <div className="state">
           <h2>Couldn&apos;t load this company&apos;s news</h2>
@@ -156,7 +182,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
             <Link href={base}>Try again</Link>
           </p>
         </div>
-      ) : timeline.body.stories.length === 0 ? (
+      ) : (
         <div className="state">
           <h2>{query.eventTypes.length || query.filingsOnly ? 'No stories match these filters' : `No news or filings yet for ${name}`}</h2>
           {(query.eventTypes.length > 0 || query.filingsOnly) && (
@@ -165,19 +191,6 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
             </p>
           )}
         </div>
-      ) : (
-        <Stream
-          key={qs}
-          initial={timeline.body}
-          query={query}
-          eventLabels={eventTypes.map((t) => [t.code, t.label])}
-          signedIn={signedIn}
-          viewerUsername={signedIn ? me.body.username : null}
-          watchlistIsins={null}
-          timeline={{ isin: c.isin, depthLimitReached: timeline.body.depth_limit_reached }}
-          header={newsHeader}
-          reader={await loadReader(timeline.body.stories[0]?.story_id)}
-        />
       )}
     </div>
   );

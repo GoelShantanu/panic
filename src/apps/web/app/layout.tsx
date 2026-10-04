@@ -7,6 +7,7 @@ import { Header } from '../site/Header.tsx';
 import type { Viewer } from '../site/Header.tsx';
 import { LiveProvider } from '../site/live.tsx';
 import { PhoneNotice } from '../site/Phone.tsx';
+import { ScrollReset } from '../site/ScrollReset.tsx';
 import { THEME_BOOT } from '../site/ThemeToggle.tsx';
 import './globals.css';
 
@@ -39,21 +40,25 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <a href="#main" className="skip-link">
             Skip to content
           </a>
-          <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
-          <main id="main" className="main">
-            <PhoneNotice />
-            {children}
-          </main>
-          <footer className="footer">
-            <p>Stories link to their original sources. Vote counts and comments are user opinion, not StockPanic&apos;s assessment, and not investment advice.</p>
-            <nav className="footer-links" aria-label="Footer">
-              <Link href="/plans">Plans</Link>
-              <Link href="/terms">Terms</Link>
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/status">Source status</Link>
-              <Link href="/grievance">Grievances</Link>
-            </nav>
-          </footer>
+          {/* Desktop: rail, content and footer bar fill the window, and each pane scrolls on its own (D-057). */}
+          <div className="app">
+            <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
+            <main id="main" className="main">
+              <ScrollReset />
+              <PhoneNotice />
+              {children}
+            </main>
+            <footer className="footer">
+              <p>Stories link to their original sources. Vote counts and comments are user opinion, not StockPanic&apos;s assessment, and not investment advice.</p>
+              <nav className="footer-links" aria-label="Footer">
+                <Link href="/plans">Plans</Link>
+                <Link href="/terms">Terms</Link>
+                <Link href="/privacy">Privacy</Link>
+                <Link href="/status">Source status</Link>
+                <Link href="/grievance">Grievances</Link>
+              </nav>
+            </footer>
+          </div>
         </LiveProvider>
       </body>
     </html>

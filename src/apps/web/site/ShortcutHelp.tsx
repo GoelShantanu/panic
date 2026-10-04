@@ -9,6 +9,7 @@ const ROWS: [string, string][] = [
   ['−', 'Bearish'],
   ['0', 'Neutral'],
   ['I', 'Important'],
+  ['/', 'Search companies'],
   ['?', 'Show this list'],
   ['Esc', 'Close'],
 ];

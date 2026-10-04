@@ -1997,6 +1997,65 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-057 — Full-window app layout, modelled on CryptoPanic's home page *(amends D-056 presentation; PRD-004 US-004.2 story URL)*
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-04 |
+| **Category** | Product · UX |
+| **Decided by** | Founder (chat, 2026-10-04): the UI "is not looking promising and professional", with "too much space on all the sides"; study cryptopanic.com's home page and act on it |
+
+**What CryptoPanic does** `[VERIFIED]` (cryptopanic.com home page, observed 2026-10-04 at 1024, 1440 and 1920 px, public page only):
+- The page fills the window at every width, with no outer margins. The document never scrolls; each pane scrolls on its own.
+- Panes: a 104 px navigation rail on the left (logo, sections, theme switch at the bottom); the news list; the reader, at about 50/50 with the list; a narrow price column on the right.
+- Each pane has its own toolbar. The list toolbar holds the view and filter menus and the search box. The reader opens with a full-width grid of vote buttons, and a close control.
+- Rows are dense: 12 px text, a 50 px time column, the coin tags in a right-hand column, and thin dividers instead of cards.
+- A story's own URL (`/news/{id}/…`) shows the same list-plus-reader screen with that story open.
+
+**Decision**
+
+1. **App shell.**
+   - Desktop (at least 1100 px): an 84 px navigation rail with the brand, News, Watchlist, Alerts (when signed in), Plans and Search. At the bottom: market session, Replies, account, theme.
+   - Content beside the rail fills the window, and a one-line footer bar carries the disclaimer and links.
+   - Below 1100 px: a top bar; the phone view is unchanged in substance.
+   - Search opens as a panel beside the rail, or with the new `/` shortcut.
+2. **Stream and company pages.**
+   - Two full-height panes, list and reader at 50/50, each scrolling on its own.
+   - Tabs, filters and banners form the list pane's head. On company pages, the company header and community opinion sit there too.
+   - The list is a focusable region, so Page Down and Space reach it (WCAG 2.1.1).
+3. **Reader.**
+   - Votes are a full-width bar across the top: Bullish, Bearish, Neutral, Important, Report. Below it are the community opinion and any messages.
+   - The reader has no close control; D-056 kept it always present.
+4. **Rows.** Company symbols move to a right-hand column. The rows are denser: 13 px headline, 11 px meta line, uppercase filing badge.
+5. **Story URL.**
+   - On wide screens, `/s/{id}` renders the list-plus-reader screen with that story as the page's main content: `h1` and "More news". Picking another story behaves as on the home page, and Back returns to the linked story.
+   - On narrow screens the story is shown alone, as before.
+   - The story view now uses one layout everywhere. A single-source story shows its filing PDF and revision time in the main block, instead of a one-item sources list.
+6. **Not copied:**
+   - CryptoPanic's price column. Prices are out of scope; the company page carries no price (D-042).
+   - Its monospace typeface and brand.
+
+**Reason**
+
+- The founder's direction: a professional, full-window triage app like the reference product, not a centred document.
+- The dense, independently scrolling panes serve the product's job, which is scanning many items and reading one beside them (PD S12).
+
+**Consequences**
+
+- Document pages (settings, plans, terms and others) sit centred in the content area beside the rail. The watchlist widens to 1100 px.
+- Fixed while verifying:
+  - Page changes left the new page part-way down (the router scrolls the window, not the content area); each page now starts at the top.
+  - Infinite scroll measures against the list pane, so the next page still loads 400 px early.
+  - Best-practice and WCAG findings that earlier audits did not run: a heading link marked by colour alone (WCAG 1.4.1) and empty table headers on the watchlist, plans and console tables.
+- Verified:
+  - Browser at 1440, 1920, 900 and 360 px: rail, panes, J/K, Back, search panel and `/`, vote bar and Report menu, story URL wide and narrow, company page, no horizontal scroll at 360 px.
+  - axe (WCAG 2.0–2.2 A/AA and best practice): 0 violations on 11 desktop pages and 2 phone pages, in both themes.
+  - Tests: 438/438, including new shell and story-URL tests. Production build passes.
+
+**Status** — Active
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

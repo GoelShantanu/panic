@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { api } from '../../../site/api.ts';
 import type { CommentPage } from '../../../site/comments/Comments.tsx';
-import { StoryView } from '../../../site/story/StoryView.tsx';
 import type { StoryDetail } from '../../../site/story/StoryView.tsx';
-import type { EventType } from '../../../site/types.ts';
+import { parseQuery } from '../../../site/stream/logic.ts';
+import { StreamScreen } from '../../../site/stream/StreamScreen.tsx';
 
 async function load(id: string) {
   const r = await api<StoryDetail & { redirect?: string }>(`/v1/stories/${encodeURIComponent(id)}`);
@@ -26,15 +26,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-// PRD-004 US-004.2: everything about one story. Direct links, search engines and phones get this
-// page; on wide screens the stream opens the same view in a side panel (D-055).
+// PRD-004 US-004.2: everything about one story. On wide screens it opens in the reader pane beside the
+// latest stories, as CryptoPanic's story links do; on narrow screens it is shown alone (D-057).
 export default async function StoryPage({ params }: { params: Promise<{ id: string }> }) {
   const s = await load((await params).id);
-  const [types, me, comments] = await Promise.all([
-    api<{ types: EventType[] }>('/v1/event-types'),
-    api<{ username: string | null }>('/v1/me'),
-    api<CommentPage>(`/v1/stories/${encodeURIComponent(s.story_id)}/comments`),
-  ]);
+  const comments = await api<CommentPage>(`/v1/stories/${encodeURIComponent(s.story_id)}/comments`);
 
   // "More on <symbol>": 5 most recent other stories for at most 2 instruments (AC-5).
   const related = await Promise.all(
@@ -49,15 +45,5 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
       })),
   );
 
-  return (
-    <StoryView
-      story={s}
-      eventLabels={(types.status === 200 ? types.body.types : []).map((t) => [t.code, t.label])}
-      signedIn={me.status === 200}
-      me={me.status === 200 ? me.body.username : null}
-      comments={comments.status === 200 ? comments.body : null}
-      related={related}
-      variant="page"
-    />
-  );
+  return <StreamScreen query={parseQuery({})} page={{ story: s, comments: comments.status === 200 ? comments.body : null, related }} />;
 }

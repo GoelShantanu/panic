@@ -47,8 +47,9 @@ export interface RelatedGroup {
 
 const out = (itemId: string, from: 'story' | 'stream') => `/v1/out/${itemId}?from=${from}`;
 
-// One story, in the PRD-004 order. The full page (/s/{id}) and the stream's reader column (D-055) both
-// render it; the reader puts votes on top and leaves out "More news", the way CryptoPanic's does.
+// One story, in the PRD-004 order, laid out for the reader pane (D-055, D-057): votes as a bar across the
+// top, the way CryptoPanic's reader has them. "page" is the story its own URL names (/s/{id}): an h1, and
+// "More news" below; "panel" is a story picked from the list, with a link to its own page.
 export function StoryView({
   story: s,
   eventLabels,
@@ -85,8 +86,8 @@ export function StoryView({
   );
 
   return (
-    <article className={panel ? 'story story-panel-body' : 'story'}>
-      {panel && <div className="panel-bar">{votes}</div>}
+    <article className="story story-panel-body">
+      <div className="panel-bar">{votes}</div>
       {withdrawn && (
         <div className="notice notice-warn" role="status">
           Withdrawn by exchange. The exchange has withdrawn this filing; it is kept here for the record.
@@ -94,7 +95,7 @@ export function StoryView({
       )}
       <Title className="story-headline">
         {s.headline}
-        {panel && primary.status !== 'removed_by_source' && (
+        {primary.status !== 'removed_by_source' && (
           <>
             {' '}
             <a className="headline-out" href={out(primary.item_id, from)} target="_blank" rel="noopener noreferrer" aria-label="Read at the source">
@@ -104,9 +105,10 @@ export function StoryView({
         )}
       </Title>
       <p className="story-byline muted">
-        {primary.kind === 'filing' && <span className="badge badge-filing">Exchange filing</span>} {panel && <>{age(primary.published_at ?? s.first_seen_at)} ago · </>}
+        {primary.kind === 'filing' && <span className="badge badge-filing">Exchange filing</span>} {age(primary.published_at ?? s.first_seen_at)} ago ·{' '}
         {primary.source.name} ·{' '}
         <time dateTime={primary.published_at ?? s.first_seen_at}>{istDateTime(primary.published_at ?? s.first_seen_at)} IST</time>
+        {s.items.length === 1 && primary.revised_at && <> · revised {istDateTime(primary.revised_at)} IST</>}
       </p>
       <div className="story-tags">
         {s.instruments.map((i) => (
@@ -166,6 +168,12 @@ export function StoryView({
             Read full story ↗
           </a>
         )}
+        {/* One source: no sources list below, so its filing PDF goes here. */}
+        {s.items.length === 1 && primary.attachment_url && (
+          <a className="button" href={primary.attachment_url} target="_blank" rel="noopener noreferrer">
+            Filing PDF
+          </a>
+        )}
         {panel && (
           <Link href={`/s/${s.story_id}`} className="button" onClick={(e) => e.stopPropagation()}>
             Open story page
@@ -173,7 +181,7 @@ export function StoryView({
         )}
       </p>
 
-      {(!panel || s.items.length > 1) && (
+      {s.items.length > 1 && (
         <section aria-labelledby={`sources-h-${s.story_id}`}>
           <h2 id={`sources-h-${s.story_id}`} className="section-h">
             {s.items.length === 1 ? '1 source' : `${s.items.length} sources`}
@@ -211,7 +219,6 @@ export function StoryView({
         </section>
       )}
 
-      {!panel && votes}
       <PhoneNote />
 
       {comments && <Comments storyId={s.story_id} initial={comments} me={me} />}

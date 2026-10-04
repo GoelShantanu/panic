@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CommentPage } from '../comments/Comments.tsx';
 import type { VoteDisplay } from '../types.ts';
 import { StoryView } from './StoryView.tsx';
-import type { StoryDetail } from './StoryView.tsx';
+import type { RelatedGroup, StoryDetail } from './StoryView.tsx';
 
 export interface ReaderData {
   story: StoryDetail;
@@ -18,8 +18,9 @@ async function getJson<T>(path: string): Promise<{ status: number; body: T | nul
   return { status: res?.status ?? 0, body: res ? ((await res.json().catch(() => null)) as T | null) : null };
 }
 
-// The stream's reader column on wide screens (D-055): part of the page, beside the list, the way
+// The stream's reader pane on wide screens (D-055, D-057): part of the page, beside the list, the way
 // CryptoPanic's works. The first story arrives server-rendered; later ones are fetched on selection.
+// On a story's own URL (pageStory) it is the page's main content, on every screen size.
 export function StoryPanel({
   storyId,
   initial,
@@ -28,6 +29,7 @@ export function StoryPanel({
   me,
   active,
   onVotes,
+  pageStory,
 }: {
   storyId: string;
   initial: ReaderData | null;
@@ -37,6 +39,7 @@ export function StoryPanel({
   // False while the column is hidden (narrow screens): its vote keys must not act, and it fetches nothing.
   active: boolean;
   onVotes: (v: VoteDisplay) => void;
+  pageStory?: { id: string; related: RelatedGroup[] };
 }) {
   const fromInitial = (id: string): Loaded | null => (initial && initial.story.story_id === id ? { state: 'ready', ...initial } : null);
   const [loaded, setLoaded] = useState<Loaded>(() => fromInitial(storyId) ?? { state: 'loading' });
@@ -69,10 +72,23 @@ export function StoryPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyId, active]);
 
+  const Pane = pageStory ? 'section' : 'aside';
+  const isPage = loaded.state === 'ready' && loaded.story.story_id === pageStory?.id;
   return (
-    <aside className="story-panel" aria-label="Story" aria-busy={loaded.state === 'loading'}>
+    <Pane className="story-panel" aria-label="Story" aria-busy={loaded.state === 'loading'}>
       {loaded.state === 'ready' ? (
-        <StoryView key={loaded.story.story_id} story={loaded.story} eventLabels={eventLabels} signedIn={signedIn} me={me} comments={loaded.comments} variant="panel" onVotes={onVotes} shortcuts={active} />
+        <StoryView
+          key={loaded.story.story_id}
+          story={loaded.story}
+          eventLabels={eventLabels}
+          signedIn={signedIn}
+          me={me}
+          comments={loaded.comments}
+          variant={isPage ? 'page' : 'panel'}
+          related={isPage ? pageStory!.related : undefined}
+          onVotes={onVotes}
+          shortcuts={active}
+        />
       ) : (
         <div className="story story-panel-body">
           <p className="faint panel-status">{loaded.state === 'loading' ? 'Loading story…' : 'This story could not be loaded.'}</p>
@@ -83,6 +99,6 @@ export function StoryPanel({
           )}
         </div>
       )}
-    </aside>
+    </Pane>
   );
 }

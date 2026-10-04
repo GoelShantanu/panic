@@ -8,6 +8,7 @@ import { useLiveEvent } from '../live.tsx';
 import { ShortcutHelp } from '../ShortcutHelp.tsx';
 import { StoryPanel } from '../story/StoryPanel.tsx';
 import type { ReaderData } from '../story/StoryPanel.tsx';
+import type { RelatedGroup } from '../story/StoryView.tsx';
 import type { Direction, QualityKind, StoryCard, StreamQuery, VoteDisplay } from '../types.ts';
 import { optimistic, sendVote } from '../votes/vote.ts';
 import type { VoteAction } from '../votes/vote.ts';
@@ -28,6 +29,9 @@ export interface StreamProps {
   header?: ReactNode;
   // The first story, server-rendered into the reader so wide screens open with it showing (D-055).
   reader?: ReaderData | null;
+  // A story's own URL (/s/{id}, D-057): the reader holds that story as the page's main content; on
+  // narrow screens it is shown alone, without the list.
+  pageStory?: { id: string; related: RelatedGroup[] };
 }
 
 // Wide enough for list and reader side by side (D-055); narrower screens hide the reader and open the full page.
@@ -46,7 +50,7 @@ function readLocalSeen(view: string): string | null {
   }
 }
 
-export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline, viewerUsername = null, header, reader = null }: StreamProps) {
+export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline, viewerUsername = null, header, reader = null, pageStory }: StreamProps) {
   const router = useRouter();
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const watchlist = useMemo(() => (watchlistIsins ? new Set(watchlistIsins) : null), [watchlistIsins]);
@@ -226,13 +230,18 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   }, [cursor, loadingMore, query, signedIn, timeline]);
 
   const sentinel = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinel.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver((entries) => entries.some((x) => x.isIntersecting) && !loadError && void loadMore(), { rootMargin: '400px' });
+    // On wide screens the list scrolls inside its own pane (D-057): measure against that, so the next
+    // page still starts loading 400 px early.
+    const box = scroller.current;
+    const root = box && getComputedStyle(box).overflowY !== 'visible' ? box : null;
+    const io = new IntersectionObserver((entries) => entries.some((x) => x.isIntersecting) && !loadError && void loadMore(), { root, rootMargin: '400px' });
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore, loadError]);
+  }, [loadMore, loadError, wide]);
 
   const setVotes = (id: string, v: VoteDisplay) => setStories((list) => list.map((s) => (s.story_id === id ? { ...s, votes: v } : s)));
   async function vote(a: VoteAction) {
@@ -264,7 +273,9 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   const current = () => stories.find((s) => s.story_id === selected);
   const dir = (value: Direction) => () => void vote({ kind: 'directional', value });
   const qual = (value: QualityKind) => () => void vote({ kind: 'quality', value });
-  useShortcuts({
+  // A story page on a narrow screen shows no list, so the list's keys stay off; the reader keeps its own.
+  const listKeys = !(pageStory && !wide);
+  useShortcuts(listKeys ? {
     j: () => move(1),
     ArrowDown: () => move(1),
     k: () => move(-1),
@@ -283,14 +294,15 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     Escape: () => (help ? setHelp(false) : setSelected(null)),
     // On wide screens the reader's vote buttons own these keys (for the story it shows), so a vote is never cast twice.
     ...(wide ? {} : { '+': dir('bullish'), '=': dir('bullish'), '-': dir('bearish'), '0': dir('neutral'), i: qual('important') }),
-  });
+  } : {});
 
   const divider = unreadDividerIndex(stories);
   return (
-    <div className="stream-layout">
+    <div className="stream-layout" data-page-story={pageStory ? '' : undefined}>
       <div className="stream-col">
-        {header}
-        <div className="stream">
+        {header && <div className="pane-head">{header}</div>}
+        {/* Focusable: on wide screens it scrolls on its own, and Page Down or Space must reach it (WCAG 2.1.1). */}
+        <div className="stream" ref={scroller} tabIndex={0} role="region" aria-label="Story list">
           {/* Zero-height sticky anchor: the control floats over the list and never moves it (WORKFLOW §7). */}
           <div className="new-stories-anchor">
             {pending.length > 0 && (
@@ -343,7 +355,16 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
         </div>
       </div>
       {shown && (
-        <StoryPanel storyId={shown} initial={reader} eventLabels={eventLabels} signedIn={signedIn} me={viewerUsername} active={wide} onVotes={(v) => setVotes(shown, v)} />
+        <StoryPanel
+          storyId={shown}
+          initial={reader}
+          eventLabels={eventLabels}
+          signedIn={signedIn}
+          me={viewerUsername}
+          active={wide || !!pageStory}
+          onVotes={(v) => setVotes(shown, v)}
+          pageStory={pageStory}
+        />
       )}
     </div>
   );

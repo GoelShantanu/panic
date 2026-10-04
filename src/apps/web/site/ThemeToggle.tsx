@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Icon } from './Icon.tsx';
 
 type Theme = 'system' | 'light' | 'dark';
 const KEY = 'sp-theme';
@@ -26,7 +27,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="icon-button"
+      className="icon-button theme-toggle"
       aria-label={LABEL[theme]}
       title={LABEL[theme]}
       onClick={() => {
@@ -39,7 +40,7 @@ export function ThemeToggle() {
         } catch {}
       }}
     >
-      {theme === 'dark' ? '☾' : theme === 'light' ? '☀' : '◐'}
+      <Icon name={theme === 'dark' ? 'moon' : theme === 'light' ? 'sun' : 'contrast'} />
     </button>
   );
 }

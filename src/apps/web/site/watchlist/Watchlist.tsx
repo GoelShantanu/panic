@@ -226,7 +226,9 @@ export function Watchlist({ initial, limit, welcome }: { initial: Entry[]; limit
                 <th scope="col">Company</th>
                 <th scope="col">Status</th>
                 <th scope="col">Latest story</th>
-                <th scope="col" />
+                <th scope="col">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>

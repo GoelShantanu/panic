@@ -49,7 +49,8 @@ describe('stream reader column (D-055)', () => {
   const noComments = { comments: [], next_cursor: null, posting: { enabled: true } };
   let fetchMock: ReturnType<typeof vi.fn>;
   const fetched = (i: number) => fetchMock.mock.calls.some(([u]) => u === `/v1/stories/${card(i).story_id}`);
-  const reader = () => screen.getByRole('complementary', { name: 'Story' });
+  // An aside beside the list; a labelled section when it holds the page's own story (D-057).
+  const reader = () => screen.getByLabelText('Story', { selector: '.story-panel' });
   const mount = (withReader = true) =>
     render(
       <LiveContext.Provider value={live as never}>
@@ -129,6 +130,51 @@ describe('stream reader column (D-055)', () => {
     });
     expect(location.pathname + location.search).toBe('/?view=latest');
     await within(reader()).findByText('Blurb for story 2 from the publisher feed.');
+  });
+
+  it('a story URL holds its story as the page: h1 and More news; picked stories replace it; Back restores it (D-057)', async () => {
+    const related = [{ isin: 'INE000Z01011', symbol: 'INVA', stories: [{ story_id: card(9).story_id, headline: 'Invented related story', first_seen_at: card(9).first_seen_at }] }];
+    const pageAt = (isWide: boolean) => {
+      wide(isWide);
+      history.replaceState({}, '', `/s/${card(1).story_id}`);
+      return render(
+        <LiveContext.Provider value={live as never}>
+          <Stream
+            initial={{ stories: [card(2), card(1)], next_cursor: null }}
+            query={{ view: 'latest', eventTypes: [], filingsOnly: false }}
+            eventLabels={[['results', 'Results']]}
+            signedIn={false}
+            watchlistIsins={null}
+            reader={{ story: detail(1), comments: noComments as never }}
+            pageStory={{ id: card(1).story_id, related }}
+          />
+        </LiveContext.Provider>,
+      );
+    };
+    // Narrow: the story alone, as the page's main content; the hidden list's keys do nothing.
+    pageAt(false);
+    const story = screen.getByRole('region', { name: 'Story' });
+    expect(within(story).getByRole('heading', { level: 1, name: /^Invented story 1/ })).toBeTruthy();
+    expect(within(story).getByText('Invented related story')).toBeTruthy();
+    expect(document.querySelector('.stream-layout')!.hasAttribute('data-page-story')).toBe(true);
+    await act(async () => void fireEvent.keyDown(window, { key: 'j' }));
+    expect(location.pathname).toBe(`/s/${card(1).story_id}`);
+    expect(fetchMock).not.toHaveBeenCalled();
+    cleanup();
+
+    // Wide: the row is marked; another story opens as a reader story (h2, its own page link); Back returns.
+    pageAt(true);
+    expect(document.getElementById(`row-${card(1).story_id}`)!.hasAttribute('data-shown')).toBe(true);
+    await act(async () => void fireEvent.click(screen.getByText('Invented story 2'), { button: 0 }));
+    await within(reader()).findByText('Blurb for story 2 from the publisher feed.');
+    expect(within(reader()).getByRole('heading', { level: 2, name: /^Invented story 2/ })).toBeTruthy();
+    expect(within(reader()).getByRole('link', { name: 'Open story page' })).toBeTruthy();
+    await act(async () => {
+      history.back();
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(location.pathname).toBe(`/s/${card(1).story_id}`);
+    await within(reader()).findByRole('heading', { level: 1, name: /^Invented story 1/ });
   });
 
   it('modifier clicks and narrow screens leave the link alone (new tab, or the full page)', async () => {

@@ -68,11 +68,6 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
           <div className="row-meta">
             <span className="row-source">{s.primary_item.source.name}</span>
             {s.source_count > 1 && <span className="badge" title={`${s.source_count} sources`}>{s.source_count} sources</span>}
-            {symbols.map((sym, i) => (
-              <Link key={s.instruments[i]!.isin} href={`/c/${s.instruments[i]!.isin}`} className="symbol" tabIndex={-1}>
-                {sym}
-              </Link>
-            ))}
             {unresolved && <span className="symbol symbol-unresolved" title={`Mentions: ${s.unresolved_mentions.join(', ')}`}>Unresolved</span>}
             {s.event_types
               .filter((t) => t !== 'other')
@@ -85,6 +80,16 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
             {!(selected && actions) && <CommunityOpinion votes={s.votes} compact />}
           </div>
         </div>
+        {/* Companies in their own column at the right edge, so the eye can run down them. */}
+        {symbols.length > 0 && (
+          <div className="row-symbols">
+            {symbols.map((sym, i) => (
+              <Link key={s.instruments[i]!.isin} href={`/c/${s.instruments[i]!.isin}`} className="symbol" tabIndex={-1} title={s.instruments[i]!.name ?? undefined}>
+                {sym}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
       {selected && <PhoneNote />}
       {selected && actions && (

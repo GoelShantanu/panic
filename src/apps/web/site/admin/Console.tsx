@@ -458,7 +458,9 @@ function StoryTools() {
                   <th scope="col">User</th>
                   <th scope="col">Account created</th>
                   <th scope="col">Voted</th>
-                  <th scope="col" />
+                  <th scope="col">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>

@@ -19,6 +19,8 @@ export function SessionStatus({ initial }: { initial: SessionInfo | null }) {
   }, []);
   const { reconnecting } = useLive();
   if (!session) return null;
+  // "Closed · opens Mon 09:00 IST": the state and its detail stack in the desktop rail.
+  const [state, detail] = sessionLabel(session).split(' · ');
   return (
     <>
       {reconnecting && (
@@ -27,8 +29,16 @@ export function SessionStatus({ initial }: { initial: SessionInfo | null }) {
         </span>
       )}
       <span className="session" data-state={session.state} title={`Exchange date ${session.exchange_date}`}>
-        <span className="session-dot" aria-hidden="true" />
-        {sessionLabel(session)}
+        <span className="session-state">
+          <span className="session-dot" aria-hidden="true" />
+          {state}
+        </span>
+        {detail && (
+          <span className="session-detail">
+            <span className="sr-only"> · </span>
+            {detail}
+          </span>
+        )}
       </span>
     </>
   );

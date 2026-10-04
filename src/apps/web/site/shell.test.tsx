@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { age, sessionLabel } from './format.ts';
 import { Header } from './Header.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+let path = '/';
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }), usePathname: () => path }));
 
 afterEach(() => {
   cleanup();
@@ -47,6 +48,35 @@ describe('header', () => {
   it('shows the account and tier for a signed-in user', () => {
     render(<Header session={null} viewer={{ username: 'asha', tier: 'paid' }} />);
     expect(screen.getByRole('link', { name: /asha/ }).textContent).toContain('Paid');
+  });
+  it('marks the current section; a story page counts as News; Alerts only when signed in (D-057)', () => {
+    path = '/s/st_00000000000000000000000001';
+    const { unmount } = render(<Header session={null} viewer={null} />);
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(nav.querySelector('[aria-current="page"]')!.textContent).toBe('News');
+    expect(screen.queryByRole('link', { name: 'Alerts' })).toBeNull();
+    unmount();
+    path = '/watchlist';
+    render(<Header session={null} viewer={{ username: 'asha', tier: 'free' }} />);
+    expect(screen.getByRole('link', { name: 'Watchlist' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('link', { name: 'Alerts' }).getAttribute('href')).toBe('/alerts');
+    path = '/';
+  });
+  it('"/" opens company search and focuses it; Esc closes it', async () => {
+    render(<Header session={null} viewer={null} />);
+    const box = screen.getByRole('combobox', { name: 'Search companies' });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: '/' });
+      await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+    });
+    expect(document.querySelector('.search[data-open]')).toBeTruthy();
+    expect(document.activeElement).toBe(box);
+    fireEvent.keyDown(box, { key: 'Escape' });
+    expect(document.querySelector('.search[data-open]')).toBeNull();
+  });
+  it('splits the session label into state and detail without losing it for screen readers', () => {
+    render(<Header session={{ state: 'closed', exchange_date: '2026-10-03', next_transition_at: '2026-10-05T03:30:00Z' }} viewer={null} />);
+    expect(document.querySelector('.session')!.textContent).toMatch(/^Closed · opens \w{3} 09:00 IST$/);
   });
 });
 

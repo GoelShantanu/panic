@@ -44,7 +44,7 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
   const mailer = new MemoryMailer();
   const provider = new FakeProvider();
   const billing: BillingDeps = {
-    provider, keyId: 'rzp_test_key', planIds: PLAN_IDS, webhookSecret: WEBHOOK_SECRET, mailer,
+    provider, keyId: 'rzp_test_key', planIds: PLAN_IDS, webhookSecret: WEBHOOK_SECRET,
     seller: { name: 'Example Media Private Limited', address: 'Bengaluru, Karnataka', gstin: '29ABCDE1234F1Z5', sac: null },
   };
   const deps: AuthDeps = { mailer, authSecret: 'test-secret-that-is-at-least-32-chars!!', google: null, billing };
@@ -100,6 +100,9 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
     const r = await call('payer', 'POST', '/v1/billing/checkout', { plan: 'monthly' });
     expect(b(r)).toEqual({ provider_checkout_url: 'https://rzp.example/sub_TEST1', provider: 'razorpay', subscription_id: 'sub_TEST1', key_id: 'rzp_test_key' });
     expect(provider.created[0]!.notes).toMatchObject({ plan: 'monthly' });
+    expect(b(await call('payer', 'POST', '/v1/billing/checkout', { plan: 'monthly' }))).toEqual(b(r));
+    expect((await call('payer', 'POST', '/v1/billing/checkout', { plan: 'yearly' })).status).toBe(409);
+    expect(provider.created).toHaveLength(1);
     expect(await tier('payer')).toBe('free');
   });
 
@@ -116,7 +119,8 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
     const detail = b(await call('payer', 'GET', `/v1/billing/invoices/${encodeURIComponent(inv[0].invoice_id)}`));
     expect(detail.text).toContain('TAX INVOICE');
     expect(detail).toMatchObject({ cgst_inr: 22.8, sgst_inr: 22.81 });
-    expect(mailer.sent.filter((m) => m.subject.startsWith('StockPanic invoice'))).toHaveLength(1);
+    const queuedMail = await db.query(`SELECT payload->>'subject' AS subject FROM job WHERE queue = 'account' AND payload->>'kind' = 'email'`);
+    expect(queuedMail.rows.map((r) => r.subject)).toContain(`StockPanic invoice ${inv[0].invoice_id}`);
     expect((await call('other', 'GET', `/v1/billing/invoices/${encodeURIComponent(inv[0].invoice_id)}`)).status).toBe(404);
 
     expect(b(await hook('subscription.charged', 'sub_TEST1', { payment: { id: 'pay_1', amount: 29900 }, eventId: 'evt_charge_1' }))).toEqual({ duplicate: true });
@@ -138,7 +142,8 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
     expect(await tier('payer')).toBe('paid'); // 7-day grace (US-007.7 AC-6)
     expect(b(await call('payer', 'GET', '/v1/billing')).subscription.payment_retrying).toBe(true);
     expect(b(await call('payer', 'GET', '/v1/me/notifications')).notices[0]).toMatchObject({ kind: 'payment_retrying' });
-    expect(mailer.sent.some((m) => m.subject.includes('payment failed'))).toBe(true);
+    const queuedMail = await db.query(`SELECT payload->>'subject' AS subject FROM job WHERE queue = 'account' AND payload->>'kind' = 'email'`);
+    expect(queuedMail.rows.some((r) => r.subject.includes('payment failed'))).toBe(true);
 
     expect(b(await hook('subscription.charged', 'sub_TEST1', { payment: { id: 'pay_2', amount: 29900 } }))).toEqual({ outcome: 'active' }); // a retry succeeded
     expect(b(await call('payer', 'GET', '/v1/billing')).subscription.payment_retrying).toBe(false);

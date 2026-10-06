@@ -33,11 +33,11 @@ export const RSS_THREE_ITEMS = RSS_TWO_ITEMS.replace(
 
 export const RSS_MIXED_QUALITY = `<?xml version="1.0"?>
 <rss version="2.0"><channel><title>Mixed</title>
-  <item><title>Single English headline about Orion Cables</title><link>https://feed.example.in/orion</link></item>
+  <item><title>Orion Cables reports 18% rise in quarterly net profit</title><link>https://feed.example.in/orion</link></item>
   <item><title>शेयर बाजार में तेजी</title><link>https://feed.example.in/hindi-1</link></item>
   <item><title></title><link>https://feed.example.in/empty</link></item>
   <item><title>No link here</title></item>
-  <item><title>Single English headline about Orion Cables</title><link>https://feed.example.in/orion?utm_campaign=x</link></item>
+  <item><title>Orion Cables reports 18% rise in quarterly net profit</title><link>https://feed.example.in/orion?utm_campaign=x</link></item>
 </channel></rss>`;
 
 export const ATOM_ONE_ENTRY = `<?xml version="1.0" encoding="utf-8"?>

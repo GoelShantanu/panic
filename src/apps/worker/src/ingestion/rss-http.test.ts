@@ -40,12 +40,14 @@ describe('toCandidates', () => {
       url: 'https://news.example.in/markets/asterion-q2',
       publishedAt: new Date('2026-10-05T04:35:00Z'),
       excerpt: null,
+      relevance: { decision: 'keep', confidence: 0.94, reason: 'explicit market, policy, or financial signal', rulesVersion: 'market-v1' },
     });
   });
 
   it('discards non-English and invalid entries, and collapses URL duplicates', () => {
     const r = toCandidates(parseFeed(RSS_MIXED_QUALITY));
     expect(r.candidates.map((c) => c.dedupKey)).toEqual(['url:https://feed.example.in/orion']);
+    expect(r.candidates[0]?.relevance?.decision).toBe('keep');
     expect(r.discardedNonEnglish).toBe(1);
     expect(r.discardedInvalid).toBe(2);
   });

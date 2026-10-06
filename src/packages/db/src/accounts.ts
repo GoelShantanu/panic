@@ -16,6 +16,10 @@ import type { Tier } from '@stockpanic/core';
 
 export const ACCOUNT_QUEUE = 'account';
 
+export async function enqueueAccountEmail(db: pg.ClientBase, message: { to: string; subject: string; text: string }): Promise<void> {
+  await db.query('INSERT INTO job (queue, payload) VALUES ($1, $2)', [ACCOUNT_QUEUE, { kind: 'email', ...message }]);
+}
+
 async function tx<T>(db: pg.ClientBase, fn: () => Promise<T>): Promise<T> {
   await db.query('BEGIN');
   try {

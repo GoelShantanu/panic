@@ -120,6 +120,8 @@ export async function fetchFilingsOnce(db: pg.ClientBase, source: SourceRow, ses
     duplicates: tally.duplicates + tally.revised,
     discardedNonEnglish: 0,
     discardedInvalid: tally.invalid,
+    heldForReview: 0,
+    discardedIrrelevant: 0,
     error,
     nextFetchAt,
   };

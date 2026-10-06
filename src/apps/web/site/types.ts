@@ -54,3 +54,17 @@ export interface StaleSource {
   health: string;
   since: string;
 }
+
+export interface RecentCommentItem {
+  comment_id: string;
+  body: string;
+  created_at: string;
+  username: string;
+  story_id: string;
+  story_headline: string | null;
+}
+
+export interface OverviewData {
+  trending: StoryCard[];
+  comments: RecentCommentItem[];
+}

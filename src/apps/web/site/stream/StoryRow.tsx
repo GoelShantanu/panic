@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { age, istDateTime } from '../format.ts';
+import { Icon } from '../Icon.tsx';
 import type { StoryCard, VoteDisplay } from '../types.ts';
 import { CommunityOpinion, VoteControls } from '../votes/VoteControls.tsx';
 import { PhoneNote } from '../Phone.tsx';
@@ -76,7 +77,12 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
                   {labels.get(t) ?? t}
                 </span>
               ))}
-            {s.comment_count > 0 && <span className="faint">{s.comment_count === 1 ? '1 comment' : `${s.comment_count} comments`}</span>}
+            {s.comment_count > 0 && (
+              <span className="opinion-badge comment" title={s.comment_count === 1 ? '1 comment' : `${s.comment_count} comments`}>
+                <Icon name="chat" size={11} />
+                <span>{s.comment_count}</span>
+              </span>
+            )}
             {!(selected && actions) && <CommunityOpinion votes={s.votes} compact />}
           </div>
         </div>

@@ -14,13 +14,23 @@ const PATHS = {
   contrast: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 4v16',
   pulse: 'M3 12h4l2.5-6 4.5 12 2.5-6H21',
   external: 'M14 4h6v6 M20 4l-9 9 M18 14v6H4V6h6',
+  bull: 'M18 15l-6-6-6 6',
+  bear: 'M6 9l6 6 6-6',
+  neutral: 'M5 12h14',
+  arrowUp: 'M12 19V5 M5 12l7-7 7 7',
+  arrowDown: 'M12 5v14 M19 12l-7 7-7-7',
+  alertTriangle: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01',
+  flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7',
+  lock: 'M7 11V7a5 5 0 0 1 10 0v4 M5 11h14v10H5z',
+  chevronDown: 'M6 9l6 6 6-6',
+  close: 'M18 6L6 18 M6 6l12 12',
 } as const;
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+export function Icon({ name, size = 18, strokeWidth = 1.7 }: { name: IconName; size?: number; strokeWidth?: number }) {
   return (
-    <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       <path d={PATHS[name]} />
     </svg>
   );

@@ -9,6 +9,7 @@ import { ThemeToggle } from './ThemeToggle.tsx';
 export interface Viewer {
   username: string | null;
   tier: 'free' | 'paid';
+  isTrial?: boolean;
   attention?: boolean;
 }
 
@@ -17,10 +18,10 @@ export interface Viewer {
 export function Header({ session, viewer }: { session: SessionInfo | null; viewer: Viewer | null }) {
   return (
     <header className="header">
-      <Link href="/" className="brand" aria-label="StockPanic home">
+      <a href="/" className="brand" aria-label="StockPanic home">
         <BrandMark />
         <span className="brand-name">StockPanic</span>
-      </Link>
+      </a>
       <NavLinks signedIn={!!viewer} />
       <Search />
       <div className="header-spacer" />
@@ -37,7 +38,7 @@ export function Header({ session, viewer }: { session: SessionInfo | null; viewe
           <Link href="/settings" className="nav-item account-link">
             <Icon name="user" />
             <span className="account-name">{viewer.username ?? 'Account'}</span>
-            {viewer.tier === 'paid' && <span className="tier-badge">Paid</span>}
+            {viewer.tier === 'paid' && <span className="tier-badge">{viewer.isTrial ? 'Trial' : 'Paid'}</span>}
           </Link>
         ) : (
           <Link href="/sign-in" className="nav-item sign-in-link">

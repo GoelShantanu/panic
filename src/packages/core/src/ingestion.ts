@@ -116,22 +116,61 @@ const NAMED_ENTITIES: Record<string, string> = {
 };
 const ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z]+);/gi;
 
-// Publishers often escape entities twice ('&amp;amp;', or '&amp;' inside CDATA), so the parsed title
-// still contains them; zero-width characters also ride along. Both are removed before storage.
 // Publisher blurb from a feed description (PRD-002 US-002.5 AC-8; D-055): markup removed, entities
 // decoded, cut at a word boundary. Stored and shown only for sources whose terms permit excerpts.
 export const EXCERPT_MAX_CHARS = 320;
+// The blurb needs only the start of a description; the rest of a 5 MB feed body is never scanned.
+const EXCERPT_SCAN_CHARS = 20_000;
 export function cleanExcerpt(raw: string | null, headline: string): string | null {
   if (!raw) return null;
-  const strip = (s: string) => s.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' ');
   // Twice: markup that was itself escaped only appears after entities are decoded.
-  const text = normaliseHeadline(strip(normaliseHeadline(strip(raw))));
+  const text = normaliseHeadline(stripTags(normaliseHeadline(stripTags(raw.slice(0, EXCERPT_SCAN_CHARS)))));
   if (text.length < 20 || text.toLowerCase() === headline.toLowerCase()) return null;
   if (text.length <= EXCERPT_MAX_CHARS) return text;
   const cut = text.slice(0, EXCERPT_MAX_CHARS);
   return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), EXCERPT_MAX_CHARS - 40)).replace(/[\s,;:.\-–]+$/, '')}…`;
 }
 
+// Tags (and script/style bodies) become spaces, in one pass. A regular expression here backtracks
+// quadratically on an unclosed '<': one 160 KB description stalled ingestion for 88 s (D-058 S1).
+export function stripTags(s: string): string {
+  const lower = s.toLowerCase();
+  const unclosed = new Set<string>(); // a body with no closing tag here has none further on either
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    const lt = s.indexOf('<', i);
+    if (lt === -1) return out + s.slice(i);
+    out += s.slice(i, lt);
+    const body = /^<(script|style)\b/.exec(lower.slice(lt, lt + 8))?.[1];
+    if (body && !unclosed.has(body)) {
+      const close = lower.indexOf(`</${body}`, lt);
+      const end = close === -1 ? -1 : s.indexOf('>', close);
+      if (end !== -1) {
+        out += ' ';
+        i = end + 1;
+        continue;
+      }
+      unclosed.add(body);
+    }
+    const gt = s.indexOf('>', lt);
+    if (gt === -1) return out + s.slice(lt); // a literal '<' with no tag after it stays text
+    out += ' ';
+    i = gt + 1;
+  }
+  return out;
+}
+
+// Control and text-direction characters display as nothing, yet can make shown text read differently
+// from what is stored (an override reverses "up" on screen). Zero-width characters ride along in
+// feeds too. All are removed from text we display (D-058 S2).
+const INVISIBLE = /[\u0000-\u0008\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g;
+export function stripInvisible(s: string): string {
+  return s.replace(INVISIBLE, '');
+}
+
+// Publishers often escape entities twice ('&amp;amp;', or '&amp;' inside CDATA), so the parsed title
+// still contains them. Decoded, and invisible characters removed, before storage.
 export function normaliseHeadline(raw: string): string {
   let s = raw;
   for (let i = 0; i < 2; i++) {
@@ -141,5 +180,5 @@ export function normaliseHeadline(raw: string): string {
       return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : m;
     });
   }
-  return s.replace(/[​-‍⁠﻿]/g, '').replace(/\s+/g, ' ').trim();
+  return stripInvisible(s).replace(/\s+/g, ' ').trim();
 }

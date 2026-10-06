@@ -382,6 +382,7 @@ export async function route(
     if (method === 'GET') return community.getComments(db, id, url.searchParams, user, now);
     if (method === 'POST') return community.postComment(db, id, req.body, user, now);
   }
+  if (path === 'comments/recent' && method === 'GET') return community.getRecentComments(db);
   if (resource === 'comments' && id && parts.length === 3 && method === 'PATCH') return community.patchComment(db, id, req.body, user, now);
   if (resource === 'comments' && id && parts.length === 3 && method === 'DELETE') return community.deleteComment(db, id, user, now);
   if (resource === 'comments' && id && sub === 'reports' && parts.length === 4 && method === 'POST') return community.postReport(db, id, req.body, user, now);

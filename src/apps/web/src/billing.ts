@@ -5,6 +5,7 @@ import { RETRY_GRACE_DAYS, invoiceTax, isOneOf, renderInvoice, verifyRazorpaySig
 import type { PlanId, Seller } from '@stockpanic/core';
 import {
   addUserNotice,
+  enqueueAccountEmail,
   applySubscription,
   checkoutByRef,
   createCheckout,
@@ -14,13 +15,13 @@ import {
   listInvoices,
   markCancelAtPeriodEnd,
   recordBillingEvent,
+  recentCheckoutForUser,
   setBillingEventOutcome,
   setPendingPlan,
   subscriptionByRef,
   userEmailOf,
 } from '@stockpanic/db';
 import type { SessionUser } from '@stockpanic/db';
-import type { Mailer } from '@stockpanic/mail';
 import { ProviderError } from './razorpay.ts';
 import type { BillingProvider } from './razorpay.ts';
 
@@ -30,7 +31,6 @@ export interface BillingDeps {
   planIds: Record<PlanId, string>;
   webhookSecret: string;
   seller: Seller;
-  mailer: Mailer;
   log?: (line: string) => void;
 }
 
@@ -69,16 +69,38 @@ export async function postCheckout(db: pg.ClientBase, body: unknown, user: Sessi
   if (!deps) return unavailable;
   const plan = field(body, 'plan');
   if (!isOneOf(PLAN_IDS, plan)) return { status: 400, body: { error: 'invalid_param', param: 'plan' } };
-  const current = await currentSubscription(db, user.id, now);
-  if (current && (current.status === 'active' || current.status === 'past_due') && !current.cancelAtPeriodEnd) return { status: 409, body: { error: 'already_subscribed' } };
-  let sub;
+  let sub: { id: string; shortUrl: string } | undefined;
   try {
+    await db.query('BEGIN');
+    // Serialize checkout creation per user so concurrent requests share one provider subscription.
+    await db.query(`SELECT pg_advisory_xact_lock(hashtextextended('stockpanic-checkout:' || $1::text, 0))`, [user.id]);
+    const current = await currentSubscription(db, user.id, now);
+    if (current && (current.status === 'active' || current.status === 'past_due') && !current.cancelAtPeriodEnd) {
+      await db.query('COMMIT');
+      return { status: 409, body: { error: 'already_subscribed' } };
+    }
+    const recent = await recentCheckoutForUser(db, user.id, new Date(now.getTime() - 15 * 60_000));
+    if (recent) {
+      await db.query('COMMIT');
+      if (recent.plan !== plan) return { status: 409, body: { error: 'checkout_in_progress', plan: recent.plan } };
+      return { status: 200, body: { provider_checkout_url: recent.shortUrl, provider: 'razorpay', subscription_id: recent.providerRef, key_id: deps.keyId } };
+    }
     sub = await deps.provider.createSubscription(plan, { user_id: user.publicId, plan });
+    await createCheckout(db, sub.id, sub.shortUrl, user.id, plan, now);
+    await db.query('COMMIT');
   } catch (err) {
-    deps.log?.(`checkout failed: ${(err as Error).message}`);
-    return { status: 502, body: { error: 'provider_error' } };
+    await db.query('ROLLBACK').catch(() => undefined);
+    if (!sub) {
+      deps.log?.(`checkout failed: ${(err as Error).message}`);
+      return { status: 502, body: { error: 'provider_error' } };
+    }
+    // Never return a provider URL unless the webhook can map its subscription to this user.
+    // The customer has not received the URL yet, so cancel the orphan and surface the failure.
+    deps.log?.(`checkout record/commit failed for ${sub.id}: ${(err as Error).message}`);
+    try { await deps.provider.cancelAtCycleEnd(sub.id); }
+    catch (cancelErr) { deps.log?.(`orphan checkout cancellation failed for ${sub.id}: ${(cancelErr as Error).message}`); }
+    return { status: 503, body: { error: 'checkout_unavailable' } };
   }
-  await createCheckout(db, sub.id, user.id, plan, now);
   return { status: 200, body: { provider_checkout_url: sub.shortUrl, provider: 'razorpay', subscription_id: sub.id, key_id: deps.keyId } };
 }
 
@@ -152,7 +174,7 @@ const days = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
 
 async function tell(db: pg.ClientBase, deps: BillingDeps, userId: string, subject: string, text: string) {
   const email = await userEmailOf(db, userId);
-  if (email) await deps.mailer.send({ to: email, subject, text }).catch((e: Error) => deps.log?.(`billing email failed: ${e.message}`));
+  if (email) await enqueueAccountEmail(db, { to: email, subject, text });
 }
 
 // POST /v1/billing/webhook — raw body, Razorpay signature, each event once.
@@ -174,6 +196,9 @@ export async function handleWebhook(db: pg.ClientBase, rawBody: string, signatur
     }
     const outcome = await applyEvent(db, evt, deps, now);
     await setBillingEventOutcome(db, id, outcome);
+    if (outcome === 'unknown_subscription') {
+      deps.log?.(`billing webhook ${id} references unknown subscription ${String(evt.payload?.subscription?.entity?.id ?? '')}; event payload is retained for operator review`);
+    }
     await db.query('COMMIT');
     return { status: 200, body: { outcome } };
   } catch (err) {
@@ -211,7 +236,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
         const { created, invoice } = await createInvoice(db, { userId, subscriptionId: saved?.id ?? null, paymentRef: pay.id, amountInr, ...tax, plan, periodEnd, at: eventAt });
         if (created) {
           const text = renderInvoice({ number: invoice.number, issuedAt: invoice.issuedAt, seller: deps.seller, buyerEmail: (await userEmailOf(db, userId)) ?? '', plan, amountInr, periodEnd });
-          await tell(db, deps, userId, `StockPanic invoice ${invoice.number}`, text); // US-007.7 AC-5
+          await tell(db, deps, userId, `StockPanic invoice ${invoice.number}`, text); // sent by the account worker after this transaction commits
         }
       }
       return 'active';

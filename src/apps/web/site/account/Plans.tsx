@@ -49,11 +49,13 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
       const b = r?.ok ? await r.json() : null;
       if (b?.tier === 'paid') {
         setMsg('You are on the paid plan. Thank you.');
+        setBusy(false);
         router.refresh();
         return;
       }
     }
     setMsg('Payment received by the provider; confirmation is taking longer than usual. Your plan will update shortly, and an invoice will be emailed.');
+    setBusy(false);
   }
 
   async function subscribe(plan: 'monthly' | 'yearly') {
@@ -62,10 +64,12 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
     setMsg(null);
     const res = await fetch('/v1/billing/checkout', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan }) }).catch(() => null);
     const body = res ? await res.json().catch(() => null) : null;
-    setBusy(false);
-    if (!res || res.status === 503) return setMsg('Subscriptions are not open yet. Try the free trial meanwhile.');
-    if (res.status === 409) return setMsg('You already have an active subscription.');
-    if (!res.ok) return setMsg('Checkout could not start. Try again.');
+    if (!res || res.status === 503) { setBusy(false); return setMsg('Subscriptions are not open yet. Try the free trial meanwhile.'); }
+    if (res.status === 409) {
+      setBusy(false);
+      return setMsg(body?.error === 'checkout_in_progress' ? `A ${body.plan} checkout is already open. Select that plan to resume checkout.` : 'You already have an active subscription.');
+    }
+    if (!res.ok) { setBusy(false); return setMsg('Checkout could not start. Try again.'); }
     if (!(await loadCheckout()) || !window.Razorpay) {
       window.location.href = body.provider_checkout_url; // provider-hosted page as a fallback
       return;
@@ -76,8 +80,9 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
       name: 'StockPanic',
       description: plan === 'yearly' ? 'Paid plan, yearly' : 'Paid plan, monthly',
       handler: () => void waitForPaid(),
-      modal: { ondismiss: () => setMsg('Checkout closed. Nothing was charged.') },
+      modal: { ondismiss: () => { setBusy(false); setMsg('Checkout closed. Nothing was charged.'); } },
     });
+    rzp.on('payment.failed', () => { setBusy(false); setMsg('Payment was not completed. You can try again.'); });
     rzp.open();
   }
 

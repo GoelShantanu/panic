@@ -338,6 +338,38 @@ export async function unseenNotices(db: pg.ClientBase, userId: string) {
   return rows.map((r) => ({ kind: r.kind, ...r.payload, created_at: r.created_at }));
 }
 
+export interface RecentCommentItem {
+  comment_id: string;
+  body: string;
+  created_at: string;
+  username: string;
+  story_id: string;
+  story_headline: string | null;
+}
+
+export async function recentGlobalComments(db: pg.ClientBase, limit = 8): Promise<RecentCommentItem[]> {
+  const { rows } = await db.query(
+    `SELECT c.public_id AS comment_id, c.body, c.created_at, u.username,
+            s.public_id AS story_id, i.headline AS story_headline
+       FROM comment c
+       JOIN app_user u ON u.id = c.user_id
+       JOIN story s ON s.id = c.story_id
+       LEFT JOIN item i ON i.id = s.primary_item_id
+      WHERE c.state = 'visible' AND u.deleted_at IS NULL
+      ORDER BY c.created_at DESC
+      LIMIT $1`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    comment_id: r.comment_id,
+    body: r.body,
+    created_at: (r.created_at as Date).toISOString(),
+    username: r.username,
+    story_id: r.story_id,
+    story_headline: r.story_headline ?? null,
+  }));
+}
+
 // Notices stay until the reader dismisses them, so a page load alone never hides one (D-045).
 export async function markNoticesSeen(db: pg.ClientBase, userId: string, upTo: Date, now: Date): Promise<number> {
   const r = await db.query("UPDATE user_notice SET seen_at = $3 WHERE user_id = $1 AND seen_at IS NULL AND date_trunc('milliseconds', created_at) <= $2", [userId, upTo, now]);

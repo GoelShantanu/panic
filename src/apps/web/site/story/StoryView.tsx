@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { Comments } from '../comments/Comments.tsx';
 import type { CommentPage } from '../comments/Comments.tsx';
-import { age, istDateTime } from '../format.ts';
+import { istDateTime } from '../format.ts';
+import { Icon } from '../Icon.tsx';
 import { PhoneNote } from '../Phone.tsx';
 import type { Instrument, VoteDisplay } from '../types.ts';
 import { StoryVotes } from './StoryVotes.tsx';
@@ -60,6 +61,7 @@ export function StoryView({
   variant,
   onVotes,
   shortcuts = true,
+  onClose,
 }: {
   story: StoryDetail;
   eventLabels: [string, string][];
@@ -70,6 +72,7 @@ export function StoryView({
   variant: 'page' | 'panel';
   onVotes?: (v: VoteDisplay) => void;
   shortcuts?: boolean;
+  onClose?: () => void;
 }) {
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const panel = variant === 'panel';
@@ -87,7 +90,20 @@ export function StoryView({
 
   return (
     <article className="story story-panel-body">
-      <div className="panel-bar">{votes}</div>
+      <div className="panel-bar">
+        {votes}
+        {onClose && (
+          <button
+            type="button"
+            className="panel-close-btn"
+            onClick={onClose}
+            aria-label="Close story and return to overview"
+            title="Close (Esc)"
+          >
+            <Icon name="close" size={13} />
+          </button>
+        )}
+      </div>
       {withdrawn && (
         <div className="notice notice-warn" role="status">
           Withdrawn by exchange. The exchange has withdrawn this filing; it is kept here for the record.
@@ -105,8 +121,7 @@ export function StoryView({
         )}
       </Title>
       <p className="story-byline muted">
-        {primary.kind === 'filing' && <span className="badge badge-filing">Exchange filing</span>} {age(primary.published_at ?? s.first_seen_at)} ago ·{' '}
-        {primary.source.name} ·{' '}
+        {primary.kind === 'filing' && <span className="badge badge-filing">Exchange filing</span>} {primary.source.name} ·{' '}
         <time dateTime={primary.published_at ?? s.first_seen_at}>{istDateTime(primary.published_at ?? s.first_seen_at)} IST</time>
         {s.items.length === 1 && primary.revised_at && <> · revised {istDateTime(primary.revised_at)} IST</>}
       </p>

@@ -1,5 +1,6 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
-import { canonicalUrl, cleanExcerpt, isProbablyEnglish, isSponsoredUrl, normaliseHeadline } from '@stockpanic/core';
+import { canonicalUrl, classifyMarketRelevance, cleanExcerpt, isProbablyEnglish, isSponsoredUrl, normaliseHeadline } from '@stockpanic/core';
+import type { ArticleScope } from '@stockpanic/core';
 import type { CandidateRow } from '@stockpanic/db';
 
 export class FeedParseError extends Error {}
@@ -78,15 +79,19 @@ export interface CandidateSummary {
   discardedNonEnglish: number;
   discardedInvalid: number;
   discardedSponsored: number;
+  heldForReview: number;
+  discardedIrrelevant: number;
 }
 
 // Headline, link and timestamp only (PRD-002 US-002.5 AC-8); dedup by guid, else canonical URL.
-export function toCandidates(entries: readonly FeedEntry[]): CandidateSummary {
+export function toCandidates(entries: readonly FeedEntry[], scope: ArticleScope = 'general'): CandidateSummary {
   const candidates: CandidateRow[] = [];
   const seen = new Set<string>();
   let discardedNonEnglish = 0;
   let discardedInvalid = 0;
   let discardedSponsored = 0;
+  let heldForReview = 0;
+  let discardedIrrelevant = 0;
   for (const e of entries) {
     const headline = e.title ? normaliseHeadline(e.title) : '';
     const url = e.link ? canonicalUrl(e.link) : null;
@@ -106,6 +111,9 @@ export function toCandidates(entries: readonly FeedEntry[]): CandidateSummary {
     if (seen.has(dedupKey)) continue;
     seen.add(dedupKey);
     const ms = e.published ? Date.parse(e.published) : Number.NaN;
+    const relevance = classifyMarketRelevance(headline, scope);
+    if (relevance.decision === 'review') heldForReview++;
+    if (relevance.decision === 'discard') discardedIrrelevant++;
     candidates.push({
       kind: 'article',
       dedupKey,
@@ -113,7 +121,8 @@ export function toCandidates(entries: readonly FeedEntry[]): CandidateSummary {
       url,
       publishedAt: Number.isNaN(ms) ? null : new Date(ms),
       excerpt: cleanExcerpt(e.description, headline), // kept only where the source permits (storeCandidates)
+      relevance,
     });
   }
-  return { candidates, discardedNonEnglish, discardedInvalid, discardedSponsored };
+  return { candidates, discardedNonEnglish, discardedInvalid, discardedSponsored, heldForReview, discardedIrrelevant };
 }

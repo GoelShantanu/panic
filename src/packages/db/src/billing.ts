@@ -4,8 +4,16 @@ import type pg from 'pg';
 import { financialYear, invoiceNumber } from '@stockpanic/core';
 import type { PlanId } from '@stockpanic/core';
 
-export async function createCheckout(db: pg.ClientBase, providerRef: string, userId: string, plan: PlanId, now: Date): Promise<void> {
-  await db.query('INSERT INTO billing_checkout (provider_ref, user_id, plan, created_at) VALUES ($1, $2, $3, $4)', [providerRef, userId, plan, now]);
+export async function createCheckout(db: pg.ClientBase, providerRef: string, shortUrl: string, userId: string, plan: PlanId, now: Date): Promise<void> {
+  await db.query('INSERT INTO billing_checkout (provider_ref, short_url, user_id, plan, created_at) VALUES ($1, $2, $3, $4, $5)', [providerRef, shortUrl, userId, plan, now]);
+}
+
+export async function recentCheckoutForUser(db: pg.ClientBase, userId: string, since: Date): Promise<{ providerRef: string; shortUrl: string; plan: PlanId } | null> {
+  const { rows } = await db.query(
+    'SELECT provider_ref, short_url, plan FROM billing_checkout WHERE user_id = $1 AND created_at >= $2 AND short_url IS NOT NULL ORDER BY created_at DESC LIMIT 1',
+    [userId, since],
+  );
+  return rows[0] ? { providerRef: rows[0].provider_ref, shortUrl: rows[0].short_url, plan: rows[0].plan } : null;
 }
 
 export interface SubscriptionRow {

@@ -8,6 +8,7 @@ import {
   nextFetchDelaySeconds,
   normaliseHeadline,
   cleanExcerpt,
+  stripTags,
   EXCERPT_MAX_CHARS,
   parseCadence,
 } from './index.ts';
@@ -138,5 +139,33 @@ describe('English-only check (N14)', () => {
     // Double-escaped entities and zero-width characters, as real feeds send them (QA, D-049).
     expect(normaliseHeadline('​Bonus issues &amp; stock split: F&amp;amp;O &#8377;5 &lt;b&gt;')).toBe('Bonus issues & stock split: F&O ₹5 <b>');
     expect(normaliseHeadline('Kept &unknown; &#0; as written')).toBe('Kept &unknown; &#0; as written');
+  });
+});
+
+describe('hostile feed text (D-058)', () => {
+  const filler = ' Board meets Thursday to consider fund raising.';
+  it('S1: stripping markup takes linear time, whatever the feed sends', () => {
+    // Each of these stalled the old regex for minutes at this size; the cap and the scan bound both.
+    for (const raw of ['<'.repeat(1_000_000), '<script'.repeat(150_000), '<style x'.repeat(150_000), '<a'.repeat(500_000) + '>']) {
+      const t = performance.now();
+      cleanExcerpt(raw + filler, 'h');
+      stripTags(raw);
+      expect(performance.now() - t).toBeLessThan(1000);
+    }
+  });
+  it('S1: still removes tags and script or style bodies, and keeps a literal "<" with no tag after it', () => {
+    expect(stripTags('a<script type="x">alert(1)</script >b<STYLE>p{}</style>c<br/>d')).toBe('a b c d');
+    expect(stripTags('Profit <5% on sales')).toBe('Profit <5% on sales');
+    expect(stripTags('<script>never closed <b>bold</b>')).toBe(' never closed  bold ');
+    expect(cleanExcerpt('Margin fell to <10% this quarter, the company said in its filing.', 'h')).toBe('Margin fell to <10% this quarter, the company said in its filing.');
+  });
+  it('S1: only the start of a long description is read', () => {
+    expect(cleanExcerpt('x'.repeat(25_000) + filler, 'h')).not.toContain('Board meets');
+  });
+  it('S2: control, zero-width and text-direction characters are removed from headlines and blurbs', () => {
+    expect(normaliseHeadline('Shares &#x202E;pu&#x202C; today')).toBe('Shares pu today');
+    expect(normaliseHeadline('Alert\u001b[31m red\u0007 ⁦isolated⁩ ‏mark')).toBe('Alert[31m red isolated mark');
+    expect(cleanExcerpt('Profit ‮%05 nwod‬' + filler, 'h')).toBe('Profit %05 nwod' + filler);
+    expect(normaliseHeadline('Tab\tand\nnewline stay spaces')).toBe('Tab and newline stay spaces');
   });
 });

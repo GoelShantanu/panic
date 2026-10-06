@@ -183,4 +183,35 @@ describe('<Stream>', () => {
     mount([c!, b!, a!]);
     expect(document.querySelector('.unread-divider')!.textContent).toBe('New since your last visit (2) ↑');
   });
+
+  it('renders Trending and Recent Comments overview on homepage when no story is selected', () => {
+    const s1 = card({ headline: 'Trending story Alpha' });
+    const overview = {
+      trending: [s1],
+      comments: [
+        {
+          comment_id: 'c_1',
+          body: 'Great commentary on results',
+          created_at: new Date().toISOString(),
+          username: 'trader_pro',
+          story_id: s1.story_id,
+          story_headline: s1.headline,
+        },
+      ],
+    };
+    mount([s1], { overview });
+    expect(screen.getAllByText('Trending').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Trending story Alpha').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Recent Comments')).toBeTruthy();
+    expect(screen.getByText('Great commentary on results')).toBeTruthy();
+    expect(screen.getByText('trader_pro')).toBeTruthy();
+  });
+
+  it('renders empty content inside stream pane without unmounting layout', () => {
+    mount([], { header: <div>Tabs</div>, empty: <div data-testid="empty-state">Your watchlist is empty</div> });
+    expect(screen.getByTestId('empty-state')).toBeTruthy();
+    expect(screen.getByTestId('empty-state').textContent).toBe('Your watchlist is empty');
+    expect(document.querySelector('.stream-layout')).toBeTruthy();
+    expect(document.querySelector('.pane-head')).toBeTruthy();
+  });
 });

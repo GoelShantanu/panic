@@ -64,7 +64,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `system-overview.md` | Components, data flow, PRD→component map, market-session assumptions, failure modes, scaling | Architect/CTO | PRD-001…007, D-024 | Database, Backend, Ops | **What runs where, and how it fails** | Medium (volumes `[ASSUMPTION]`) | ✅ v1.0 approved — D-026 |
-| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` | Component designs for C4 and C5 | Architect/CTO | system overview, PRD-002, PRD-004, ADR-004/006, D-025 | Database, Backend | **How items, stories, tags and AI outputs are produced** | Medium (thresholds and volumes `[ASSUMPTION]`) | ✅ v1.0 approved — D-026 |
+| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` | Component designs for C4 and C5; ingestion.md §4.1 also records the 2026-10-05 headline relevance implementation supplement | Architect/CTO | system overview, PRD-002, PRD-004, ADR-004/006, D-025, D-059 | Database, Backend | **How items, stories, tags and AI outputs are produced** | Medium (thresholds and volumes `[ASSUMPTION]`; relevance heuristic uncalibrated) | ✅ v1.0 plus implementation supplement |
 | `adr/adr-007-google-workspace-email.md` | Email through Google: free Gmail or Workspace | Founder/CTO | PRD-003, PRD-007 | Backend | **Email provider and limits** | Medium (limits `[INFERRED]`) | ✅ Accepted — D-031 |
 | `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | ✅ Accepted — D-026 |
 
@@ -72,37 +72,36 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path | Architect | Architecture v1.0, PRD-001…007 | Backend | **Which rules the database guarantees** | High (verified by execution) | ✅ v1.0 approved — D-028 |
+| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path (migrations through 0018) | Architect | Architecture v1.0, PRD-001…007, D-059 | Backend | **Which rules the database guarantees** | High (migrations through 0018 applied locally) | ✅ v1.0 plus forward migration notes |
 | `partitioning.md` | Partitioned tables, retention, lifecycle | Architect | schema.md | Ops | **Retention by partition** | Medium (functions verified; jobs not built) | ✅ v1.0 approved — D-028 |
 | `migrations/0001_initial.sql` | Initial DDL | Architect | schema.md | Backend | **The schema itself** | High (applied on PG 17.11) | ✅ v1.0 frozen — D-028 |
+| `migrations/0018_article_relevance.sql` | RSS editorial scope and persistent relevance review queue | CTO | D-059, ingestion.md §4.1 | Worker ingestion | **The relevance-candidate schema change** | High (applied to local PostgreSQL) | ✅ Applied locally |
 | `tests/0001_constraints_test.sql` | Constraint tests against real Postgres | Architect | 0001 | CI | **Proof the constraints hold** | High | ✅ 56/56 pass |
 
 ### 1.2g Source — `src/`
 
 | Path | Purpose | Owner | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, text features, classification, tagging, clustering, auth, alerts, community (eligibility, TOTP, secret encryption), AI rules (output validation, safeguards G1–G7, spend), filing envelope v1 and push signature, billing (GST, invoice numbering, webhook signature), trading calendar and Trending score | CTO | PRD-002, 004, 005, 007; ADR-001; D-030 | ✅ B1–B3 — 62 unit tests |
-| `src/packages/db` | Migration runner; data access for ingestion, pipeline, reads, accounts, alerts, community and moderation; partition maintenance | CTO | `docs/database/` | ✅ B1–B11 |
+| `src/packages/core` | Shared domain rules: ISIN, public IDs, taxonomy, entitlements, vote display, ingestion, market relevance gate (`market-v1`, heuristic/un-calibrated), text features, classification, tagging, clustering, auth, alerts, community (eligibility, TOTP, secret encryption), AI rules (output validation, safeguards G1–G7, spend), filing envelope v1 and push signature, billing (GST, invoice numbering, webhook signature), trading calendar and Trending score | CTO | PRD-002, 004, 005, 007; ADR-001; D-030, D-059 | ✅ B1–B3 plus relevance gate |
+| `src/packages/db` | Migration runner; data access for ingestion, relevance candidate persistence/review, pipeline, reads, accounts, alerts, community and moderation; partition maintenance | CTO | `docs/database/` | ✅ B1–B11 plus migration 0018 |
 | `src/apps/web` (pages) | Next.js 16 App Router pages (`app/`): stream, story, company, accounts and billing, watchlist and alerts, comments and grievances, profiles and replies, operator console, status, sitemaps and robots; components and helpers (`site/`); design tokens (WCAG 2.2 AA); phone view; push service worker; component and structural accessibility tests | CTO | API contracts; D-040…D-047 | ✅ F1–F8 — approved (D-048) |
 | `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007; watchlist/alerts: PRD-003; votes, comments, grievances, operator moderation with TOTP 2FA: PRD-005/006), filings push receiver (D-035), billing on Razorpay with webhooks and GST invoices (D-036), operator story corrections and review queue (D-037), Google sign-in verifier, Node server with sessions; frontend additions: saved views, outbound clicks, notices, summary reports, admin settings and court-order intake, source status, sitemap data (D-042…D-047) | CTO | `db`, `mail`; PRD contracts; ADR-007; D-032, D-033 | ✅ B4–B11, F3–F8 |
 | `docs/qa/test-strategy.md` | QA method and results: entity-resolution precision (real RSS corpus, real NSE registry), market-open load profile, defects, traceability, limits | CTO | PRD-002, NFR-001.x, entity-resolution.md, ADR-005 | ✅ QA exited (D-052) |
 | `docs/qa/curated-aliases.csv` | Curated aliases (short names, demerger ambiguity), loaded with the registry | Founder (approved) / operators (upkeep) | entity-resolution.md §2.3 | ✅ Approved (D-051) |
 | `docs/security/threat-model.md` | Assets, actors, trust boundaries, STRIDE by component, abuse vectors | CTO | ADR-003, ADR-005, PRD-005/006/007 | ✅ Phase 9 (D-054) |
 | `docs/security/review.md` | Security review record: method, probe results, findings F1–F10, residual risks A1–A8, deployment requirements | CTO / Founder (risk acceptance) | threat-model.md | ✅ Residual risks accepted (D-054) |
+| `docs/ops/release-runbook.md` | Local PostgreSQL/app verification, relevance-review CLI, production release gates, host baseline, billing mail queue behavior, evidence limits | CTO | WORKFLOW §10, system-overview.md, security/review.md, D-059 | ◐ Draft; local DB and review commands documented, production deployment and restore unverified |
 | `src/packages/push` | Pusher interface: web-push (VAPID), memory | CTO | PRD-003 US-003.6 | ✅ B6 — 2 tests |
 | `src/packages/mail` | Mailer interface: smtp (free Gmail / Workspace), log, memory | CTO | ADR-007 | ✅ B5 — 3 tests |
 | `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |
-| `src/apps/worker` | Ingestion (RSS; filings poll, push inbox and reconciliation; health, scheduler), pipeline (classify, tag, cluster, recompute), account jobs (export, deletion), alerts (evaluate, deliver, digest, corrections), AI jobs (classify, summarise with pdf.js attachment text; Anthropic SDK client behind an interface); `ingest`, `pipeline`, `account`, `alerts`, `ai`, `reconcile`, `maintenance`, `admin` CLIs | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030 | ✅ B2–B3 — 37 tests incl. 19 end-to-end |
+| `src/apps/worker` | Ingestion (RSS scope + relevance gate/review CLI; filings poll, push inbox and reconciliation; health, scheduler), pipeline (classify, tag, cluster, recompute), account jobs (export, deletion), alerts (evaluate, deliver, digest, corrections), AI jobs (classify, summarise with pdf.js attachment text; Anthropic SDK client behind an interface); worker CLIs including `ingest`, `pipeline`, `account`, `alerts`, `ai`, `reconcile`, `maintenance`, `admin` | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030, D-059 | ✅ B2–B3; relevance path covered by targeted tests |
 
-### 1.3 Gated — not yet created
+### 1.3 Planned paths — not yet present
 
 | Layer | Path | Gate |
 | --- | --- | --- |
 | API | `docs/api/` | Architecture approved |
-| QA | `docs/qa/` | PRD approved |
-| Security | `docs/security/` | Architecture approved *(counsel gate removed — D-018)* |
-| Ops | `docs/ops/` | Architecture approved |
-| Code | `src/` | Architecture approved |
+| API reference | `docs/api/` | Architecture approved; API contract reference not yet written |
 
 ---
 

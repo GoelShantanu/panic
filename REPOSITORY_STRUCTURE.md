@@ -10,6 +10,8 @@
 
 Audited 2026-08-05.
 
+> **Historical snapshot:** §1 records the repository before product, database, and application implementation began; it is not a current inventory. The live file register is [KNOWLEDGE_MAP.md](KNOWLEDGE_MAP.md), and current status/next action are in [PROJECT_STATE.md](PROJECT_STATE.md). Update this snapshot only when maintaining the structural history; do not use its old file counts or statements that code is absent as present-day facts.
+
 ```
 C:\backup_15th June 2026\StockPanic\
 ├── .gitignore
@@ -85,25 +87,24 @@ C:\backup_15th June 2026\StockPanic\
 │   │   ├── streaming.md
 │   │   └── public-api.md             ← B2B surface (OQ-5)
 │   │
-│   ├── qa/                      ☐ GATED — PRD approved
+│   ├── qa/                      ✅ QA exited (D-052)
 │   │   ├── test-strategy.md
 │   │   └── entity-resolution-benchmark.md   ← mandatory (WORKFLOW §8)
 │   │
-│   ├── security/                ☐ GATED — architecture approved
+│   ├── security/                ✅ Security review exited (D-054)
 │   │   ├── threat-model.md
 │   │   ├── compliance-controls.md    ← traces Research §6 to enforcement
 │   │   └── reviews/
 │   │
-│   └── ops/                     ☐ GATED — architecture approved
-│       ├── runbooks/
-│       └── observability.md
+│   └── ops/                     ◐ Release draft
+│       └── release-runbook.md
 │
 ├── src/                         ☐ GATED — architecture approved
 │
 └── scratch/                     Untracked. Never a source of truth.
 ```
 
-**GATED** = must stay empty until [WORKFLOW.md](WORKFLOW.md) entry criteria are met. An empty gated directory is correct; a populated one is a guardrail violation (GUARDRAILS §3.7).
+**GATED** = must stay empty until [WORKFLOW.md](WORKFLOW.md) entry criteria are met. QA and security are populated because their phase gates have exited; the ops runbook is a draft and is not evidence of a production deployment.
 
 ---
 

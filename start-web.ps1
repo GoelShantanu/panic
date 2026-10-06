@@ -1,0 +1,5 @@
+$env:DATABASE_URL = "postgres://postgres:stockpanic_dev_only@127.0.0.1:5432/stockpanic"
+$env:AUTH_SECRET = "dev_secret_must_be_at_least_32_characters_long_for_auth_testing"
+$env:PORT = "3002"
+$env:LIVE_ORIGIN = "http://127.0.0.1:3003"
+Start-Process -FilePath "node" -ArgumentList "src/apps/web/src/cli/serve.ts" -WorkingDirectory "C:\backup_15th June 2026\StockPanic" -RedirectStandardOutput "C:\backup_15th June 2026\StockPanic\web-out.log" -RedirectStandardError "C:\backup_15th June 2026\StockPanic\web-err.log"

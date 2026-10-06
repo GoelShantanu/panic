@@ -47,6 +47,7 @@ import {
   markSessionMfa,
   oldestUserActionSince,
   recentComments,
+  recentGlobalComments,
   recentUserActions,
   reportSummary,
   repliesTo,
@@ -268,6 +269,11 @@ export async function deleteComment(db: pg.ClientBase, commentPublicId: string, 
   if (c.userId !== user.id) return { status: 403, body: { error: 'not_eligible', reason: 'not_author' } };
   await deleteOwnComment(db, c, now);
   return { status: 204, body: null };
+}
+
+export async function getRecentComments(db: pg.ClientBase): Promise<Res> {
+  const comments = await recentGlobalComments(db, 8);
+  return { status: 200, body: { comments } };
 }
 
 export async function postReport(db: pg.ClientBase, commentPublicId: string, body: unknown, user: SessionUser | null, now: Date): Promise<Res> {

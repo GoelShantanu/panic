@@ -93,7 +93,9 @@ function proxyLive(req: IncomingMessage, res: ServerResponse, origin: string) {
     if (!res.headersSent) res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'live_unavailable' }));
   });
-  req.on('close', () => upstream.destroy());
+  // IncomingMessage 'close' fires when the request has been read, which is immediate for GET.
+  // The response stays open for SSE; close the upstream only when the client response closes.
+  res.on('close', () => upstream.destroy());
   upstream.end();
 }
 

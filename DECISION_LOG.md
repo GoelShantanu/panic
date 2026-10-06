@@ -2056,6 +2056,52 @@ The frontend under `src/apps/web` (milestones F1–F8, D-040…D-047; migrations
 
 ---
 
+## D-058 — Local verification support and durable post-commit billing mail
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-05 |
+| **Category** | Release · Reliability |
+| **Decided by** | CTO implementation, requested by Founder in chat |
+
+**Changes**
+
+- Track SSE connection lifetime from the response close event; a completed GET request is not a signal that a streaming response has closed.
+- Insert billing email jobs in the same database transaction as the signed webhook's subscription and invoice changes. The account worker sends mail outside a database transaction and retries failures through the existing bounded job retry policy.
+- If a provider subscription is created but its local checkout record cannot be persisted, do not expose its checkout URL; attempt provider cancellation and return an unavailable response. Unknown-subscription webhooks are retained with an operator-facing log message.
+- Serialize checkout requests per account and reuse a same-plan checkout created in the previous 15 minutes; requests for another plan receive a conflict instead of creating overlapping provider subscriptions. Migration 0017 stores the checkout URL and indexes recent attempts.
+- Mail delivery is at-least-once; a crash after provider acceptance and before job completion can cause a duplicate. Exhausted jobs require operational inspection.
+- Add a loopback-only PostgreSQL 17 Compose service and a release runbook for local verification and production readiness tasks.
+
+**Verification status:** implementation added; local migrations and typecheck were applied/passed, and the local browser route, seeded stream API, and SSE handshake returned successfully. The full automated suite and production deployment were not verified.
+
+---
+
+## D-059 — Conservative RSS headline relevance gate and human review
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-05 |
+| **Category** | Ingestion · Editorial quality |
+| **Decided by** | CTO implementation, requested by Founder in chat |
+
+**Decision**
+
+- Each RSS source has an explicit editorial scope: `markets`, `business`, or `general`.
+- Before a candidate becomes a stream item, `market-v1` classifies its headline as `keep`, `review`, or `discard`. Strong market/financial signals are kept; uncertain headlines are held; only clear entertainment/sports headlines without a market signal are discarded.
+- Persist the headline decision, source scope, reason, rules version, heuristic confidence, and any later human decision in `article_relevance_candidate`. An operator can approve a held headline, which creates the item and pipeline job atomically, or discard it.
+- Do not present the confidence as a calibrated probability. Human review is recorded for evaluation but does not train or tune the rules.
+
+**Rationale**
+
+The stream should focus on markets and business without imposing a company-name requirement or a strict topic allowlist that could hide macro and emerging-market stories. Holding uncertain headlines protects recall while source curation and real-world labels are not yet available.
+
+**Verification and limits**
+
+Migration 0018 is applied to the local PostgreSQL database. Typecheck passed and 30 targeted relevance/ingestion/database tests passed. No real publisher feeds are enabled locally, so live coverage has not been measured. The full test suite has one shell session-label expectation failure, recorded in PROJECT_STATE. Before tuning or broadening discards, label a held-out corpus and report false exclusions and review volume by source.
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

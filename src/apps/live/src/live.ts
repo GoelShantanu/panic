@@ -152,7 +152,9 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
     const resumeFrom = typeof lastEventId === 'string' && /^\d+$/.test(lastEventId) ? BigInt(lastEventId) : null;
     const client: Client = { res, lastSent: resumeFrom ?? lastBroadcast, ready: resumeFrom === null, queue: [] };
     clients.add(client);
-    req.on('close', () => clients.delete(client));
+    // The GET request completes as soon as its headers are read. Track the long-lived
+    // response instead, or Node may remove a healthy SSE client immediately.
+    res.on('close', () => clients.delete(client));
 
     if (resumeFrom !== null) {
       await (chain = chain.then(async () => {

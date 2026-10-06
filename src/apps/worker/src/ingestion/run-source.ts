@@ -20,6 +20,8 @@ export interface FetchSummary {
   duplicates: number;
   discardedNonEnglish: number;
   discardedInvalid: number;
+  heldForReview: number;
+  discardedIrrelevant: number;
   error: string | null;
   nextFetchAt: Date;
 }
@@ -55,7 +57,7 @@ export async function fetchSourceOnce(
     return { sourceId: source.sourceId, nextFetchAt, ...partial };
   };
 
-  const empty = { inserted: 0, duplicates: 0, discardedNonEnglish: 0, discardedInvalid: 0 };
+  const empty = { inserted: 0, duplicates: 0, discardedNonEnglish: 0, discardedInvalid: 0, heldForReview: 0, discardedIrrelevant: 0 };
   const url = source.adapter['url'];
   if (source.adapter['type'] !== 'rss' || typeof url !== 'string') {
     return finish({ outcome: 'error', error: `unsupported adapter: ${JSON.stringify(source.adapter)}`, ...empty });
@@ -78,10 +80,10 @@ export async function fetchSourceOnce(
     if (err instanceof FeedParseError) return finish({ outcome: 'error', error: err.message, ...empty });
     throw err;
   }
-  const { candidates, discardedNonEnglish, discardedInvalid } = toCandidates(entries);
-  const { inserted, duplicates } = await storeCandidates(db, source, candidates);
+  const { candidates, discardedNonEnglish, discardedInvalid } = toCandidates(entries, source.articleScope);
+  const { inserted, duplicates, heldForReview, discardedIrrelevant } = await storeCandidates(db, source, candidates);
   return finish(
-    { outcome: inserted > 0 ? 'new_items' : 'no_new_items', error: null, inserted, duplicates, discardedNonEnglish, discardedInvalid },
+    { outcome: inserted > 0 ? 'new_items' : 'no_new_items', error: null, inserted, duplicates, discardedNonEnglish, discardedInvalid, heldForReview, discardedIrrelevant },
     { etag: res.etag, lastModified: res.lastModified },
   );
 }

@@ -92,8 +92,8 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
       <section className="panel settings-section" aria-labelledby="plan-h">
         <h2 id="plan-h">Plan</h2>
         <p>
-          You are on the <strong>{me.tier === 'paid' ? 'Paid' : 'Free'}</strong> plan.
-          {me.trial.ends_at && new Date(me.trial.ends_at) > new Date() && ` Trial · ends ${day(me.trial.ends_at)}.`}
+          You are on the <strong>{me.trial.ends_at && new Date(me.trial.ends_at) > new Date() && (!sub || sub.status !== 'active') ? 'Trial' : me.tier === 'paid' ? 'Paid' : 'Free'}</strong> plan.
+          {me.trial.ends_at && new Date(me.trial.ends_at) > new Date() && ` · ends ${day(me.trial.ends_at)}.`}
         </p>
         {sub?.payment_retrying && <p className="notice notice-warn">Your last payment failed and is being retried. Paid features stay on meanwhile; you can update the payment method in your bank or UPI app mandate.</p>}
         {sub && (

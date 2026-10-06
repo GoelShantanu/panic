@@ -32,7 +32,6 @@ const billing =
         planIds: { monthly: env['RAZORPAY_PLAN_MONTHLY']!, yearly: env['RAZORPAY_PLAN_YEARLY']! },
         webhookSecret: env['RAZORPAY_WEBHOOK_SECRET'],
         seller: { name: env['SELLER_NAME'], address: env['SELLER_ADDRESS'], gstin: env['SELLER_GSTIN'] || null, sac: env['SELLER_SAC'] || null },
-        mailer,
         log: (l: string) => console.log(l),
       }
     : null;

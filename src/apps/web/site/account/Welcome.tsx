@@ -54,24 +54,24 @@ export function Welcome({ next }: { next: string }) {
           Shown on your comments. 3–20 letters, digits or underscores. You can change it once every 30 days.
         </p>
         <label className="check">
-          <input type="checkbox" checked={age} onChange={(e) => setAge(e.target.checked)} required /> I am 18 or older.
+          <input type="checkbox" checked={age} onChange={(e) => setAge(e.target.checked)} required />
+          <span>I am 18 or older.</span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} required /> I accept the{' '}
-          <Link href="/terms" target="_blank">
-            Terms of Use
-          </Link>
-          .
+          <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} required />
+          <span>
+            I accept the <Link href="/terms" target="_blank">Terms of Use</Link>.
+          </span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} required /> I agree to StockPanic processing my data as described in the{' '}
-          <Link href="/privacy" target="_blank">
-            Privacy Notice
-          </Link>
-          .
+          <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} required />
+          <span>
+            I agree to StockPanic processing my data as described in the <Link href="/privacy" target="_blank">Privacy Notice</Link>.
+          </span>
         </label>
         <label className="check">
-          <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} /> Optional: email me occasional product news.
+          <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
+          <span>Optional: email me occasional product news.</span>
         </label>
         <button type="submit" className="button button-primary" disabled={busy || !validName || !age || !terms || !privacy}>
           Create account

@@ -61,8 +61,8 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
       [t0.toISOString().slice(0, 10), at(-60), at(3_600)],
     );
     await db.query(
-      `INSERT INTO source (source_id, name, kind, tier, access_basis, access_checked_on, enabled, cadence, adapter)
-       VALUES ('src_test_desk', 'Example Markets Desk', 'article', 3, 'https://news.example.in/terms', current_date, true, $1, $2)`,
+      `INSERT INTO source (source_id, name, kind, tier, access_basis, access_checked_on, enabled, cadence, adapter, article_scope)
+       VALUES ('src_test_desk', 'Example Markets Desk', 'article', 3, 'https://news.example.in/terms', current_date, true, $1, $2, 'business')`,
       [CADENCE, { type: 'rss', url: feedUrl }],
     );
   });

@@ -31,6 +31,15 @@ describe('community opinion display (PRD-005 US-005.3)', () => {
     rerender(<CommunityOpinion compact votes={{ important_count: 0, directional: { state: 'few', total: 2, label: 'Community opinion' } }} />);
     expect(container.textContent).toBe('');
   });
+  it('compact rows render symbols with counts for bullish, bearish, neutral and important', () => {
+    const { container } = render(
+      <CommunityOpinion compact votes={{ important_count: 4, directional: { state: 'counts', total: 9, bullish: 5, bearish: 3, neutral: 1, label: 'Community opinion' } }} />,
+    );
+    expect(container.querySelector('.opinion-badge.bull')?.textContent).toBe('5');
+    expect(container.querySelector('.opinion-badge.bear')?.textContent).toBe('3');
+    expect(container.querySelector('.opinion-badge.neu')?.textContent).toBe('1');
+    expect(container.querySelector('.opinion-badge.important')?.textContent).toBe('4');
+  });
 });
 
 describe('follow button (PRD-003 §2)', () => {

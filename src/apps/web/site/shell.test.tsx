@@ -49,6 +49,10 @@ describe('header', () => {
     render(<Header session={null} viewer={{ username: 'asha', tier: 'paid' }} />);
     expect(screen.getByRole('link', { name: /asha/ }).textContent).toContain('Paid');
   });
+  it('shows Trial badge for a user on active trial', () => {
+    render(<Header session={null} viewer={{ username: 'sgoel', tier: 'paid', isTrial: true }} />);
+    expect(screen.getByRole('link', { name: /sgoel/ }).textContent).toContain('Trial');
+  });
   it('marks the current section; a story page counts as News; Alerts only when signed in (D-057)', () => {
     path = '/s/st_00000000000000000000000001';
     const { unmount } = render(<Header session={null} viewer={null} />);

@@ -1,11 +1,17 @@
 import pg from 'pg';
 import { MUHURAT_DEFAULT, istInstant, isValidDate } from '@stockpanic/core';
-import { addCalendarException, addHoliday, calendarDay, clearCalendarExceptions, grantRole, removeHoliday, setSettingFromCli } from '@stockpanic/db';
+import { addCalendarException, addHoliday, addRssSource, calendarDay, clearCalendarExceptions, grantRole, listPendingRelevance, removeHoliday, reviewRelevanceCandidate, setSettingFromCli, setSourceArticleScope, setSourceEnabled } from '@stockpanic/db';
 
 const USAGE = `usage: admin.ts <command>
   grant-role <username> <user|operator|admin>
   set-setting <key> <json value>                  e.g. set-setting ai_enabled true
   list-sources                                    id, tier, enabled, excerpts
+  add-source <source_id> <tier 2-4> <https feed URL> <markets|business|general> <name> -- <terms reference>
+                                                  curated RSS feed, enabled, headlines only
+  set-source-scope <source_id> <markets|business|general>
+  relevance-list [limit]                           show headlines held for human review
+  relevance-review <candidate_id> <keep|discard> [reviewer]
+  set-source-enabled <source_id> on|off           stop or resume fetching a source
   set-source-excerpt <source_id> on|off [terms]   publisher blurbs for a source, once its terms permit (D-055)
   add-holiday <YYYY-MM-DD> <name>                 an exchange trading holiday (NSE and BSE)
   remove-holiday <YYYY-MM-DD>
@@ -43,8 +49,60 @@ try {
       break;
     }
     case 'list-sources': {
-      const { rows } = await db.query('SELECT source_id, name, kind, tier, enabled, excerpt_allowed, access_basis, access_checked_on::text AS checked FROM source ORDER BY tier, source_id');
-      for (const r of rows) console.log(`${r.source_id.padEnd(22)} tier ${r.tier} ${r.kind.padEnd(7)} ${r.enabled ? 'on ' : 'off'}  excerpts ${r.excerpt_allowed ? 'on ' : 'off'}  ${r.name}${r.access_basis ? `  [${r.access_basis}, ${r.checked}]` : ''}`);
+      const { rows } = await db.query('SELECT source_id, name, kind, tier, enabled, excerpt_allowed, article_scope, access_basis, access_checked_on::text AS checked FROM source ORDER BY tier, source_id');
+      for (const r of rows) console.log(`${r.source_id.padEnd(22)} tier ${r.tier} ${r.kind.padEnd(7)} ${r.enabled ? 'on ' : 'off'}  scope ${r.article_scope}  excerpts ${r.excerpt_allowed ? 'on ' : 'off'}  ${r.name}${r.access_basis ? `  [${r.access_basis}, ${r.checked}]` : ''}`);
+      break;
+    }
+    case 'add-source': {
+      // add-source src_et_stocks 2 https://…/rss markets Economic Times Stocks -- https://…/terms (read 2026-10-04)
+      const sep = rest.indexOf('--');
+      if (sep < 2 || sep === rest.length - 1) fail();
+      const [id, tier, feed, scope] = [a ?? fail(), b ?? fail(), c ?? fail(), rest[0] ?? fail()];
+      if (!['markets', 'business', 'general'].includes(scope)) fail();
+      try {
+        await addRssSource(db, { sourceId: id, tier: Number(tier), url: feed, articleScope: scope as 'markets' | 'business' | 'general', name: rest.slice(1, sep).join(' '), accessBasis: rest.slice(sep + 1).join(' ') });
+        console.log(`${id}: added and enabled, scope=${scope} (headlines only)`);
+      } catch (e) {
+        console.error((e as Error).message);
+        process.exitCode = 1;
+      }
+      break;
+    }
+    case 'set-source-scope': {
+      const id = a ?? fail();
+      if (b !== 'markets' && b !== 'business' && b !== 'general') fail();
+      if (await setSourceArticleScope(db, id, b as 'markets' | 'business' | 'general')) console.log(`${id}: article scope set to ${b}`);
+      else { console.error(`no article source ${id}`); process.exitCode = 1; }
+      break;
+    }
+    case 'relevance-list': {
+      if (a && !/^\d+$/.test(a)) fail();
+      const pending = await listPendingRelevance(db, a ? Number(a) : 100);
+      if (pending.length === 0) console.log('No headlines are waiting for relevance review.');
+      for (const item of pending) {
+        console.log(`#${item.id} [${item.sourceScope}] ${item.sourceName} — ${(item.confidence * 100).toFixed(0)}%`);
+        console.log(`  ${item.headline}\n  ${item.url}\n  ${item.reason}`);
+      }
+      break;
+    }
+    case 'relevance-review': {
+      if (!a || !/^\d+$/.test(a) || (b !== 'keep' && b !== 'discard')) fail();
+      const result = await reviewRelevanceCandidate(db, a!, b as 'keep' | 'discard', c ?? process.env['USER'] ?? 'operator');
+      if (result === 'reviewed') console.log(`candidate #${a}: ${b}`);
+      else {
+        console.error(result === 'not_found' ? `no relevance candidate #${a}` : `candidate #${a} is not awaiting review`);
+        process.exitCode = 1;
+      }
+      break;
+    }
+    case 'set-source-enabled': {
+      const id = a ?? fail();
+      if (b !== 'on' && b !== 'off') fail();
+      if (await setSourceEnabled(db, id, b === 'on')) console.log(`${a}: fetching ${b}`);
+      else {
+        console.error(`no source ${a}`);
+        process.exitCode = 1;
+      }
       break;
     }
     case 'set-source-excerpt': {

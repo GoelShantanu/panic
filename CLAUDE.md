@@ -20,7 +20,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Current Phase
 
-**Phase 4 — Architecture: complete** (2026-10-02, D-026). Approved: [`docs/product/product-definition.md`](docs/product/product-definition.md), `docs/prd/prd-001…007`, `docs/architecture/` (ADR-001…006). **Phase 5 — Database: complete** (2026-10-02, D-028): `docs/database/`, migration 0001 frozen. **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend: complete** (2026-10-03, D-048). **Phase 8 — QA: complete** (2026-10-03, D-052). **Phase 9 — Security review: complete** (2026-10-03, D-054). **Phase 10 — Release** next (PROJECT_STATE).
+**Phase 4 — Architecture: complete** (2026-10-02, D-026). **Phase 5 — Database: complete** (D-028; forward migrations through 0018). **Phase 6 — Backend: complete** (2026-10-03, D-039). **Phase 7 — Frontend: complete** (2026-10-03, D-048). **Phase 8 — QA: complete** (2026-10-03, D-052). **Phase 9 — Security review: complete** (2026-10-03, D-054). **Phase 10 — Release: active**. Current release state and next action are owned by [PROJECT_STATE.md](PROJECT_STATE.md).
 
 **Gate:** OQ-1…OQ-5 resolved 2026-10-02. Product Definition may begin; PRD, architecture, schema and code still follow WORKFLOW order. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
@@ -38,7 +38,7 @@ The product ingests fragmented Indian financial news and regulatory filings, res
 
 ## Folder Structure
 
-Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md).
+The repository now has populated `docs/` and `src/` trees. [KNOWLEDGE_MAP.md](KNOWLEDGE_MAP.md) is the current file register; [REPOSITORY_STRUCTURE.md](REPOSITORY_STRUCTURE.md) retains the dated 2026-08 baseline and target layout, so its old inventory is historical rather than current state.
 
 ```
 /                          Foundation docs (this file and its six siblings)
@@ -63,9 +63,9 @@ Current state is flat; the target structure is defined in [REPOSITORY_STRUCTURE.
 
 In order. Do not skip.
 
-1. **Frontend** — WORKFLOW §7, on the approved backend. See [PROJECT_STATE.md](PROJECT_STATE.md).
+1. **Release verification and source readiness** — see [PROJECT_STATE.md](PROJECT_STATE.md); no real publisher RSS source is enabled locally yet.
 2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
-3. **Complete the CryptoPanic reference study** — Parts IV+ pending. Partially blocked; see [PROJECT_STATE.md](PROJECT_STATE.md).
+3. **Complete the CryptoPanic reference study** — Parts IV+ pending. See [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ---
 
@@ -93,6 +93,9 @@ DATABASE_URL=postgres://… node src/apps/worker/src/cli/maintenance.ts        #
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts grant-role <username> operator   # after the user enrols TOTP (/v1/me/totp/enrol, /confirm)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-setting ai_enabled true      # once Anthropic credentials exist (D-034)
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-source-excerpt <source_id> on "<terms>"   # publisher blurbs once terms permit (D-055); list-sources shows state
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts relevance-list [limit]                 # held RSS headlines
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts relevance-review <id> keep|discard [reviewer] # resolve one held headline
+DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts add-source <id> <tier> <https-url> <markets|business|general> <name> -- <terms reference> # register after terms review
 DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts add-holiday|set-muhurat|record-halt|show-day …   # trading calendar (D-038); run without args for usage
 DATABASE_URL=postgres://… ANTHROPIC_API_KEY=… OPS_EMAIL=… node src/apps/worker/src/cli/ai.ts [--once]   # AI classify + summarise jobs (Haiku 4.5)
 DATABASE_URL=postgres://… OPS_EMAIL=… node src/apps/worker/src/cli/reconcile.ts [--date YYYY-MM-DD]  # filings reconciliation, 23:30 + 07:30 IST (D-035)

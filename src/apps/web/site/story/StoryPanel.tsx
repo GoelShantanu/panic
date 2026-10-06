@@ -30,6 +30,7 @@ export function StoryPanel({
   active,
   onVotes,
   pageStory,
+  onClose,
 }: {
   storyId: string;
   initial: ReaderData | null;
@@ -40,6 +41,7 @@ export function StoryPanel({
   active: boolean;
   onVotes: (v: VoteDisplay) => void;
   pageStory?: { id: string; related: RelatedGroup[] };
+  onClose?: () => void;
 }) {
   const fromInitial = (id: string): Loaded | null => (initial && initial.story.story_id === id ? { state: 'ready', ...initial } : null);
   const [loaded, setLoaded] = useState<Loaded>(() => fromInitial(storyId) ?? { state: 'loading' });
@@ -88,6 +90,7 @@ export function StoryPanel({
           related={isPage ? pageStory!.related : undefined}
           onVotes={onVotes}
           shortcuts={active}
+          onClose={!isPage ? onClose : undefined}
         />
       ) : (
         <div className="story story-panel-body">

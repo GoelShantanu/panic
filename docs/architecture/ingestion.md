@@ -80,6 +80,20 @@ One adapter instance per feed URL.
 | **Stored fields** | Headline as published, canonical URL, publisher time, first-seen time, source. Description only if `excerpt_allowed` (PRD-002 US-002.5 AC-8). |
 | **Republished old items** | Passed to the pipeline; clustering matches them to the original story (deduplication §3). |
 
+### 4.1 Headline relevance gate (implementation supplement, 2026-10-05)
+
+RSS sources carry an explicit `article_scope` (`markets`, `business`, or `general`). Before a headline becomes an `item`, the worker records a versioned first-pass decision:
+
+| Decision | Behaviour |
+| --- | --- |
+| `keep` | Store the item and enqueue the normal pipeline job. |
+| `review` | Store only the headline, URL, source scope, reason, and confidence in `article_relevance_candidate`; do not publish it to the stream until an operator approves it. |
+| `discard` | Store the decision for audit, but do not create an item. Reserved for clear off-topic headlines without a market signal. |
+
+The initial `market-v1` rules are conservative heuristics, not a trained or calibrated relevance model. Uncertain headlines are held for review to protect recall. Operators can use `relevance-list` and `relevance-review <id> keep|discard` through the worker admin CLI; approving a headline creates its item and pipeline job in one transaction. Store publisher excerpts only when the source terms allow them. Relevance candidates retain the decision reason, rules version, and subsequent human decision for later evaluation.
+
+Before widening the gate or treating its confidence as probabilistic, label a held-out set of real headlines, measure false exclusions and review volume by source, and tune against those results. A review decision is feedback data; this first pass does not yet retrain or automatically adjust the rules.
+
 ---
 
 ## 5. Source Health (PRD-001 US-001.6)

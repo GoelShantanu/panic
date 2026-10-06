@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17
+    container_name: stockpanic-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stockpanic
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: stockpanic_dev_only
+    ports:
+      - "127.0.0.1:${STOCKPANIC_DB_PORT:-5432}:5432"
+    volumes:
+      - stockpanic_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stockpanic"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  stockpanic_pgdata:

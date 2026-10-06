@@ -5,7 +5,7 @@ import type { CommentPage } from '../comments/Comments.tsx';
 import { StaleBanner } from '../LiveStatus.tsx';
 import { loadReader } from '../story/loadReader.ts';
 import type { RelatedGroup, StoryDetail } from '../story/StoryView.tsx';
-import type { EventType, StaleSource, StoryCard, StreamQuery } from '../types.ts';
+import type { EventType, OverviewData, RecentCommentItem, StaleSource, StoryCard, StreamQuery } from '../types.ts';
 import { Filters } from './Filters.tsx';
 import type { SavedView } from './Filters.tsx';
 import { streamParams } from './logic.ts';
@@ -48,12 +48,24 @@ export interface PageStory {
 // CryptoPanic's story links do.
 export async function StreamScreen({ query, page }: { query: StreamQuery; page?: PageStory }) {
   const qs = streamParams(query).toString();
-  const [stream, types, session, me] = await Promise.all([
+  const isHome = !page && (query.view === 'latest' || !query.view) && query.eventTypes.length === 0 && !query.filingsOnly;
+  const [stream, types, session, me, trendingRes, commentsRes] = await Promise.all([
     api<StreamBody & Record<string, unknown>>(`/v1/stream${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
     api<{ stale_sources: StaleSource[]; directional_voting_enabled: boolean }>('/v1/session'),
     api<{ username: string | null; entitlements: { multi_event_filter: boolean; stream_filings_only: boolean; saved_views: number } }>('/v1/me'),
+    isHome ? api<StreamBody>('/v1/stream?view=trending') : Promise.resolve(null),
+    isHome ? api<{ comments: RecentCommentItem[] }>('/v1/comments/recent') : Promise.resolve(null),
   ]);
+  const trendingStories =
+    trendingRes?.status === 200 && trendingRes.body.stories.length > 0
+      ? trendingRes.body.stories.slice(0, 5)
+      : stream.status === 200
+        ? [...stream.body.stories].sort((a, b) => b.source_count - a.source_count).slice(0, 5)
+        : [];
+  const recentComments =
+    commentsRes?.status === 200 && commentsRes.body.comments ? commentsRes.body.comments.slice(0, 6) : [];
+  const overview: OverviewData | null = isHome ? { trending: trendingStories, comments: recentComments } : null;
   const signedIn = me.status === 200;
   const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false, saved_views: 0 };
   // Signed-in readers: the watchlist drives the Watchlist view and the row Follow controls.
@@ -131,6 +143,32 @@ export async function StreamScreen({ query, page }: { query: StreamQuery; page?:
     );
   } else if (stream.body.stories.length === 0) {
     const filtered = query.eventTypes.length > 0 || query.filingsOnly;
+    if (query.view === 'trending' && !filtered) {
+      const fallback = await api<StreamBody>('/v1/stream?view=latest');
+      if (fallback.status === 200 && fallback.body.stories.length > 0) {
+        const sorted = [...fallback.body.stories].sort((a, b) => b.source_count - a.source_count);
+        return (
+          <Stream
+            key={qs}
+            initial={{ ...fallback.body, stories: sorted }}
+            query={query}
+            eventLabels={eventTypes.map((t) => [t.code, t.label])}
+            signedIn={signedIn}
+            viewerUsername={signedIn ? me.body.username : null}
+            watchlistIsins={watchlist?.status === 200 ? watchlist.body.instruments.map((i) => i.isin) : null}
+            header={
+              <>
+                {header}
+                <div className="notice notice-info" style={{ margin: '8px 12px' }}>
+                  No 3+ source clusters in the trailing 2-hour window. Showing top covered stories from recent market activity.
+                </div>
+              </>
+            }
+            reader={await loadReader(sorted[0]?.story_id)}
+          />
+        );
+      }
+    }
     content =
       query.view === 'watchlist' && watchlist?.status === 200 && watchlist.body.instruments.length === 0 ? (
         <State title="Your watchlist is empty">
@@ -155,26 +193,24 @@ export async function StreamScreen({ query, page }: { query: StreamQuery; page?:
       ) : (
         <State title="No stories in this view yet" />
       );
-  } else {
-    return (
-      <Stream
-        key={qs}
-        initial={stream.body}
-        query={query}
-        eventLabels={eventTypes.map((t) => [t.code, t.label])}
-        signedIn={signedIn}
-        viewerUsername={signedIn ? me.body.username : null}
-        watchlistIsins={watchlist?.status === 200 ? watchlist.body.instruments.map((i) => i.isin) : null}
-        header={header}
-        reader={await loadReader(stream.body.stories[0]?.story_id)}
-      />
-    );
   }
 
+  const stories = stream.status === 200 ? stream.body.stories : [];
+  const reader = stories.length > 0 ? await loadReader(stories[0]?.story_id) : null;
+
   return (
-    <>
-      {header}
-      {content}
-    </>
+    <Stream
+      key={qs}
+      initial={stream.status === 200 ? stream.body : { stories: [], next_cursor: null }}
+      query={query}
+      eventLabels={eventTypes.map((t) => [t.code, t.label])}
+      signedIn={signedIn}
+      viewerUsername={signedIn ? me.body.username : null}
+      watchlistIsins={watchlist?.status === 200 ? watchlist.body.instruments.map((i) => i.isin) : null}
+      header={header}
+      reader={reader}
+      overview={overview}
+      empty={content}
+    />
   );
 }

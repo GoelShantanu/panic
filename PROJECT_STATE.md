@@ -1,6 +1,6 @@
 # PROJECT_STATE.md — Live Project Memory
 
-**Last updated:** 2026-10-04
+**Last updated:** 2026-10-05
 **Updated by:** Founding CTO
 **Update cadence:** every session, before ending.
 
@@ -184,16 +184,15 @@ The product is a Vue SPA; authenticated screens are client-rendered. Available t
 
 ## Next Action
 
-**Single next action:** CTO opens Release (WORKFLOW §10): deployment runbook, host hardening and pen test plan, and the founder inputs needed for launch. New founder inputs: Grievance Officer name and email; confirm or replace the Terms and Privacy drafts (D-043); VAPID keys for browser push (D-044).
-- accountant confirmation of GST treatment (release blocker for billing, D-039);
-- each December, next year's holidays and Muhurat date (D-038);
-- exchange feed vendor (OQ-6);
-- Razorpay account, plans, webhook, seller details (D-036);
-- Anthropic API key (D-034);
-- RSS feed list with terms checks; first curated aliases;
-- Gmail app password, Google client ID, VAPID keys, `OPS_EMAIL`.
+**Single next action:** configure and verify permitted market/business RSS sources, then run ingestion against them and label a held-out headline sample before calibrating the relevance rules. The local PostgreSQL database is running and migration 0018 is applied. The local sources are disabled demo sources; there is no live publisher feed to verify yet. Continue the browser walkthrough in [docs/ops/release-runbook.md](docs/ops/release-runbook.md) independently. Billing remains intentionally disabled locally unless Razorpay and seller configuration is supplied; live payment verification is deferred.
 
-Schedule `maintenance.ts` daily and `reconcile.ts` at 23:30 and 07:30 IST.
+**Recent implementation work:** corrected SSE client lifetime handling; queued billing webhook emails transactionally for post-commit account-worker delivery; added a checkout orphan-compensation path; added local PostgreSQL Compose setup; drafted the host and release runbook; added RSS source scopes and the conservative `market-v1` keep/review/discard headline gate; persisted decisions and a human review queue; added admin CLI commands to list/review candidates; applied migrations 0017 and 0018 locally. Typecheck passed; targeted relevance/ingestion/database tests passed (30/30). The full suite currently has one failing shell session-label expectation (`src/apps/web/site/shell.test.tsx`); 270 passed and 179 skipped. Local DB migration check is up to date. The actual payment flow remains unverified.
+
+**Relevance gate limits:** the rule confidences are heuristic and uncalibrated; human decisions are recorded but do not retrain rules. Unknown headlines default to review to reduce false exclusions. No real RSS sources are enabled in the local database, so live-feed behavior and source coverage remain unverified. See [D-059](DECISION_LOG.md), [ingestion design](docs/architecture/ingestion.md#41-headline-relevance-gate-implementation-supplement-2026-10-05), and migration 0018.
+
+**Still requires external access or founder input:** accountant GST confirmation; Razorpay account, plans, webhook, seller details, and later test-mode purchase; Grievance Officer name/email; Terms and Privacy approval; exchange feed vendor (OQ-6); Anthropic key if summaries are to be enabled; source-by-source RSS terms checks and feed curation; labeled relevance evaluation corpus; curated aliases; Gmail app password, Google client ID, VAPID keys, and `OPS_EMAIL`. Production host hardening, external penetration test, monitoring, and restore drill also remain unverified.
+
+Continue scheduling `maintenance.ts` daily and `reconcile.ts` at 23:30 and 07:30 IST before production.
 
 
 **Legal posture (D-017, D-018):** no counsel before launch; GUARDRAILS §3.5 and §4.13 removed. Risk recorded in D-018.

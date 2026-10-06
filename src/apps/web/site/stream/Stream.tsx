@@ -9,9 +9,10 @@ import { ShortcutHelp } from '../ShortcutHelp.tsx';
 import { StoryPanel } from '../story/StoryPanel.tsx';
 import type { ReaderData } from '../story/StoryPanel.tsx';
 import type { RelatedGroup } from '../story/StoryView.tsx';
-import type { Direction, QualityKind, StoryCard, StreamQuery, VoteDisplay } from '../types.ts';
+import type { Direction, OverviewData, QualityKind, StoryCard, StreamQuery, VoteDisplay } from '../types.ts';
 import { optimistic, sendVote } from '../votes/vote.ts';
 import type { VoteAction } from '../votes/vote.ts';
+import { HomeOverview } from './HomeOverview.tsx';
 import { applyUpdate, belongsToView, markUnread, mergeStories, streamParams, unreadDividerIndex } from './logic.ts';
 import { StoryRow } from './StoryRow.tsx';
 
@@ -32,6 +33,10 @@ export interface StreamProps {
   // A story's own URL (/s/{id}, D-057): the reader holds that story as the page's main content; on
   // narrow screens it is shown alone, without the list.
   pageStory?: { id: string; related: RelatedGroup[] };
+  // Home overview (Trending + Recent Comments) when on homepage and no news article is selected.
+  overview?: OverviewData | null;
+  // Empty state or message when there are no stories to display in the stream.
+  empty?: ReactNode;
 }
 
 // Wide enough for list and reader side by side (D-055); narrower screens hide the reader and open the full page.
@@ -50,7 +55,20 @@ function readLocalSeen(view: string): string | null {
   }
 }
 
-export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, timeline, viewerUsername = null, header, reader = null, pageStory }: StreamProps) {
+export function Stream({
+  initial,
+  query,
+  eventLabels,
+  signedIn,
+  watchlistIsins,
+  timeline,
+  viewerUsername = null,
+  header,
+  reader = null,
+  pageStory,
+  overview = null,
+  empty = null,
+}: StreamProps) {
   const router = useRouter();
   const labels = useMemo(() => new Map(eventLabels), [eventLabels]);
   const watchlist = useMemo(() => (watchlistIsins ? new Set(watchlistIsins) : null), [watchlistIsins]);
@@ -63,9 +81,10 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   const [selected, setSelected] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [help, setHelp] = useState(false);
-  // Reader column (D-055): always beside the list on wide screens, showing the first story until the
-  // reader picks another. CSS hides it on narrow screens, where a click opens the full page instead.
-  const defaultStory = reader?.story.story_id ?? initial.stories[0]?.story_id ?? null;
+  // Reader column (D-055): always beside the list on wide screens.
+  // When an overview is provided (homepage), no story is opened by default until selected.
+  // Otherwise, opens on the first story or reader story.
+  const defaultStory = overview ? null : (reader?.story.story_id ?? initial.stories[0]?.story_id ?? null);
   const [shown, setShown] = useState<string | null>(defaultStory);
   // Read on the first client render (it only changes click handlers, never markup), so a click right
   // after load already uses the reader.
@@ -87,6 +106,13 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
       history.pushState({ spStory: id }, '', `/s/${id}`);
     } else if (panelState() !== id) history.replaceState({ spStory: id }, '', `/s/${id}`);
     setShown(id);
+  }, []);
+  const closePanel = useCallback(() => {
+    setShown(null);
+    setSelected(null);
+    if (panelState() !== null) {
+      history.pushState(null, '', streamUrl.current ?? '/');
+    }
   }, []);
   useEffect(() => {
     const onPop = () => {
@@ -122,6 +148,12 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   const buffer = useRef<StoryCard[]>([]);
   const newestSeen = useRef<string | null>(initial.stories[0]?.first_seen_at ?? null);
   const listRef = useRef<HTMLOListElement>(null);
+  // On wide screens the list scrolls in its own pane (D-057); elsewhere the window scrolls.
+  const scroller = useRef<HTMLDivElement>(null);
+  const listScroller = () => {
+    const box = scroller.current;
+    return box && getComputedStyle(box).overflowY !== 'visible' ? box : null;
+  };
 
   // Anonymous unread marker from browser storage (US-001.4 AC-4); signed-in comes from the server.
   useEffect(() => {
@@ -163,7 +195,11 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
     };
   }, [signedIn, query.view]);
 
-  const atTop = () => typeof window === 'undefined' || window.scrollY < 40;
+  const atTop = () => {
+    if (typeof window === 'undefined') return true;
+    const box = listScroller();
+    return (box ? box.scrollTop : window.scrollY) < 40;
+  };
 
   // New stories: straight in when the reader is at the top with nothing selected; otherwise held
   // behind the "N new stories" control so the list never moves under them (US-001.2 AC-2/AC-3).
@@ -204,7 +240,7 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   });
 
   function showPending() {
-    window.scrollTo({ top: 0 });
+    (listScroller() ?? window).scrollTo({ top: 0 });
     setStories((list) => mergeStories(list, pending));
     newestSeen.current = pending[0]?.first_seen_at && pending[0].first_seen_at > (newestSeen.current ?? '') ? pending[0].first_seen_at : newestSeen.current;
     setPending([]);
@@ -230,14 +266,11 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
   }, [cursor, loadingMore, query, signedIn, timeline]);
 
   const sentinel = useRef<HTMLDivElement>(null);
-  const scroller = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinel.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    // On wide screens the list scrolls inside its own pane (D-057): measure against that, so the next
-    // page still starts loading 400 px early.
-    const box = scroller.current;
-    const root = box && getComputedStyle(box).overflowY !== 'visible' ? box : null;
+    // Measured against the list's own pane where it has one, so the next page still loads 400 px early.
+    const root = listScroller();
     const io = new IntersectionObserver((entries) => entries.some((x) => x.isIntersecting) && !loadError && void loadMore(), { root, rootMargin: '400px' });
     io.observe(el);
     return () => io.disconnect();
@@ -311,61 +344,76 @@ export function Stream({ initial, query, eventLabels, signedIn, watchlistIsins, 
               </button>
             )}
           </div>
-          <ol className="rows panel" ref={listRef} aria-label="Stories">
-            {stories.map((s, i) => (
-              <StoryRowWithDivider
-                key={s.story_id}
-                showDivider={i === divider}
-                unreadCount={unreadCount}
-                story={s}
-                selected={s.story_id === selected}
-                shown={s.story_id === shown}
-                labels={labels}
-                signedIn={signedIn}
-                message={messages[s.story_id] ?? null}
-                onSelect={() => (wide ? openPanel(s.story_id) : setSelected(s.story_id))}
-                onOpen={wide ? () => openPanel(s.story_id) : undefined}
-                actions={!wide}
-                onVotes={(v) => setVotes(s.story_id, v)}
-                followed={followed}
-                onFollow={(isin, on) => void follow(isin, on)}
-              />
-            ))}
-          </ol>
-          <div ref={sentinel} className="stream-end">
-            {loadingMore && <span className="spinner" aria-label="Loading more stories" />}
-            {loadError && (
-              <span className="notice notice-error">
-                Couldn&apos;t load more stories.{' '}
-                <button type="button" className="button" onClick={() => void loadMore()}>
-                  Retry
-                </button>
-              </span>
-            )}
-            {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
-              <span className="faint">{depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}</span>
-            )}
-            {cursor && !loadingMore && !loadError && (
-              <button type="button" className="button" onClick={() => void loadMore()}>
-                Load more
-              </button>
-            )}
-          </div>
+          {stories.length === 0 && empty ? (
+            empty
+          ) : (
+            <>
+              <ol className="rows panel" ref={listRef} aria-label="Stories">
+                {stories.map((s, i) => (
+                  <StoryRowWithDivider
+                    key={s.story_id}
+                    showDivider={i === divider}
+                    unreadCount={unreadCount}
+                    story={s}
+                    selected={s.story_id === selected}
+                    shown={s.story_id === shown}
+                    labels={labels}
+                    signedIn={signedIn}
+                    message={messages[s.story_id] ?? null}
+                    onSelect={() => (wide ? openPanel(s.story_id) : setSelected(s.story_id))}
+                    onOpen={wide ? () => openPanel(s.story_id) : undefined}
+                    actions={!wide}
+                    onVotes={(v) => setVotes(s.story_id, v)}
+                    followed={followed}
+                    onFollow={(isin, on) => void follow(isin, on)}
+                  />
+                ))}
+              </ol>
+              <div ref={sentinel} className="stream-end">
+                {loadingMore && <span className="spinner" aria-label="Loading more stories" />}
+                {loadError && (
+                  <span className="notice notice-error">
+                    Couldn&apos;t load more stories.{' '}
+                    <button type="button" className="button" onClick={() => void loadMore()}>
+                      Retry
+                    </button>
+                  </span>
+                )}
+                {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
+                  <span className="faint">{depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}</span>
+                )}
+                {cursor && !loadingMore && !loadError && (
+                  <button type="button" className="button" onClick={() => void loadMore()}>
+                    Load more
+                  </button>
+                )}
+              </div>
+            </>
+          )}
           {help && <ShortcutHelp onClose={() => setHelp(false)} />}
         </div>
       </div>
-      {shown && (
+      {!shown && overview ? (
+        <aside className="story-panel home-overview-panel" aria-label="Story">
+          <HomeOverview
+            trending={overview.trending}
+            comments={overview.comments}
+            onSelectStory={(id) => openPanel(id)}
+          />
+        </aside>
+      ) : shown ? (
         <StoryPanel
           storyId={shown}
-          initial={reader}
+          initial={shown === reader?.story.story_id ? reader : null}
           eventLabels={eventLabels}
           signedIn={signedIn}
           me={viewerUsername}
           active={wide || !!pageStory}
           onVotes={(v) => setVotes(shown, v)}
           pageStory={pageStory}
+          onClose={overview ? closePanel : undefined}
         />
-      )}
+      ) : null}
     </div>
   );
 }

@@ -2153,6 +2153,43 @@ Migration 0018 is applied to the local PostgreSQL database. Typecheck passed and
 
 ---
 
+## D-062 — Reader panel UI cleanup, asymmetric entity clustering, and community commentary demonstration
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-06 |
+| **Category** | Product · UX · Deduplication · Community |
+| **Decided by** | Founder requests (chat, 2026-10-06): remove redundant "Open story page" action, resolve FirstCry duplicate stories, and demonstrate live community comments on homepage |
+
+**Decision**
+
+1. **Reader panel action cleanup (`StoryView.tsx`)**:
+   - Removed the secondary `<Link>` button "Open story page" from the reader side-drawer panel.
+   - Preserves a clean, single-action **"Read full story ↗"** button directing readers to the external publisher's original article via `/v1/out/{item_id}`.
+   - Readers can still navigate to standalone `/s/{story_id}` pages at any time via headline Middle-click or Ctrl-click. Updated reader unit tests in `panel.test.tsx`.
+2. **Asymmetric entity clustering (`clustering.ts`)**:
+   - In `pairScore(a, b)`, when comparing near-identical syndicated headlines ($\text{Jaccard} \ge 0.80$) where only one item has resolved company tags (e.g. wire variations, or an alias added between fetches), the missing company tag on the second item is treated as an absence of signal rather than a negative mismatch: `rest / (1 - WEIGHTS.instruments)`.
+   - Allows syndicated wire stories with matching numbers to automatically cluster into a single story without penalty ($\text{score} = 0.857 \ge 0.75$), with the survivor story inheriting the company tag from whichever item resolved it.
+   - Differently worded or general market headlines still retain the penalty to prevent broad market stories from attaching to single-stock stories.
+   - Added automated regression test in `pipeline.test.ts`.
+3. **Story deduplication & consolidation**:
+   - Successfully merged multiple duplicate stories for the FirstCry-backed Swara Baby Products IPO using `mergeStories()`.
+   - Survivor story (`st_01M48C7MAP4Q9ZF755C314GV62`) now consolidates 4 distinct reporting sources (The Economic Times, Business Standard, The Hindu BusinessLine Companies, and The Hindu BusinessLine Markets) under a single story card showing `4 sources`.
+4. **Community commentary & discussion**:
+   - Seeded realistic market commentary and replies across live stories (`sgoel007`, `arjun_trader`, `neha_invests`).
+   - Verified that stream stories with comments display CryptoPanic-style comment pills (`💬 1`, `💬 2`), reader drawer renders full nested reply trees, and the homepage overview "Recent Comments" sidebar actively displays live discussions with direct click-through navigation.
+5. **Feed resilience & curation**:
+   - Verified automated recovery of all 12 RSS feeds following offline system sleep backoff. All feeds running healthy on 1–5 minute poll intervals.
+   - Added curated aliases for `CDSL` (`INE736A01011`) and `TajGVK` / `TajGVK Hotels` (`INE586B01026`).
+
+**Verification and limits**
+
+- All 277 unit & integration tests passing (`npm test`).
+- Production web server (`http://127.0.0.1:3002`) and live SSE server (`http://127.0.0.1:3003`) serving live updates.
+- Ingestion (`run-ingest.cmd`) and pipeline (`run-pipeline.cmd`) daemons active and processing incoming news.
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

@@ -41,8 +41,17 @@ function atomLink(links: unknown): string | null {
 
 // RSS 2.0 and Atom (ingestion.md §4). Malformed XML is a fetch failure, never a crash.
 export function parseFeed(xml: string): FeedEntry[] {
-  if (XMLValidator.validate(xml) !== true) throw new FeedParseError('malformed XML');
-  const doc = parser.parse(xml) as Record<string, any>;
+  let validXml = xml;
+  if (XMLValidator.validate(validXml) !== true) {
+    // Sanitise unescaped ampersands common in Indian news feeds (e.g. Business Standard)
+    const sanitized = validXml.replace(/&(?!(?:amp|lt|gt|apos|quot|#\d+|#x[0-9a-fA-F]+);)/g, '&amp;');
+    if (XMLValidator.validate(sanitized) === true) {
+      validXml = sanitized;
+    } else {
+      throw new FeedParseError('malformed XML');
+    }
+  }
+  const doc = parser.parse(validXml) as Record<string, any>;
 
   if (doc['rss']?.channel) {
     const items: unknown[] = doc['rss'].channel.item ?? [];

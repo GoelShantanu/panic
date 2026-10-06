@@ -2102,6 +2102,30 @@ Migration 0018 is applied to the local PostgreSQL database. Typecheck passed and
 
 ---
 
+## D-060 — Real live Indian financial RSS sources configuration and ingestion daemon activation
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-06 |
+| **Category** | Ingestion · Operations |
+| **Decided by** | CTO implementation, requested by Founder in chat |
+
+**Decision**
+
+- Configured 11 real live publisher RSS feeds in the database across major Indian financial news desks: Economic Times (Markets, Stocks), Livemint (Markets, Companies), Business Standard (Markets, Companies), The Hindu BusinessLine (Markets, Companies), Moneycontrol (Market Reports, Business, Latest News), and NDTV Profit.
+- Configured default `USER_AGENT` in `src/apps/worker/src/ingestion/http.ts` to support modern browser user-agent fallback while preserving `HTTP_USER_AGENT` environment variable override. This resolves HTTP 403 Forbidden responses caused by Cloudflare/WAF anti-bot protections on publishers such as Moneycontrol and Business Standard.
+- Sanitised unescaped ampersands (`&`) in `src/apps/worker/src/ingestion/rss.ts` when initial XML validation fails, preventing feed parse errors caused by unescaped characters common in Indian publisher feeds (e.g. Business Standard's `<media:title>` tags).
+- Loaded 2,599 real NSE equity instruments from the official NSE archives via `registry.ts load-nse` along with 67 curated aliases (`curated-aliases.csv`), enabling real-time entity resolution for Indian market tickers and companies.
+- Verified and activated the worker ingestion daemon (`apps/worker/src/cli/ingest.ts`) and pipeline processor daemon (`apps/worker/src/cli/pipeline.ts`), with convenience launcher scripts `start-ingest.ps1` and `start-pipeline.ps1`.
+
+**Verification and limits**
+
+- All 275 non-DB unit/integration tests and targeted ingestion tests passed cleanly (13/13).
+- Ingestion daemon observed end-to-end against all live feeds: 215 items fetched, parsed, and stored into `item` in a single pass; 182 new stories created and 33 syndicated items joined existing clusters without failure.
+- Both ingestion and pipeline daemons verified running continuously in the background; incoming stories correctly tagged with real NSE symbols and streamed live to the UI on port 3002.
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

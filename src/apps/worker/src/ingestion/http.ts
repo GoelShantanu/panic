@@ -16,7 +16,9 @@ export interface ConditionalGetOptions {
   headers?: Record<string, string>;
 }
 
-export const USER_AGENT = 'StockPanicBot/0.1';
+export const USER_AGENT =
+  process.env['HTTP_USER_AGENT'] ??
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 

@@ -28,6 +28,13 @@ describe('parseFeed', () => {
     expect(() => parseFeed(MALFORMED)).toThrow(FeedParseError);
     expect(() => parseFeed('<html><body>Not a feed</body></html>')).toThrow(FeedParseError);
   });
+
+  it('parses feeds with unescaped ampersands in titles or descriptions', () => {
+    const xml = `<rss version="2.0"><channel><item><title>M&M and L&T quarterly earnings</title><link>https://example.in/1</link></item></channel></rss>`;
+    const entries = parseFeed(xml);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.title).toBe('M&M and L&T quarterly earnings');
+  });
 });
 
 describe('toCandidates', () => {

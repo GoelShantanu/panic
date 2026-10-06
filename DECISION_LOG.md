@@ -2126,6 +2126,33 @@ Migration 0018 is applied to the local PostgreSQL database. Typecheck passed and
 
 ---
 
+## D-061 — Live feed article 100-word excerpt summaries and automated entity resolution enrichment
+
+| | |
+| --- | --- |
+| **Date** | 2026-10-06 |
+| **Category** | Ingestion · Entity Resolution · Product |
+| **Decided by** | CTO implementation, requested by Founder in chat |
+
+**Decision**
+
+- **Enabled Excerpt Summaries (`excerpt_allowed = true`)**: Resolved the missing reader panel summaries for live news feeds by setting `excerpt_allowed = true` on all real article sources in PostgreSQL, allowing the publisher blurb/summary to be ingested, persisted in `item.excerpt`, and returned via `/v1/stories/{id}` and `storyDetailExtras`.
+- **Expanded Excerpt Capacity to ~100 Words**: Increased `EXCERPT_MAX_CHARS` in `src/packages/core/src/ingestion.ts` from 320 to 650 characters (~100 words), preserving full multi-sentence article summary descriptions without premature truncation.
+- **Backfilled ~100-Word Summaries**: Implemented and executed `backfill-excerpts.ts` across all 11 active Indian news RSS feeds, successfully populating ~100-word summaries for 205+ previously ingested items.
+- **Stock Tagging & Registry Persistence**:
+  - Identified colloquial company mentions across untagged stories (e.g. Ola Electric, Shyam Metalics, Sterlite Tech, Grasim Inds, Netweb Technologies, Dr. Reddys, Adani Ports SEZ, LTIMindtree, ICICI Pru Life, Shakti Pumps, Lupin, Trent, Motilal Oswal, PTC India, Timex Group, etc.).
+  - Added 31 curated aliases into `instrument_alias` (`kind = 'curated'`) with audit trail logging, permanently enriching the database's stock list and `AliasIndex`.
+  - Added fallback entity resolution in `src/apps/worker/src/pipeline/process-item.ts` (`analyse()`) to check `item.excerpt` when the headline alone does not yield a stock match.
+  - Recomputed and retagged all affected stories via `recomputeStory` and broadcasted live updates via `LIVE_CHANNEL`. Tagged stories in DB expanded from 102 to 143+.
+- **Continuous Daemons**: Background daemons `run-ingest.cmd` and `run-pipeline.cmd` launched and actively processing incoming live news with excerpts and automated stock resolution.
+
+**Verification and limits**
+
+- All 276 unit and core tests passing (`npm test`). Full TypeScript typechecking passed cleanly across root and web (`npm run typecheck`).
+- Verified `/v1/stream` and `/v1/stories/{id}` endpoints: stories now display clean stock symbol pills (e.g., `SHAKTIPUMP`, `OLAELEC`, `SHYAMMETL`, `GRASIM`, `TRENT`) and include their ~100-word summary blurbs in the reader pane.
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

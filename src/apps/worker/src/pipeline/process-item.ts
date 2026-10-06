@@ -62,6 +62,15 @@ async function analyse(db: pg.ClientBase, item: PipelineItem, ctx: PipelineConte
     const r = ctx.aliases.resolve(item.headline);
     tags = r.isins.map((isin) => ({ isin, method: 'rule' }));
     unresolved = r.unresolved;
+    if (tags.length === 0 && item.excerpt) {
+      const rx = ctx.aliases.resolve(item.excerpt);
+      if (rx.isins.length > 0) {
+        tags = rx.isins.map((isin) => ({ isin, method: 'rule' }));
+      }
+      if (unresolved.length === 0) {
+        unresolved = rx.unresolved;
+      }
+    }
   }
   return {
     eventTypes,

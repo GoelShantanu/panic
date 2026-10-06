@@ -118,7 +118,7 @@ const ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z]+);/gi;
 
 // Publisher blurb from a feed description (PRD-002 US-002.5 AC-8; D-055): markup removed, entities
 // decoded, cut at a word boundary. Stored and shown only for sources whose terms permit excerpts.
-export const EXCERPT_MAX_CHARS = 320;
+export const EXCERPT_MAX_CHARS = 650;
 // The blurb needs only the start of a description; the rest of a 5 MB feed body is never scanned.
 const EXCERPT_SCAN_CHARS = 20_000;
 export function cleanExcerpt(raw: string | null, headline: string): string | null {

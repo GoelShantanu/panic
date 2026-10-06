@@ -66,6 +66,7 @@ export interface PipelineItem {
   sourceKind: SourceKind;
   tier: number;
   headline: string;
+  excerpt?: string | null;
   publishedAt: Date | null;
   firstSeenAt: Date;
   filing: { exchange: string; scripCode: string; category: string | null } | null;
@@ -74,7 +75,7 @@ export interface PipelineItem {
 
 export async function loadPipelineItem(db: pg.ClientBase, itemId: string): Promise<PipelineItem | null> {
   const { rows } = await db.query(
-    `SELECT i.id, i.kind, i.source_id, s.kind AS source_kind, s.tier, i.headline, i.published_at, i.first_seen_at,
+    `SELECT i.id, i.kind, i.source_id, s.kind AS source_kind, s.tier, i.headline, i.excerpt, i.published_at, i.first_seen_at,
             f.exchange, f.scrip_code, f.category, EXISTS (SELECT 1 FROM reconciliation_backfill b WHERE b.item_id = i.id) AS backfilled
        FROM item i JOIN source s USING (source_id) LEFT JOIN filing_detail f ON f.item_id = i.id
       WHERE i.id = $1`,
@@ -89,6 +90,7 @@ export async function loadPipelineItem(db: pg.ClientBase, itemId: string): Promi
     sourceKind: r.source_kind,
     tier: r.tier,
     headline: r.headline,
+    excerpt: r.excerpt,
     publishedAt: r.published_at,
     firstSeenAt: r.first_seen_at,
     filing: r.exchange ? { exchange: r.exchange, scripCode: r.scrip_code, category: r.category } : null,

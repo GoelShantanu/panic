@@ -324,6 +324,7 @@ export interface NewRssSource {
   url: string;
   // Where the publisher's terms were read (PRD-002 US-002.5 AC-1): no access basis, no ingestion.
   accessBasis: string;
+  excerptAllowed?: boolean;
 }
 
 // Registers a publisher's RSS feed with an explicit editorial scope. Headlines-only until terms
@@ -345,12 +346,17 @@ export async function addRssSource(db: pg.ClientBase, s: NewRssSource): Promise<
   const cadence = Object.fromEntries(Object.entries(RSS_CADENCE).map(([session, poll]) => [session, { poll_s: poll, expect: true }]));
   parseCadence(cadence); // the shape the scheduler reads
   const r = await db.query(
-    `INSERT INTO source (source_id, name, kind, tier, access_basis, access_checked_on, enabled, cadence, adapter, article_scope)
-     VALUES ($1, $2, 'article', $3, $4, current_date, true, $5, $6, $7)
+    `INSERT INTO source (source_id, name, kind, tier, access_basis, access_checked_on, excerpt_allowed, enabled, cadence, adapter, article_scope)
+     VALUES ($1, $2, 'article', $3, $4, current_date, $8, true, $5, $6, $7)
      ON CONFLICT (source_id) DO NOTHING`,
-    [s.sourceId, s.name.trim(), s.tier, s.accessBasis.trim(), cadence, { type: 'rss', url: url.toString() }, s.articleScope],
+    [s.sourceId, s.name.trim(), s.tier, s.accessBasis.trim(), cadence, { type: 'rss', url: url.toString() }, s.articleScope, s.excerptAllowed ?? false],
   );
   if (r.rowCount === 0) throw new Error(`source ${s.sourceId} already exists`);
+}
+
+export async function setSourceExcerptAllowed(db: pg.ClientBase, sourceId: string, allowed: boolean): Promise<boolean> {
+  const r = await db.query('UPDATE source SET excerpt_allowed = $2 WHERE source_id = $1', [sourceId, allowed]);
+  return (r.rowCount ?? 0) > 0;
 }
 
 export async function setSourceArticleScope(db: pg.ClientBase, sourceId: string, scope: ArticleScope): Promise<boolean> {

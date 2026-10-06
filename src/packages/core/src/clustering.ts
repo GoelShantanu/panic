@@ -32,12 +32,17 @@ export function pairScore(a: ItemFeatures, b: ItemFeatures): number | null {
   if (a.isins.length > 0 && b.isins.length > 0 && !overlaps(a.isins, b.isins)) return null;
   if (a.numbers.length > 0 && b.numbers.length > 0 && !overlaps(a.numbers, b.numbers)) return null;
   const eventType = overlaps(specific(a.eventTypes), specific(b.eventTypes)) ? 1 : 0;
+  const headlineSim = jaccard(a.shingles, b.shingles);
   const rest =
-    WEIGHTS.headline * jaccard(a.shingles, b.shingles) + WEIGHTS.eventType * eventType + WEIGHTS.time * (1 - dt / CLUSTER_WINDOW_MS);
-  // When neither item names a company (common at launch), the instrument signal is absent rather
-  // than negative: score on the remaining signals so identical syndicated headlines still merge.
-  // When only one side has companies, the missing overlap counts against the pair.
-  if (a.isins.length === 0 && b.isins.length === 0) return rest / (1 - WEIGHTS.instruments);
+    WEIGHTS.headline * headlineSim + WEIGHTS.eventType * eventType + WEIGHTS.time * (1 - dt / CLUSTER_WINDOW_MS);
+  // When neither item names a company (common at launch), or when near-identical syndicated headlines
+  // have a company recognized on only one side (e.g. one publisher wire includes the ticker/mention or one
+  // item was ingested before alias enrichment), treat the instrument signal as absent rather than negative.
+  // When only one side has companies and the headlines are not near-identical, the missing overlap counts
+  // against the pair to prevent general market headlines from merging into single-stock stories.
+  if ((a.isins.length === 0 && b.isins.length === 0) || ((a.isins.length === 0 || b.isins.length === 0) && headlineSim >= 0.8)) {
+    return rest / (1 - WEIGHTS.instruments);
+  }
   const instruments = a.isins.length > 0 && b.isins.length > 0 ? jaccard(a.isins, b.isins) : 0;
   return rest + WEIGHTS.instruments * instruments;
 }

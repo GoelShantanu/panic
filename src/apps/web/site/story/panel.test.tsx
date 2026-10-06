@@ -167,8 +167,8 @@ describe('stream reader column (D-055)', () => {
     expect(document.getElementById(`row-${card(1).story_id}`)!.hasAttribute('data-shown')).toBe(true);
     await act(async () => void fireEvent.click(screen.getByText('Invented story 2'), { button: 0 }));
     await within(reader()).findByText('Blurb for story 2 from the publisher feed.');
-    expect(within(reader()).getByRole('heading', { level: 2, name: /^Invented story 2/ })).toBeTruthy();
-    expect(within(reader()).getByRole('link', { name: 'Open story page' })).toBeTruthy();
+    expect(within(reader()).getByRole('link', { name: /Read full story/ })).toBeTruthy();
+    expect(within(reader()).queryByRole('link', { name: 'Open story page' })).toBeNull();
     await act(async () => {
       history.back();
       await new Promise((r) => setTimeout(r, 50));

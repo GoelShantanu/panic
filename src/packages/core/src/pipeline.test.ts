@@ -193,6 +193,11 @@ describe('clustering decisions (deduplication.md)', () => {
     expect(pairScore(item(h), item(h, { at: mins(5) }))!).toBeGreaterThanOrEqual(0.75);
   });
 
+  it('identical syndicated headlines merge even when only one item has an entity tag', () => {
+    const h = 'FirstCry-backed Swara Baby Products gets Sebi nod for ₹1,000 crore IPO';
+    expect(pairScore(item(h, { isins: ['INE02RE01045'] }), item(h, { isins: [], at: mins(5) }))!).toBeGreaterThanOrEqual(0.75);
+  });
+
   it('differently worded headlines stay separate (prefer a visible duplicate)', () => {
     expect(pairScore(item('Orion Cables board approves capex plan'), item('Orion Cables to invest in new plant'))!).toBeLessThan(0.75);
   });

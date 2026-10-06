@@ -189,11 +189,6 @@ export function StoryView({
             Filing PDF
           </a>
         )}
-        {panel && (
-          <Link href={`/s/${s.story_id}`} className="button" onClick={(e) => e.stopPropagation()}>
-            Open story page
-          </Link>
-        )}
       </p>
 
       {s.items.length > 1 && (

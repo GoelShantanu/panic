@@ -1,5 +1,7 @@
 # QA — Test Strategy and Results
 
+> **Release revalidation, v1.1 (2026-10-08, D-064):** the original Phase 8 exit below is historical. The current real-news pilot does **not** demonstrate the 99.5% tagging target. See §8 for current results, fixes, reproduction steps, and limits.
+
 | | |
 | --- | --- |
 | **Phase** | 8 — QA (WORKFLOW §8) |
@@ -203,3 +205,70 @@ The knee is between 150 and 200 requests/s. Past it, requests queued without bou
 - English headlines from three publishers. No exchange filings: the feed is not procured (OQ-6). BSE-only companies are absent from the registry until a BSE list is chosen.
 - Load figures come from a shared development machine. No real-network latency; no PostgreSQL tuning; no multi-host run.
 - No security testing; that is Phase 9.
+
+## 8. Release quality revalidation — 2026-10-08 (D-064)
+
+**[VERIFIED] The evaluation ran successfully; the tagging readiness check failed.** Against provisional labels, the final disjoint 75-article sample produced 36 correct tags, 4 incorrect tags, and 14 missing tags: **90.0% precision and 72.0% recall**. Passing automated tests does not establish the 99.5% real-news target.
+
+### 8.1 Corpus and labelling
+
+[VERIFIED] `src/apps/worker/src/cli/qa-quality.ts` captured a repeatable-read, read-only snapshot of articles first seen since `2026-10-07T00:00:00+05:30`, including unpublished relevance-review/discard candidates. Sampling only published items would hide false exclusions. Exact normalised headlines already seen before the cutoff and duplicate headlines within the window were excluded, leaving **355 unique headlines**. The snapshot freezes aliases, NSE symbol mappings, publisher attribution, excerpts, timestamps, and the configured merge threshold (0.75). It exports no user/account data.
+
+[VERIFIED] **325 articles** were provisionally labelled in three disjoint samples (150, 100, 75), plus a 60-pair deduplication challenge. Blind files hide resolver predictions and stored story assignments. The first sample was split into calibration and validation halves; fixes informed by its validation errors made that sample a regression set, not a final holdout. The final 75 articles were scored without further tuning to their failures.
+
+[ASSUMPTION] Gold labels are a single **model annotator's** interpretation of headlines and available feed excerpts, conditioned on the frozen registry. They are not independently human-adjudicated facts. Analyst affiliations, trading venues, groups, and unlisted subsidiaries are not issuer subjects. Two uncertain tagging cases (BPL's meaning and an Allcargo entity ambiguity) were excluded from tag metrics in the initial sample; their relevance labels still count. Five uncertain pair labels are excluded from duplicate/nonduplicate denominators.
+
+[VERIFIED] Label errors discovered during registry checks were corrected transparently: MARSONS, ELITECON and GNRL were present; VHL needed VHLTD; Shankara Buildpro needed BUILDPRO, and SHARDUL was missing from that article's gold. `gold-initial.json` and `report-initial-labels.json` retain the original results in the later sample directories. The initial failed validation is retained as `first-validation-failed.json`; no failed run is presented as a pass.
+
+### 8.2 Results and interpretation
+
+[VERIFIED] Metrics below are micro averages over predicted/expected company tags, conditional on the provisional gold. Relevance counts include all sampled articles, including those without tags.
+
+| Sample / stage | Correct / wrong / missing tags | Precision | Recall | Relevant kept / reviewed / discarded | Off-topic kept / reviewed / discarded |
+| --- | --- | --- | --- | --- | --- |
+| Initial 75-article calibration, before fixes | 47 / 6 / 24 | 88.68% | 66.20% | 52 / 20 / 0 | 0 / 3 / 0 |
+| Initial 150 articles, current-code regression | 69 / 0 / 34 | 100% | 66.99% | 115 / 25 / 0 | 0 / 10 / 0 |
+| Disjoint 100-article second sample, current code | 48 / 0 / 9 | 100% | 84.21% | 78 / 18 / 0 | 0 / 3 / 1 |
+| **Final disjoint 75 articles, current code** | **36 / 4 / 14** | **90.0%** | **72.0%** | **56 / 11 / 0** | **0 / 6 / 2** |
+
+[VERIFIED] Even the zero-error 100-article sample provides only a **93.95% one-sided 95% lower bound**, under independent Bernoulli trials. It does not establish 99.5%. The final sample contains errors and fails `--require-tag-target`. Do not combine calibration and validation results into an unbiased release estimate.
+
+[VERIFIED] The final four incorrect tags were analyst/commentator affiliations: MOTILALOFS twice (items 518 and 555), ICRA (565), and ABSLAMC (q34498). Missing aliases, incomplete multi-company coverage, and deliberate ambiguity abstention reduce recall. Eleven of 67 relevant final-sample articles remained held for review; none was automatically discarded. No off-topic article was automatically kept in that sample. These counts do not establish population-wide rates.
+
+[VERIFIED] In the enriched pair challenge, **all 11 labelled duplicate pairs remained split** under the current candidate/score approximation, while **0 of 44 nonduplicate pairs** incorrectly merged; five pairs were uncertain. Stored story assignments likewise split all seven labelled duplicate pairs with both articles published, and wrongly merged none of 38 published nonduplicate pairs. Ten pairs with an unpublished member were excluded from stored-story metrics. The challenge deliberately includes similar price-update templates and paraphrases; it is not a random estimate of feed-wide duplicate frequency.
+
+### 8.3 Changes verified in code
+
+- [VERIFIED] Pipeline and both evaluators now share `resolveArticle`, including excerpt fallback. A headline's unresolved entity prevents fallback from replacing that ambiguity with an unrelated excerpt match.
+- [VERIFIED] Added guards for Reserve Bank of India, analyst/fund subsidiaries, plural acronyms, ownership qualifiers, trading-venue mentions, BSE index names, fund AUM context, selected unlisted subsidiaries, and trailing analyst attribution. Genuine issuer cases and a future registered legal-name override are tested. These guards do not cover all attribution forms, as the final failures show.
+- [VERIFIED] Relevance rules (`market-v2`) recognise additional financial topics and discard clear entertainment headlines whose only financial signal is box-office money; explicit issuer financial events remain eligible. Resolver/classification analyses use `rules-2026-10-08.1`.
+- [VERIFIED] Strict typechecking and **465/465 tests across 51 files, zero skips**, passed with isolated PostgreSQL 17. The temporary test container and volume were removed. No registry aliases, story assignments, relevance decisions, or production settings were rewritten by this evaluation. Existing stored analyses require a separately planned reprocessing step to reflect new resolver rules.
+
+### 8.4 Reproduction and evidence
+
+[VERIFIED] Publisher headlines/excerpts and provisional gold remain in ignored `scratch/`, not committed documentation. Set `DATABASE_URL` through the existing environment for capture; scoring reads frozen files and needs no database. Choose a new empty output directory for every capture (exclusive file creation prevents accidental overwrites).
+
+```powershell
+node src/apps/worker/src/cli/qa-quality.ts capture scratch/quality-new --since 2026-10-07T00:00:00+05:30 --n 150
+# Fill gold.json from blind.json before examining predictions.
+# symbols: registry symbols; [] means no company; null + note means uncertain.
+# relevant: boolean. Pair labels: boolean or "uncertain".
+node src/apps/worker/src/cli/qa-quality.ts score scratch/quality-new --split calibration
+node src/apps/worker/src/cli/qa-quality.ts score scratch/quality-new --split validation --require-tag-target
+# Reproduce the final pilot: expected exit status 1 (target not demonstrated).
+node src/apps/worker/src/cli/qa-quality.ts score scratch/quality-2026-10-08-final --require-tag-target
+```
+
+| Evidence directory | Snapshot SHA-256 | Gold SHA-256 |
+| --- | --- | --- |
+| `scratch/quality-2026-10-08-v2` | `01702da2d072a8d105a8831000d905aceb486ea3585ed57c534b81c9d1ec80bd` | `50baf4996186a9c7920a4e659116791636b0ba9769dd2bd26d738539699c00b8` |
+| `scratch/quality-2026-10-08-round2` | `7531b2beac64c40c1142d2bbb18c2bed4cb057abbbe7107020cc13712614d67c` | `61999ebfeaeab3b2c25ecaaad44101711e761e7cf712fbfa30e0c5509b2b24b4` |
+| `scratch/quality-2026-10-08-final` | `d786869551f011da3a4953390b4e0a21d30d383f867e52943ff96383066548df` | `7d6e7190ef04b8cb80b1dccc9041316431d79472ea5eecf301ba0db8d167ed68` |
+
+[VERIFIED] Reports fingerprint the scored implementations. Final resolver SHA-256: `c0a895925ab746c4480c4d6507ae8156c977772c689abc67ca3c404e1aa2aa2f`; relevance: `a70fd94e2ef89a6f4130b729fb720d814bc7fcf8f7d3bc65810b1c0ffbd7ee6a`. The evaluator models shared-company/LSH candidates and pair scores; it does not replay the full incremental clustering graph or live worker scheduling. Stored assignments reflect the captured database, not a reprocessed corpus.
+
+### 8.5 Pending work and limits
+
+[INFERRED] Next work should address the remaining analyst/interviewee attribution patterns, review missing aliases and multi-company resolution, and improve paraphrase candidate retrieval/scoring with duplicate and nonduplicate controls. Lowering the global merge threshold without false-merge evidence would not be justified by this challenge. Re-run on fresh dates after those changes, with independent human adjudication and versioned registry checks; about 600 independent, zero-error predicted tags would be needed for the stated confidence target.
+
+**Limits:** [UNVERIFIED] No independent human annotation, multi-day/source-independent validation, full-article adjudication for all examples, exchange filings, or BSE-only coverage. Samples share one date, publishers, and potentially events even when article IDs are disjoint. Registry membership is frozen input, not proof that each instrument mapping is externally correct. The pilot neither certifies launch readiness nor changes the production tagging switch. Scratch evidence is local and must be retained separately if another reviewer needs to reproduce it after moving checkouts.

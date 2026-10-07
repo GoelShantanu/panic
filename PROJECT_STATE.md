@@ -1,6 +1,6 @@
 # PROJECT_STATE.md — Live Project Memory
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-08
 **Updated by:** Founding CTO
 **Update cadence:** every session, before ending.
 
@@ -10,6 +10,10 @@
 ---
 
 ## Current Phase
+
+**Release data-quality update (2026-10-08, D-064):** [VERIFIED] Completed the real-news pilot and conservative resolver/relevance fixes; current tagging readiness remains unmet. Results, provisional-label limitations, reproducible evaluator, and remaining attribution/deduplication failures are owned by [QA §8](docs/qa/test-strategy.md#8-release-quality-revalidation--2026-10-08-d-064). Strict typecheck and all 465 tests passed with zero skips. **Next data-quality action:** fix remaining analyst/interviewee attribution, review missing aliases/multi-company coverage, and improve duplicate matching, then validate on fresh, human-adjudicated news. Existing database stories were not reprocessed. Hosted CI verification below remains pending, deferred while addressing the founder's priority 2 request.
+
+**Release verification update (2026-10-07, D-063):** [VERIFIED] Added GitHub Actions CI for Node 24/26 and disposable PostgreSQL 17, plus `npm run test:ci` with mandatory database configuration and no skipped/focused tests. Local Node 26 verification: strict typecheck, all 18 migrations, SQL constraint checks, all 456 tests across 50 files (zero skipped), and production frontend build passed. [UNVERIFIED] Hosted GitHub execution and branch protection have not been configured or observed. **Next CI action:** push the workflow, observe both hosted matrix jobs, then require both checks in repository rules. Reproduction and limits: [release runbook](docs/ops/release-runbook.md#automated-release-checks-2026-10-07-d-063). Current data-quality status is in the D-064 update above.
 
 **Phase 10 — Release** *(entry met 2026-10-03)*. Phase 9 — Security review: complete *(exited 2026-10-03 — [D-054](DECISION_LOG.md), [docs/security/review.md](docs/security/review.md))*. Phase 8 — QA: complete *(exited 2026-10-03 — [D-052](DECISION_LOG.md), [docs/qa/test-strategy.md](docs/qa/test-strategy.md))*. Phase 7 — Frontend: complete *(exited 2026-10-03 — [D-048](DECISION_LOG.md))*. Phase 6 — Backend: complete *(D-039)*.
 
@@ -239,6 +243,7 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 
 | Date | Session summary | State change |
 | --- | --- | --- |
+| 2026-10-08 | D-064: real-news release pilot, shared resolver/evaluator, conservative attribution and relevance fixes; see QA §8 for results and limitations. | Tagging target remains unmet; attribution and duplicate matching are next |
 | 2026-07-15 | Phase 1 research produced and approved. Five strategic OQs raised. | OQs opened |
 | 2026-07-15 | CryptoPanic RE Parts I–III produced from public artefacts. One error found and corrected via errata (§14, WebSocket). | RE study at v1.2 |
 | 2026-07-15 | Scripted authenticated access declined; artefact-capture path proposed instead. | B-3 raised |

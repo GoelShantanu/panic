@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
-import { AliasIndex, normaliseForMatch } from '@stockpanic/core';
+import { AliasIndex, normaliseForMatch, resolveArticle } from '@stockpanic/core';
 import { loadAliasEntries } from '@stockpanic/db';
 
 // Entity-resolution precision and recall on a labelled corpus (WORKFLOW §8 mandatory metric; D-049).
@@ -30,7 +30,7 @@ await db.connect();
 try {
   const index = new AliasIndex(await loadAliasEntries(db, asOf));
   const symbolOf = new Map((await db.query<{ isin: string; code: string }>(`SELECT isin::text, code FROM instrument_code WHERE exchange = 'NSE' AND valid @> $1::date`, [asOf])).rows.map((r) => [r.isin.trim(), r.code]));
-  const items = (await db.query<{ id: string; headline: string }>('SELECT id::text, headline FROM item ORDER BY id')).rows;
+  const items = (await db.query<{ id: string; headline: string; excerpt: string | null }>('SELECT id::text, headline, excerpt FROM item ORDER BY id')).rows;
   const seen = new Set<string>();
   let tp = 0;
   let fp = 0;
@@ -45,7 +45,7 @@ try {
     if (seen.has(key)) continue;
     seen.add(key);
     headlines++;
-    const r = index.resolve(it.headline.replace(/&amp;/g, '&'));
+    const r = resolveArticle(index, it.headline.replace(/&amp;/g, '&'), it.excerpt);
     unresolvedMentions += r.unresolved.length;
     const got = new Set(r.isins.map((i) => symbolOf.get(i) ?? i));
     const want = gold.get(it.id) ?? new Set<string>();

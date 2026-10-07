@@ -20,4 +20,15 @@ describe('market relevance gate', () => {
   it('does not discard an entertainment business story with a clear market signal', () => {
     expect(classifyMarketRelevance('Listed studio reports quarterly revenue after a film release', 'general').decision).toBe('keep');
   });
+
+  it('keeps financial topics that previously accumulated in review', () => {
+    for (const headline of ['Treasury yields ease before policy decision', 'Private credit attracts fresh funding', 'Gold prices fall ahead of Fed minutes', 'Retailer posts strong Q2 update', 'Oil prices rise as supply risks mount', 'Fund managers report higher AUM']) {
+      expect(classifyMarketRelevance(headline, 'markets').decision).toBe('keep');
+    }
+  });
+
+  it('distinguishes box-office money from an issuer financial result', () => {
+    expect(classifyMarketRelevance('Fantasy film box office collection crosses Rs 200 crore', 'markets').decision).toBe('discard');
+    expect(classifyMarketRelevance('Listed studio reports quarterly revenue after film release', 'general').decision).toBe('keep');
+  });
 });

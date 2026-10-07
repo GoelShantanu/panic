@@ -80,3 +80,32 @@ Billing webhooks persist email jobs with the subscription and invoice changes in
 ## Evidence and limits
 
 Local Docker/PostgreSQL startup and migrations are intended to be repeatable; they do not prove production host security, restore behavior, external service availability, or payment success. Keep verified deployment evidence and provider webhook samples with the release record, excluding secrets and personal data.
+
+## Automated release checks (2026-10-07, D-063)
+
+The workflow in `.github/workflows/ci.yml` runs on pushes, pull requests, and manual dispatch. Each Node 24/26 job uses a fresh PostgreSQL 17 service bound to loopback, installs the lockfile with `npm ci`, typechecks, applies all migrations, exercises `docs/database/tests/0001_constraints_test.sql`, runs `npm run test:ci`, and builds the production frontend. Migration and constraint checks use `stockpanic_ci`; integration suites create and remove their own randomly named databases. The test identity needs database/role creation privileges and must never target production.
+
+`npm test` remains available for local work without PostgreSQL. `npm run test:ci` requires a non-empty `TEST_DATABASE_URL`, rejects `.only`, fails when no tests are found, and fails if any collected test is skipped (including runtime skips). A database connection failure also fails the suite. The strict configuration is included in typechecking.
+
+To reproduce against a fresh disposable service in PowerShell:
+
+```powershell
+docker run -d --name stockpanic-ci-local -p 127.0.0.1::5432 -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=stockpanic_ci postgres:17
+docker port stockpanic-ci-local 5432
+# Substitute the loopback port printed above; wait for pg_isready to succeed.
+docker exec stockpanic-ci-local pg_isready -U postgres -d stockpanic_ci
+$env:TEST_DATABASE_URL = 'postgresql://postgres@127.0.0.1:<port>/postgres'
+$env:DATABASE_URL = 'postgresql://postgres@127.0.0.1:<port>/stockpanic_ci'
+npm ci
+npm run typecheck
+npm run db:migrate
+Get-Content -Raw docs/database/tests/0001_constraints_test.sql | docker exec -i stockpanic-ci-local psql -U postgres -d stockpanic_ci -v ON_ERROR_STOP=1
+npm run test:ci
+npm run web:build
+# After reviewing results, remove only this disposable test container and its anonymous volume.
+docker rm -fv stockpanic-ci-local
+```
+
+Stop on any failed command. Trust authentication is only for this disposable, loopback-bound test server. Do not reuse this setup for application data.
+
+The workflow must be pushed to GitHub before hosted checks can run. After successful hosted runs, configure repository branch protection/rulesets to require both `Verify (Node 24)` and `Verify (Node 26)` checks. Workflow files alone do not enforce merge protection. Hosted execution and repository settings are not established by a local test run.

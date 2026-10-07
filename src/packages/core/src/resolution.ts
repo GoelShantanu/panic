@@ -18,6 +18,14 @@ export interface Resolution {
   readonly unresolved: string[];
 }
 
+// Shared by the pipeline and quality evaluation, including the excerpt fallback.
+export function resolveArticle(index: AliasIndex, headline: string, excerpt: string | null = null): Resolution {
+  const primary = index.resolve(headline);
+  if (primary.isins.length || primary.unresolved.length || !excerpt) return primary;
+  const fallback = index.resolve(excerpt);
+  return { isins: fallback.isins, unresolved: primary.unresolved.length ? primary.unresolved : fallback.unresolved };
+}
+
 interface Entry {
   isins: Set<string>;
   ambiguous: boolean;
@@ -39,9 +47,12 @@ const CONTEXT_WINDOW = 3;
 // "BSE" beside "NSE" names the exchanges, not BSE Limited's shares ("Are NSE, BSE closed today?").
 const EXCHANGE_PAIR: Record<string, string> = { bse: 'nse' };
 const EXCHANGE_WINDOW = 3;
+const FUND_HOUSE_NAMES = new Set(['sbi', 'motilal oswal', 'icici', 'hdfc', 'kotak', 'axis']);
+const UNLISTED_MENTIONS = new Set(['jio', 'jio platforms', 'l and t realty']);
 
 export class AliasIndex {
   private readonly entries = new Map<string, Entry>();
+  private readonly legalNames = new Set<string>();
   // Proper word-prefixes of multi-word keys: "ntpc green" for "ntpc green energy".
   private readonly prefixes = new Set<string>();
   private maxWords = 1;
@@ -50,6 +61,7 @@ export class AliasIndex {
     for (const a of aliases) {
       const key = a.source === 'name' ? normaliseName(a.text) : normaliseForMatch(a.text);
       if (key === '') continue;
+      if (a.source === 'name') this.legalNames.add(key);
       const e = this.entries.get(key) ?? { isins: new Set<string>(), ambiguous: false, commonWord: false };
       e.isins.add(a.isin);
       e.ambiguous ||= a.ambiguous;
@@ -86,6 +98,31 @@ export class AliasIndex {
         if (entry.commonWord && !tokens.slice(Math.max(0, i - CONTEXT_WINDOW), i + n + CONTEXT_WINDOW).some((t) => COMPANY_CONTEXT.has(t.norm))) continue;
         // Headlines capitalise company names; a lower-case run is ordinary words ("to take over").
         if (!/^[\p{Lu}\p{N}]/u.test(span[0]!.orig)) continue;
+        // Plural acronyms in prose (e.g. MPs) are not a company named MPS.
+        if (n === 1 && /^[A-Z]{2,}s$/.test(trimMention(span[0]!.orig))) continue;
+        // An institution, analyst subsidiary, ownership qualifier or trading venue is
+        // contextual attribution, not evidence that the listed issuer is the subject.
+        const nextWord = tokens[i + n]?.norm;
+        const previousWord = tokens[i - 1]?.norm;
+        const venuePreposition = previousWord === 'the' ? tokens[i - 2]?.norm : previousWord;
+        const analystSubsidiary = nextWord === 'securities' || nextWord === 'mf' || (nextWord === 'mutual' && tokens[i + n + 1]?.norm === 'fund');
+        const centralBank = key === 'bank of india' && previousWord === 'reserve';
+        const ownership = nextWord === 'backed';
+        const indexName = key === 'bse' && (nextWord === 'sensex' || /^\d+$/.test(nextWord ?? ''));
+        const unlisted = (UNLISTED_MENTIONS.has(key) && !this.legalNames.has(key))
+          || (key === 'l and t' && nextWord === 'realty' && !this.legalNames.has(`${key} realty`));
+        const fundHouse = FUND_HOUSE_NAMES.has(key) && tokens.some(t=>t.norm==='aum')
+          && !tokens.some(t=>['stock','stocks','share','shares'].includes(t.norm));
+        const trailingAttribution = i+n===tokens.length && /:$/.test(tokens[i-1]?.orig ?? '')
+          && tokens.slice(0,i).some(t=>/^(?:says?|said|sees?|seen|forecasts?|estimates?|expected|projected)$/.test(t.norm));
+        const venue = ['bse', 'nse', 'mcx', 'multi commodity exchange'].includes(key)
+          && ['on', 'at', 'via', 'through'].includes(venuePreposition ?? '')
+          && !COMPANY_CONTEXT.has(nextWord ?? '');
+        if (analystSubsidiary || centralBank || ownership || venue || indexName || unlisted || fundHouse || trailingAttribution) {
+          if (unlisted || fundHouse || trailingAttribution) unresolved.add(trimMention([...new Set(span.map(t=>t.orig))].join(' ')));
+          matched = n;
+          break;
+        }
         const partner = EXCHANGE_PAIR[key];
         if (partner && tokens.slice(Math.max(0, i - EXCHANGE_WINDOW), i + n + EXCHANGE_WINDOW).some((t) => t.norm === partner)) {
           matched = n;

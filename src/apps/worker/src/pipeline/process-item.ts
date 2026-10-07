@@ -13,6 +13,7 @@ import {
   headlineShingles,
   isExchangeTwin,
   lshBands,
+  resolveArticle,
   wordSet,
 } from '@stockpanic/core';
 import type { FilingFeatures, ItemFeatures } from '@stockpanic/core';
@@ -59,18 +60,9 @@ async function analyse(db: pg.ClientBase, item: PipelineItem, ctx: PipelineConte
     if (isin) tags = [{ isin, method: 'exchange_code' }];
   } else {
     eventTypes = classifyHeadline(item.headline);
-    const r = ctx.aliases.resolve(item.headline);
+    const r = resolveArticle(ctx.aliases, item.headline, item.excerpt);
     tags = r.isins.map((isin) => ({ isin, method: 'rule' }));
     unresolved = r.unresolved;
-    if (tags.length === 0 && item.excerpt) {
-      const rx = ctx.aliases.resolve(item.excerpt);
-      if (rx.isins.length > 0) {
-        tags = rx.isins.map((isin) => ({ isin, method: 'rule' }));
-      }
-      if (unresolved.length === 0) {
-        unresolved = rx.unresolved;
-      }
-    }
   }
   return {
     eventTypes,

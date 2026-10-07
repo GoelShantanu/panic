@@ -13,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p src/apps/web/tsconfig.json",
     "web:build": "next build src/apps/web",
     "test": "vitest run",
+    "test:ci": "vitest run --config vitest.ci.config.ts",
     "db:migrate": "node src/packages/db/src/cli/migrate.ts",
     "db:local:up": "docker compose up -d db",
     "db:local:status": "docker compose ps db",

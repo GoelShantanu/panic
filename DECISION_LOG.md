@@ -2190,6 +2190,30 @@ Migration 0018 is applied to the local PostgreSQL database. Typecheck passed and
 
 ---
 
+## D-063 — Mandatory database verification in CI (2026-10-07)
+
+**Decision:** Per the founder's request to implement priority 1 of the maturity review, add GitHub Actions checks on Node 24 and 26 with disposable PostgreSQL 17, locked dependency installation, typechecking, migrations, SQL constraints, the full test suite, and the production build. Use a separate `test:ci` configuration to reject missing database configuration, skipped tests, focused tests, and empty test discovery.
+
+**Reason:** [VERIFIED] The prior local default test run passed 277 tests while skipping 179 database tests. That remains useful for local unit work but cannot establish release readiness. The existing integration suites already create isolated databases and apply migrations, so CI reuses them.
+
+**Alternatives:** Requiring a database for every `npm test` would remove convenient unit-only development. Checking only that the URL exists would still permit future explicit or runtime skips. The dedicated strict command preserves local convenience while enforcing complete execution in CI.
+
+**Limits:** Hosted execution and required branch checks need separate verification after the workflow is pushed; see the release runbook. No deployment or production credentials are involved.
+
+---
+
+## D-064 — Real-news quality pilot and conservative resolver fixes (2026-10-08)
+
+**Decision:** Per the founder's priority 2 request, freeze and provisionally label recent news, evaluate tagging/relevance/deduplication together, and implement conservative attribution and relevance fixes. Detailed evidence and limitations live in [QA §8](docs/qa/test-strategy.md#8-release-quality-revalidation--2026-10-08-d-064). This is a release revalidation, not a new Phase 8 exit approval.
+
+**Reason:** [VERIFIED] Live processing now uses excerpts and expanded aliases, so the prior headline-only evaluator no longer matched the pipeline. A shared `resolveArticle` aligns evaluation and processing; unresolved headline mentions stop excerpt fallback from bypassing ambiguity. Context guards distinguish institutions, subsidiary analysts/funds, ownership qualifiers, exchange venues, index names, and selected unlisted mentions. Registered legal names can supersede the unlisted-name safeguard. Relevance gains financial topics and a box-office exclusion while preserving explicit issuer financial events. Rule versions identify the changed analyses.
+
+**Outcome:** [VERIFIED] The final provisional sample fails the tagging target, and duplicate challenges expose missed merges. Strict typechecking and 465 tests with zero skips passed. Raw publisher text and initial/corrected labels remain in ignored scratch evidence. Failed results are preserved. No existing stories, registry data, review decisions, or tagging switch were rewritten.
+
+**Alternatives and next action:** [INFERRED] A global deduplication threshold reduction is not supported without false-merge controls. Prefer further attribution handling, reviewed alias/multi-company coverage, and paraphrase candidate/scoring improvements, followed by fresh human-adjudicated validation. The pilot's model labels and one-date sample cannot certify 99.5% population precision; see QA §8.5.
+
+---
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

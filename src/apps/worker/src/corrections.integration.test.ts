@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { hashToken, isinCheckDigit, newPublicId, newToken } from '@stockpanic/core';
-import { createSession, migrate, recomputeStory, storeCandidates } from '@stockpanic/db';
+import { createSession, migrate, recomputeStory, storeCandidates, mergeStories } from '@stockpanic/db';
 import { MemoryMailer } from '@stockpanic/mail';
 import { MemoryPusher } from '@stockpanic/push';
 import { route } from '../../web/src/api.ts';
@@ -224,5 +224,18 @@ describe.skipIf(!adminUrl)('operator story corrections (PostgreSQL)', () => {
       await db.query(`INSERT INTO vote_quality (story_id, user_id, kind, detail) VALUES ($1, $2, 'wrong_stock', $3)`, [two.id, ids['bob'], JSON.stringify({ isin: A })]);
       expect(b(await call('moderator1', 'GET', '/v1/admin/corrections')).queue.filter((q: any) => q.kind === 'wrong_stock').map((q: any) => q.reporters)).toEqual([1]);
     });
+  });
+  it('audits founder-authorised system merges without inventing an operator or human label', async () => {
+    await article('src_desk_a', 'sys-a', 'Asterion Industries launches orbital research initiative');
+    await article('src_desk_b', 'sys-b', 'Asterion Industries opens deep sea exploration laboratory');
+    await pipeline();
+    const a=await storyOfKey('sys-a'), c=await storyOfKey('sys-b');
+    expect(a.id).not.toBe(c.id);
+    const beforeLabels=(await db.query('SELECT count(*)::int n FROM correction_label')).rows[0].n;
+    const result=await mergeStories(db,a.public_id,c.public_id,null,'Founder-authorised reviewed duplicate correction',new Date());
+    expect((await storyOfKey('sys-a')).id).toBe((await storyOfKey('sys-b')).id);
+    expect((await db.query('SELECT actor_type,actor_id FROM audit_log WHERE id=$1',[result.auditId])).rows[0])
+      .toMatchObject({actor_type:'system',actor_id:null});
+    expect((await db.query('SELECT count(*)::int n FROM correction_label')).rows[0].n).toBe(beforeLabels);
   });
 });

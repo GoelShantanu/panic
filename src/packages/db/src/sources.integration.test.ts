@@ -122,4 +122,18 @@ describe.skipIf(!adminUrl)('RSS source registration (PostgreSQL)', () => {
       expect((await db.query(`SELECT "after" FROM audit_log WHERE entity_type='source' AND entity_id=$1 AND "after"->'adapter'->>'access_reviewed'='false'`,[feed.sourceId])).rowCount).toBeGreaterThan(0);
     } finally {await unlink(file);await rmdir(directory);}
   });
+  it('production audit permits missing publisher approvals but still rejects missing news adapters', async () => {
+    await setSourceEnabled(db, feed.sourceId, true);
+    const run = () => promisify(execFile)(process.execPath,
+      ['src/apps/worker/src/cli/sources.ts', 'audit', '--production'], { env: { ...process.env, DATABASE_URL: testUrl } });
+    const report = JSON.parse((await run()).stdout);
+    expect(report).toMatchObject({ publisherApprovalRequired: false, sourceReadinessChecksPassed: true, issues: [] });
+    expect(report.sources.find((s: { source_id: string }) => s.source_id === feed.sourceId).access_reviewed).toBe(false);
+    await db.query(`UPDATE source SET adapter = '{"type":"unsupported"}'::jsonb WHERE source_id = $1`, [feed.sourceId]);
+    try {
+      await expect(run()).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('enabled news source has no RSS adapter') });
+    } finally {
+      await db.query(`UPDATE source SET adapter = $2 WHERE source_id = $1`, [feed.sourceId, { type: 'rss', url: feed.url, access_reviewed: false }]);
+    }
+  });
 });

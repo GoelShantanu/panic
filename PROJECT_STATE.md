@@ -1,5 +1,15 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Reviewed aliases and historical corrections activated — 2026-10-09 (D-076)
+
+[VERIFIED] Founder-authorised activation completed: all 27 reviewed CSV aliases match current registry ISINs; 20 were already active and seven were added effective 9 October. Backed up the database, paused the pipeline, previewed all 1,059 current article stories, reviewed 66 proposed tag changes, then applied 55 tag changes / 60 analyses across 41 selected stories. Eleven questionable tag changes were held because of historical registry gaps or incidental excerpt context. Reviewed 37 duplicate candidates: 25 actual merges, four redundant edges already joined, five held broad-coverage/live-blog pairs and three rejected different-day reports. Audit and preserved-record checks are owned by QA §18. Local services restarted; homepage/stream/SSE return 200, stream has 50 stories and zero stale sources. Aliases and approved historical corrections are now active, superseding earlier pending activation statements below.
+
+**Remaining quality work:** Repair historical name/alias gaps before revisiting held legitimate-issuer removals; prevent the incidental Hyundai IPO comparison becoming a Jio subject. One held Jio article retains its previous parent tag pending that correction. Review five broad-coverage pairs, remaining hospital aliases and the earlier two-pair semantic challenge, then independently human-adjudicate full articles across fresh dates. Licensing approval is not a release requirement under D-075. Provider configuration, branch protection and production operations remain pending as previously recorded. Current code/doc updates for D-075/D-076 remain local; operational changes are already applied.
+
+## Publisher approval gate removed — 2026-10-09 (D-075)
+
+**Founder direction:** Remove publisher licensing approval as a release requirement. This supersedes the publisher-approval blocker in the dated entries below. Approval records are optional provenance; missing records no longer fail `sources.ts audit --production`. Existing source/excerpt settings are retained without falsely marking approval granted. The audit checks enabled RSS adapter configuration only and does not certify overall production readiness. Source availability, fresh news, relevance, tagging/deduplication, integration setup and operational acceptance remain separate work. This change records a project decision, not a legal determination.
+
 ## Publication and remaining work — 2026-10-09
 
 [VERIFIED] Final publication check: strict TypeScript and **557/557 tests across 56 files, zero skips**, passed on disposable PostgreSQL 17. This supersedes D-074's earlier focused-only validation. Source diff/whitespace checks pass; local feed remains healthy. Secrets, database dumps and ignored QA captures are excluded from the commit.

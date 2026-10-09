@@ -6,12 +6,13 @@ import { buildPipelineContext } from './runner.ts';
 
 // Reanalysis preserves story IDs, operator overrides, comments and votes. Historic
 // duplicate merges require separate operator review; no new-news alerts are replayed.
-export async function reanalyseStories(db: pg.ClientBase, opts: { since: Date; limit: number; apply: boolean }) {
+export async function reanalyseStories(db: pg.ClientBase, opts: { since: Date; limit: number; apply: boolean; storyIds?: readonly string[] }) {
   if (!Number.isFinite(opts.since.getTime()) || !Number.isInteger(opts.limit) || opts.limit < 1 || opts.limit > 10000) throw new Error('Invalid reprocessing range');
   const ids = (await db.query<{ id: string }>(
     `SELECT s.id FROM story s WHERE s.merged_into IS NULL AND EXISTS
       (SELECT 1 FROM story_item si JOIN item i ON i.id=si.item_id WHERE si.story_id=s.id AND i.kind='article' AND i.first_seen_at >= $1)
-      ORDER BY s.id LIMIT $2`, [opts.since, opts.limit])).rows;
+      AND ($3::bigint[] IS NULL OR s.id = ANY($3::bigint[]))
+      ORDER BY s.id LIMIT $2`, [opts.since, opts.limit, opts.storyIds ?? null])).rows;
   const changes: { storyId: string; itemId: string; before: string[]; after: string[] }[] = [];
   let updated = 0;
   for (const {id} of ids) {

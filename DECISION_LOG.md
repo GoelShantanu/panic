@@ -2329,3 +2329,17 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Applied:** Discarded only item IDs `it_01M4GJCHKD7VW09TJW73T53YEQ` and `it_01M4GJCHKKZNWS12V9WGW3Q5TF` with founder review attribution and specific reasons. Local services restarted and feed/SSE verified. Evidence and limits are in QA §16.
 
 **Publication:** Founder subsequently explicitly requested pushing changes to Git and a remaining-work summary. Final full validation passes 557 tests plus strict TypeScript (QA §16). Publish D-072–D-074 code, regression coverage and documentation on the existing main branch; exclude local credentials, dumps and ignored captures. Current release gaps are summarized at the top of PROJECT_STATE.md.
+
+## D-075 — Remove publisher licensing approval as a release gate (2026-10-09)
+
+**Direction:** Founder explicitly requested dropping the requirement if it concerns licensing, and asked whether anything else remains under that item. Remove the internal publisher-approval gate; no publisher licence purchase/contact is requested.
+
+**Implemented:** Missing access-review records no longer fail the production source audit. Its remaining technical check requires an RSS adapter for enabled news sources, with explicit check scope in the report. Keep existing optional provenance, source/excerpt switches and audit history; do not manufacture approval records. D-075 supersedes earlier project approval blockers. Source health/freshness and relevance/tagging/duplicate acceptance remain independent concerns. The founder's project decision is recorded without asserting a legal conclusion. Validation belongs to QA §17.
+
+## D-076 — Activate reviewed aliases and apply reviewed historical corrections (2026-10-09)
+
+**Direction:** Founder requested activating reviewed aliases and reviewing historical tag updates and duplicate corrections. Authorisation includes supported local maintenance; no publisher contact or deployment requested.
+
+**Applied:** Verified expected ISINs for all 27 CSV aliases, added seven absent entries effective 9 October, and retained existing alias validity. Backed up the database before changes. Paused the pipeline, previewed historical analyses, reviewed actual tag differences and applied only an explicit story allowlist. Historical registry gaps and an incidental Hyundai comparison made 11 tag changes unsuitable; they remain held. Reviewed duplicate candidates individually; rejected different-day recurring reports and held broad live-blog/forecast coverage. Rechecked every proposed merge against all current story members, preserving any-member vetoes and thresholds. Result: 55 tag changes across 41 stories and 25 audited merges.
+
+**Provenance:** Local database has no operator/admin account. Founder-authorised maintenance therefore uses system audit provenance with full before/after state, without inventing an operator or an independently human-labelled correction row. Existing authenticated operator paths still write their normal labels. Added regression coverage for selected reanalysis and system merge auditing. Preservation, backup, application results and unresolved cases: QA §18.

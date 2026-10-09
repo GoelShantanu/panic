@@ -1,5 +1,15 @@
 # Release and local verification runbook
 
+## Current publisher requirement amendment (2026-10-09, D-075)
+
+The founder removed publisher licensing approval as a release gate. This supersedes the approval requirements in the dated sections below. Missing `access_reviewed` records do not block ingestion or fail the production source audit. `record-access` remains an optional provenance/operator-control tool; do not mark sources approved without evidence. Source and excerpt settings remain unchanged. The source audit now reports enabled RSS adapter configuration issues only, explicitly identifying its check scope; passing it is not overall launch certification. Normal source-health, freshness and news-quality checks remain in force. No legal permission is established by removing the internal gate.
+
+### Historical correction scope (D-076)
+
+Preview actual tag-set changes before applying reanalysis. Publication-date registry gaps can remove legitimate old tags; do not accept a bulk preview merely because tests pass. `reanalyseStories` accepts an explicit `storyIds` allowlist (empty means none). Back up, pause the pipeline, apply reviewed IDs, repeat the preview to check idempotence, then restart it. Alias imports retain their reviewed validity date rather than backdating all aliases.
+
+Founder-authorised maintenance may call `mergeStories` with a null operator ID to record a system audit, preserving reasons and all before/after state. This mode does not create a human operator correction label. Authenticated UI paths continue using an operator ID. Review each pair and recheck current members for vetoes before merging; score alone is insufficient. Broad live blogs, differing sessions/dates and incompatible figures require separate review. QA §18 records the completed activation and held cases.
+
 ## Active scope: publisher news only (2026-10-09, D-071)
 
 The founder retired corporate filings. Do not register, poll, push, reconcile or procure exchange feeds. The historical provider research/config examples and setup instructions below are retained as records, not active operations. The reconciliation CLI has been removed and source registration is unavailable. Free feed access does not change the retirement decision.

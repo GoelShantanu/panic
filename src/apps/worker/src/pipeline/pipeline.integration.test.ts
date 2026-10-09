@@ -245,6 +245,8 @@ describe.skipIf(!adminUrl)('pipeline end-to-end (PostgreSQL)', () => {
     await db.query(`INSERT INTO story_tag (story_id,isin,method,confidence) VALUES ($1,$2,'rule',1),($1,$3,'operator',1)`,[s.id,K,M]);
     const opts={since:new Date(Date.now()-3600_000),limit:1000,apply:false};
     const preview=await reanalyseStories(db,opts);
+    expect((await reanalyseStories(db,{...opts,storyIds:[]})).selected).toBe(0);
+    expect((await reanalyseStories(db,{...opts,storyIds:[s.id]})).selected).toBe(1);
     expect(preview.changes.find(c=>c.itemId===id)).toMatchObject({before:[K],after:[A]});
     expect((await storyOf('reprocess-case')).tags).toEqual([`${K}:rule`,`${M}:operator`].sort());
     await reanalyseStories(db,{...opts,apply:true});

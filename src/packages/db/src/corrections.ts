@@ -40,9 +40,9 @@ async function storyState(db: pg.ClientBase, storyId: string): Promise<StoryStat
 
 const snapshot = (s: StoryState) => ({ story_id: s.publicId, items: s.items, tags: s.tags });
 
-async function audit(db: pg.ClientBase, a: { operatorId: string; action: string; entityId: string; before: unknown; after: unknown; at: Date }): Promise<string> {
+async function audit(db: pg.ClientBase, a: { operatorId: string | null; action: string; entityId: string; before: unknown; after: unknown; at: Date }): Promise<string> {
   const { rows } = await db.query(
-    `INSERT INTO audit_log (at, actor_type, actor_id, action, entity_type, entity_id, before, after) VALUES ($1, 'operator', $2, $3, 'story', $4, $5, $6) RETURNING id`,
+    `INSERT INTO audit_log (at, actor_type, actor_id, action, entity_type, entity_id, before, after) VALUES ($1, CASE WHEN $2::bigint IS NULL THEN 'system'::actor_type ELSE 'operator'::actor_type END, $2, $3, 'story', $4, $5, $6) RETURNING id`,
     [a.at, a.operatorId, a.action, a.entityId, JSON.stringify(a.before), JSON.stringify(a.after)],
   );
   return String(rows[0].id);
@@ -142,7 +142,8 @@ export async function retagStory(db: pg.ClientBase, publicId: string, add: reado
 // ---------------------------------------------------------------- merge (US-002.7 AC-1)
 
 // The older story survives; the other redirects to it.
-export async function mergeStories(db: pg.ClientBase, publicId: string, intoPublicId: string, operatorId: string, reason: string, now: Date): Promise<CorrectionResult> {
+export async function mergeStories(db: pg.ClientBase, publicId: string, intoPublicId: string, operatorId: string | null, reason: string, now: Date): Promise<CorrectionResult> {
+  if (!reason.trim()) throw new CorrectionError('reason', 'a merge review reason is required');
   if (publicId === intoPublicId) throw new CorrectionError('into_story_id', 'cannot merge a story into itself');
   return inTx(db, async () => {
     const a = await storyState(db, await liveStoryId(db, publicId, 'story_id'));
@@ -168,7 +169,9 @@ export async function mergeStories(db: pg.ClientBase, publicId: string, intoPubl
       operatorId, action: 'story.merged', entityId: survivor.publicId,
       before: { survivor: snapshot(survivor), absorbed: snapshot(absorbed) }, after: { ...snapshot(after), absorbed: absorbed.publicId, reason }, at: now,
     });
-    await label(db, { kind: 'merged', storyId: survivor.id, otherStoryId: absorbed.id, reason, operatorId, at: now });
+    // Founder-authorised CLI maintenance uses system provenance, not a fabricated
+    // operator account or a human adjudication label. Its complete audit is retained.
+    if (operatorId !== null) await label(db, { kind: 'merged', storyId: survivor.id, otherStoryId: absorbed.id, reason, operatorId, at: now });
     await markReviewed(db, survivor.id, 'duplicate', now);
     await markReviewed(db, absorbed.id, 'duplicate', now);
     await emitStoryEvent(db, 'story.updated', survivor.id);

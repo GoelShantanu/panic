@@ -29,8 +29,11 @@ else {
       const masters=(await db.query(`SELECT DISTINCT ON (entity_id) entity_id exchange, "after"->>'as_of' as_of,
         "after"->>'rows' rows,"after"->>'input_sha256' input_sha256,"after"->>'complete' complete
         FROM audit_log WHERE action='registry.master_applied' ORDER BY entity_id, id DESC`)).rows;
-      const issues=sources.filter(s=>s.kind==='article'&&s.enabled&&!s.access_reviewed).map(s=>`${s.source_id}: production-use approval not recorded`);
-      console.log(JSON.stringify({sources,registry,masters,sourceReadinessChecksPassed:issues.length===0,issues},null,2));
+      // D-075: publisher approval records are optional provenance, not a release gate.
+      // This audit checks adapter configuration only, not overall production readiness.
+      const issues=sources.filter(s=>s.kind==='article'&&s.enabled&&s.adapter_type!=='rss')
+        .map(s=>`${s.source_id}: enabled news source has no RSS adapter`);
+      console.log(JSON.stringify({sources,registry,masters,checks:['enabled_news_adapter'],publisherApprovalRequired:false,sourceReadinessChecksPassed:issues.length===0,issues},null,2));
       if(process.argv.includes('--production')&&issues.length) process.exitCode=1;
     }
   } finally {await db.end();}

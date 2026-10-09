@@ -2264,6 +2264,14 @@ Verification and remaining release gates are owned by [QA §11](docs/qa/test-str
 
 **Limits:** Local fixtures and disposable database tests are not live exchange coverage. Source procurement, permission and independent production acceptance remain open.
 
+## D-070 — Free-first exchange-feed investigation; retain dormant integration (2026-10-09)
+
+**Authority:** Founder requested official/free NSE/BSE download research and dropping filings if no free source exists. No paid procurement or vendor contact was requested.
+
+**Finding:** [VERIFIED] Direct public HTTP downloads of both exchanges' announcement RSS succeeded without credentials; current-day XML parsed successfully. [INFERRED] The conditional removal premise is therefore not established. Retain the implementation and data, defer paid procurement and keep sources inactive. Download availability does not settle public-use rights or production completeness. Detailed evidence, free-alternative comparison and remaining technical questions live in the release runbook's D-070 section.
+
+**Limits:** No source enabled, integration claimed production-ready, external account created, vendor contacted or app data rewritten. If acceptable free use cannot be established, the founder's conditional removal preference remains applicable.
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

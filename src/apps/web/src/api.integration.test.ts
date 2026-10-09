@@ -132,8 +132,8 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     it('every enabled source with its state; error text stays internal', async () => {
       await db.query(`UPDATE source_health SET state = 'stale', last_error = 'HTTP 503 from upstream', changed_at = now() WHERE source_id = 'src_desk'`);
       const s = body(await get('/v1/sources/status')).sources;
-      expect(s.map((x: any) => x.source_id)).toEqual(['src_bse_ann', 'src_desk']); // tier order
-      expect(s[1]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale' });
+      expect(s.map((x: any) => x.source_id)).toEqual(['src_desk']); // retired exchange sources are not advertised
+      expect(s[0]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale' });
       expect(JSON.stringify(s)).not.toContain('503');
       await db.query(`UPDATE source_health SET state = 'healthy', last_error = NULL WHERE source_id = 'src_desk'`);
     });
@@ -207,11 +207,11 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       expect(s2.votes.directional).toEqual({ state: 'counts', total: 4, bullish: 3, bearish: 1, neutral: 0, label: 'Community opinion' });
     });
 
-    it('one event type is free; several, or the stream filings-only toggle, need paid (402)', async () => {
+    it('multiple event types need paid; legacy source filters no longer restrict news', async () => {
       expect(body(await get('/v1/stream?event_types=results')).stories.map((s: any) => s.story_id)).toEqual([ids['S1']!.pub]);
       const multi = await get('/v1/stream?event_types=results,other');
       expect(multi).toMatchObject({ status: 402, body: upgradeRequired('multi_event_filter') });
-      expect((await get('/v1/stream?filings_only=true')).status).toBe(402);
+      expect(body(await get('/v1/stream?filings_only=true')).stories).toEqual(body(await get('/v1/stream')).stories);
     });
 
     it('error codes per the contract', async () => {
@@ -229,18 +229,19 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       expect(r1.session.state).toBe('closed'); // no calendar loaded
       expect(r1.stale_sources).toEqual([]);
       await db.query(`UPDATE source_health SET state = 'stale' WHERE source_id = 'src_bse_ann'`);
-      expect(body(await get('/v1/stream')).stale_sources).toEqual([expect.objectContaining({ source_id: 'src_bse_ann', health: 'stale' })]);
+      expect(body(await get('/v1/stream')).stale_sources).toEqual([]);
+      expect(body(await get('/v1/sources/status')).sources.some((s: any) => s.kind === 'filing')).toBe(false);
       await db.query(`UPDATE source_health SET state = 'healthy' WHERE source_id = 'src_bse_ann'`);
     });
   });
 
   describe('GET /v1/stories/{id} (PRD-004 §6.1)', () => {
-    it('returns items filing-first, the summary, named instruments and related stories', async () => {
+    it('preserves historical items and named instruments without exposing retired summaries', async () => {
       const r = await get(`/v1/stories/${ids['S1']!.pub}`);
       expect(r.status).toBe(200);
       const b = body(r);
       expect(b.items.map((i: any) => i.kind)).toEqual(['filing', 'article']);
-      expect(b.summary).toMatchObject({ label: 'AI summary of the BSE filing', text: expect.stringContaining('board approved') });
+      expect(b.summary).toBeNull();
       expect(b.instruments[0]).toMatchObject({ isin: A, name: 'Asterion Industries Limited' });
       expect(b.related).toEqual({ [A]: [ids['S4']!.pub] });
       expect(b.primary_item_id).toBe(b.items[0].item_id);
@@ -369,6 +370,8 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     try {
       const headlines = async (path = '/v1/stream', headers: Record<string, string> = {}) => ((await (await fetch(s.base + path, { headers })).json()) as any).stories.map((x: any) => x.headline);
       const before = await headlines();
+      const retired = await fetch(s.base + '/v1/ingest/filings/src_bse_ann', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      expect(retired.status).toBe(404);
       const h = (await fetch(s.base + '/v1/session')).headers; // security headers on every response (D-053)
       expect(h.get('x-frame-options')).toBe('DENY');
       expect(h.get('x-content-type-options')).toBe('nosniff');

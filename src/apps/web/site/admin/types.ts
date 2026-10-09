@@ -32,16 +32,6 @@ export interface CorrectionRow {
   tags: string[];
 }
 
-export interface SummaryRow {
-  story_id: string;
-  headline: string;
-  summary: string | null;
-  status: 'shown' | 'hidden_by_operator' | null;
-  generated_at: string | null;
-  reports: number;
-  last_report_at: string;
-}
-
 export interface Abuse {
   vote_bursts: { story_id: string; votes: number; new_account_votes: number }[];
   shared_ips: { story_id: string; ip: string; accounts: number }[];
@@ -60,7 +50,6 @@ export interface Switches {
 export interface ConsoleData {
   grievances: Grievance[];
   corrections: CorrectionRow[];
-  summaries: SummaryRow[];
   abuse: Abuse;
   settings: Switches;
 }

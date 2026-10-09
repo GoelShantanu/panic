@@ -58,7 +58,7 @@ export function StaleBanner({ initial }: { initial: StaleSource[] }) {
     <div className="notice notice-warn" role="status">
       {stale.map((s) => (
         <div key={s.source_id}>
-          <strong>{s.name}</strong> is {s.health === 'down' ? 'down' : 'delayed'} since {istDateTime(s.since)} IST. Filings from it may be missing until it recovers.
+          <strong>{s.name}</strong> is {s.health === 'down' ? 'down' : 'delayed'} since {istDateTime(s.since)} IST. News from it may be missing until it recovers.
         </div>
       ))}
     </div>

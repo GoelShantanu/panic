@@ -7,7 +7,6 @@ export function streamParams(q: StreamQuery, cursor: string | null = null): URLS
   const p = new URLSearchParams();
   if (q.view !== 'latest') p.set('view', q.view);
   if (q.eventTypes.length) p.set('event_types', q.eventTypes.join(','));
-  if (q.filingsOnly) p.set('filings_only', 'true');
   if (cursor) p.set('cursor', cursor);
   return p;
 }
@@ -18,7 +17,7 @@ export function parseQuery(sp: Record<string, string | string[] | undefined>): S
   return {
     view: view === 'watchlist' || view === 'important' || view === 'bullish' || view === 'bearish' || view === 'trending' ? view : 'latest',
     eventTypes: (one('event_types') ?? '').split(',').filter(Boolean),
-    filingsOnly: one('filings_only') === 'true',
+    filingsOnly: false,
   };
 }
 
@@ -28,7 +27,7 @@ export function belongsToView(card: StoryCard, q: StreamQuery, watchlist: Readon
   if (q.view === 'important' || q.view === 'bullish' || q.view === 'bearish' || q.view === 'trending') return false;
   if (q.view === 'watchlist' && !(watchlist && card.instruments.some((i) => watchlist.has(i.isin)))) return false;
   if (q.eventTypes.length && !card.event_types.some((t) => q.eventTypes.includes(t))) return false;
-  if (q.filingsOnly && card.primary_item.kind !== 'filing') return false;
+  if (card.primary_item.kind !== 'article') return false;
   return true;
 }
 

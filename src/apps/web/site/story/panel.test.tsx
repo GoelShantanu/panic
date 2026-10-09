@@ -194,7 +194,7 @@ describe('stream reader column (D-055)', () => {
 
 describe('story view content (D-055)', () => {
   afterEach(cleanup);
-  it('articles show the publisher blurb with attribution; filings with a summary show the summary instead', () => {
+  it('publisher excerpts remain visible and retired summaries are not rendered', () => {
     const { unmount } = render(<StoryView story={detail(3)} eventLabels={[]} signedIn={false} me={null} comments={null} variant="page" />);
     expect(screen.getByText('Blurb for story 3 from the publisher feed.')).toBeTruthy();
     expect(screen.getByText('From Example Desk')).toBeTruthy();
@@ -209,7 +209,7 @@ describe('story view content (D-055)', () => {
         variant="page"
       />,
     );
-    expect(screen.getByText('A short neutral summary of the filing.')).toBeTruthy();
-    expect(screen.queryByText('Blurb for story 4 from the publisher feed.')).toBeNull();
+    expect(screen.queryByText('A short neutral summary of the filing.')).toBeNull();
+    expect(screen.getByText('Blurb for story 4 from the publisher feed.')).toBeTruthy();
   });
 });

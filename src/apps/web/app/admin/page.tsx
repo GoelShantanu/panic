@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Console } from '../../site/admin/Console.tsx';
-import type { Abuse, ConsoleData, CorrectionRow, Grievance, SummaryRow, Switches } from '../../site/admin/Console.tsx';
+import type { Abuse, ConsoleData, CorrectionRow, Grievance, Switches } from '../../site/admin/Console.tsx';
 import { MfaVerify, TotpEnrol } from '../../site/admin/Mfa.tsx';
 import { api } from '../../site/api.ts';
 
@@ -34,16 +34,15 @@ export default async function AdminPage() {
       </div>
     );
   }
-  const [g, c, s, a] = await Promise.all([
+  const [g, c, a] = await Promise.all([
     api<{ grievances: Grievance[] }>('/v1/admin/grievances'),
     api<{ queue: CorrectionRow[] }>('/v1/admin/corrections'),
-    api<{ queue: SummaryRow[] }>('/v1/admin/summaries'),
     api<Abuse>('/v1/admin/abuse'),
   ]);
   const data: ConsoleData = {
     grievances: g.status === 200 ? g.body.grievances : [],
     corrections: c.status === 200 ? c.body.queue : [],
-    summaries: s.status === 200 ? s.body.queue : [],
+
     abuse: a.status === 200 ? a.body : { vote_bursts: [], shared_ips: [], concentrated_voters: [], bullish_view_sme_share: { total: 0, sme: 0 } },
     settings: settings.body,
   };

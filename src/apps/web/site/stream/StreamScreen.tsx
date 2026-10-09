@@ -53,7 +53,7 @@ export async function StreamScreen({ query, page }: { query: StreamQuery; page?:
     api<StreamBody & Record<string, unknown>>(`/v1/stream${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
     api<{ stale_sources: StaleSource[]; directional_voting_enabled: boolean }>('/v1/session'),
-    api<{ username: string | null; entitlements: { multi_event_filter: boolean; stream_filings_only: boolean; saved_views: number } }>('/v1/me'),
+    api<{ username: string | null; entitlements: { multi_event_filter: boolean; saved_views: number } }>('/v1/me'),
     isHome ? api<StreamBody>('/v1/stream?view=trending') : Promise.resolve(null),
     isHome ? api<{ comments: RecentCommentItem[] }>('/v1/comments/recent') : Promise.resolve(null),
   ]);
@@ -67,7 +67,7 @@ export async function StreamScreen({ query, page }: { query: StreamQuery; page?:
     commentsRes?.status === 200 && commentsRes.body.comments ? commentsRes.body.comments.slice(0, 6) : [];
   const overview: OverviewData | null = isHome ? { trending: trendingStories, comments: recentComments } : null;
   const signedIn = me.status === 200;
-  const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false, saved_views: 0 };
+  const entitlements = signedIn ? me.body.entitlements : { multi_event_filter: false, saved_views: 0 };
   // Signed-in readers: the watchlist drives the Watchlist view and the row Follow controls.
   const [watchlist, saved] = signedIn
     ? await Promise.all([api<{ instruments: { isin: string }[] }>('/v1/watchlist'), api<{ views: SavedView[]; disabled?: boolean }>('/v1/saved-views')])

@@ -1,5 +1,7 @@
 # CLAUDE.md — StockPanic India
 
+> **Current scope amendment — D-071 (2026-10-09):** The founder retired exchange filings. Earlier filings-first positioning, procurement priorities and summary/reconciliation commands below are historical. Use [PROJECT_STATE.md](PROJECT_STATE.md) for current priorities and the [runbook](docs/ops/release-runbook.md) for active operations.
+
 **Entry point.** Read this first, then [KNOWLEDGE_MAP.md](KNOWLEDGE_MAP.md) to navigate, then [PROJECT_STATE.md](PROJECT_STATE.md) for live status.
 
 This file stays under ~300 lines. If information belongs elsewhere, **link to it — do not expand this file.**

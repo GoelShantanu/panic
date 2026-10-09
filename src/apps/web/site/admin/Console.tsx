@@ -1,20 +1,18 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
-import { adminCall, outcome } from './call.ts';
-import { Action } from './Action.tsx';
+import { adminCall } from './call.ts';
 import { RecordOrder, GrievanceCard } from './Grievances.tsx';
 import { CorrectionCard } from './Corrections.tsx';
 import { StoryTools } from './StoryTools.tsx';
 import { SwitchesPanel } from './SwitchesPanel.tsx';
 import { AbusePanel } from './AbusePanel.tsx';
 import type { ConsoleData } from './types.ts';
-export type { ConsoleData, Abuse, CorrectionRow, Grievance, SummaryRow, Switches } from './types.ts';
+export type { ConsoleData, Abuse, CorrectionRow, Grievance, Switches } from './types.ts';
 
 // ---------------------------------------------------------------- the console
 
-const TABS = ['Grievances', 'Corrections', 'Summaries', 'Story tools', 'Abuse', 'Switches'] as const;
+const TABS = ['Grievances', 'Corrections', 'Story tools', 'Abuse', 'Switches'] as const;
 type Tab = (typeof TABS)[number];
 
 export function Console({ initial }: { initial: ConsoleData }) {
@@ -22,15 +20,14 @@ export function Console({ initial }: { initial: ConsoleData }) {
   const [data, setData] = useState(initial);
   const [flash, setFlash] = useState<string | null>(null);
   const reload = async () => {
-    const [g, c, s] = await Promise.all([adminCall('GET', '/v1/admin/grievances'), adminCall('GET', '/v1/admin/corrections'), adminCall('GET', '/v1/admin/summaries')]);
+    const [g, c] = await Promise.all([adminCall('GET', '/v1/admin/grievances'), adminCall('GET', '/v1/admin/corrections')]);
     setData((d) => ({
       ...d,
       ...(g.status === 200 && Array.isArray(g.body?.grievances) ? { grievances: g.body.grievances } : {}),
       ...(c.status === 200 && Array.isArray(c.body?.queue) ? { corrections: c.body.queue } : {}),
-      ...(s.status === 200 && Array.isArray(s.body?.queue) ? { summaries: s.body.queue } : {}),
     }));
   };
-  const counts: Partial<Record<Tab, number>> = { Grievances: data.grievances.length, Corrections: data.corrections.length, Summaries: data.summaries.length };
+  const counts: Partial<Record<Tab, number>> = { Grievances: data.grievances.length, Corrections: data.corrections.length };
   const overdue = data.grievances.filter((g) => g.ack_overdue || g.resolve_overdue).length;
   return (
     <div className="console">
@@ -80,39 +77,6 @@ export function Console({ initial }: { initial: ConsoleData }) {
             <ol className="plain-list">
               {data.corrections.map((c) => (
                 <CorrectionCard key={`${c.story_id}-${c.kind}`} c={c} onChange={() => void reload()} />
-              ))}
-            </ol>
-          ))}
-        {tab === 'Summaries' &&
-          (data.summaries.length === 0 ? (
-            <p className="state">No summary reports awaiting review.</p>
-          ) : (
-            <ol className="plain-list">
-              {data.summaries.map((s) => (
-                <li key={s.story_id} className="panel grievance">
-                  <div className="grievance-head">
-                    <strong>{s.reports}</strong> {s.reports === 1 ? 'report' : 'reports'} ·{' '}
-                    <Link href={`/s/${s.story_id}`} target="_blank">
-                      {s.headline}
-                    </Link>
-                    {s.status === 'hidden_by_operator' && <span className="tag"> hidden</span>}
-                  </div>
-                  <p className="summary-text">{s.summary ?? '(no summary now: it was regenerated or withheld)'}</p>
-                  <div className="row-buttons">
-                    {(['hide', 'regenerate', 'dismiss'] as const).map((action) => (
-                      <Action
-                        key={action}
-                        label={action === 'hide' ? 'Hide summary' : action === 'regenerate' ? 'Regenerate' : 'Dismiss reports'}
-                        danger={action === 'hide'}
-                        onRun={async (reason) => {
-                          const r = await adminCall('POST', `/v1/admin/stories/${s.story_id}/summary`, { action, reason });
-                          void reload();
-                          return outcome(r, action === 'hide' ? 'Hidden.' : action === 'regenerate' ? 'Removed; a new summary is queued and must pass the checks.' : 'Dismissed.');
-                        }}
-                      />
-                    ))}
-                  </div>
-                </li>
               ))}
             </ol>
           ))}

@@ -1,5 +1,20 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Current scope and next action — 2026-10-09 (D-071)
+
+**Founder decision:** Remove the corporate-filings feature. This supersedes D-069/D-070 sourcing recommendations and all older exchange-feed procurement/coverage launch blockers below. Historical research remains preserved.
+
+**Implemented:** User-facing filing controls, badges, document actions, summaries, admin summary controls and pricing/metadata promises removed; retired HTTP routes return 404; active workers skip filing/summary work. Stored data and schema are retained. Release source approval checks now concern enabled publisher news sources. Validation evidence is owned by [QA §13](docs/qa/test-strategy.md#13-filings-retirement--2026-10-09-d-071).
+
+**Local validation:** [VERIFIED] Strict checking, 534 full-suite tests with zero skips, production browser build and 16 desktop/mobile workflows passed. The actual local app and SSE return 200, with 12 publisher sources and active ingestion/pipeline. No application data reset or deletion.
+
+**Next development priority:** Fix the measured company-attribution and duplicate-matching misses, then repeat fresh-date, independently human-adjudicated acceptance (D-064). Code implementation is not production-quality certification.
+
+**External configuration and production validation:** Publisher usage approvals remain a release dependency. Google/email delivery, billing, push and optional AI classification require their provider configuration and end-to-end acceptance; existing implementations/mock tests do not establish that. Earlier hosted CI passed (record below); CI for this change and branch protection still need verification. Production deployment, monitoring and rollback still need verified evidence. Do not revive filings procurement as a blocker.
+
+Older dated entries below are historical and do not override this decision.
+
+
 **Last updated:** 2026-10-09
 **Updated by:** Founding CTO
 **Update cadence:** every session, before ending.

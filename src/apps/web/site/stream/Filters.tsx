@@ -10,9 +10,8 @@ export interface FiltersProps {
   query: StreamQuery;
   eventTypes: EventType[];
   directionalEnabled: boolean;
-  entitlements: { multi_event_filter: boolean; stream_filings_only: boolean; saved_views?: number };
+  entitlements: { multi_event_filter: boolean; saved_views?: number };
   signedIn?: boolean;
-  // Company timeline: no view tabs; filings-only is free there (PRD-007 §2.1, PRD-004 US-004.3 AC-3).
   basePath?: string;
   views?: boolean;
   // Server-rendered saved views, so the filter row does not shift after load (WORKFLOW §7).
@@ -34,7 +33,6 @@ const hrefFor = (base: string) => (q: StreamQuery) => {
 // upgrade prompt rather than an empty list (AC-8). The URL carries the whole state (AC-3).
 export function Filters({ query, eventTypes, directionalEnabled, entitlements, basePath = '/', views: showViews = true, signedIn = false, savedViews }: FiltersProps) {
   const href = hrefFor(basePath);
-  const filingsFree = basePath !== '/';
   const router = useRouter();
   const [upgrade, setUpgrade] = useState<string | null>(null);
   const views: { v: View; label: string }[] = [
@@ -62,11 +60,11 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name, params: { view: query.view, event_types: query.eventTypes, filings_only: query.filingsOnly } }),
+      body: JSON.stringify({ name, params: { view: query.view, event_types: query.eventTypes, filings_only: false } }),
     }).catch(() => null);
     const body = res ? await res.json().catch(() => null) : null;
     if (res?.status === 201) {
-      setSaved((x) => [...x, { id: body.id, name: body.name, params: { view: query.view, event_types: query.eventTypes, filings_only: query.filingsOnly } }]);
+      setSaved((x) => [...x, { id: body.id, name: body.name, params: { view: query.view, event_types: query.eventTypes, filings_only: false } }]);
       setNaming(false);
       setName('');
     } else setUpgrade(body?.error === 'name_taken' ? 'You already have a saved view with that name.' : body?.error === 'saved_view_limit' ? 'You have 10 saved views. Delete one in settings to add another.' : 'Could not save this view.');
@@ -122,17 +120,6 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
             ))}
           </div>
         </details>
-        <label className="check" title={entitlements.stream_filings_only || filingsFree ? undefined : 'Paid feature'}>
-          <input
-            type="checkbox"
-            checked={query.filingsOnly}
-            onChange={() => {
-              if (!entitlements.stream_filings_only && !filingsFree && !query.filingsOnly) return setUpgrade('Filings-only is part of the paid plan. It shows only stories led by an exchange filing.');
-              go({ ...query, filingsOnly: !query.filingsOnly });
-            }}
-          />
-          Filings only {!entitlements.stream_filings_only && !filingsFree && <span className="paid-label">Paid</span>}
-        </label>
         {(query.eventTypes.length > 0 || query.filingsOnly) && (
           <button type="button" className="icon-button" onClick={() => go({ ...query, eventTypes: [], filingsOnly: false })}>
             Clear filters
@@ -143,7 +130,7 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
             <summary className="button">Saved views</summary>
             <div className="dropdown-menu panel">
               {saved.map((v) => (
-                <Link key={v.id} href={href({ view: v.params.view, eventTypes: v.params.event_types, filingsOnly: v.params.filings_only })}>
+                <Link key={v.id} href={href({ view: v.params.view, eventTypes: v.params.event_types, filingsOnly: false })}>
                   {v.name}
                 </Link>
               ))}

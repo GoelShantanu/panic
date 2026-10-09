@@ -11,7 +11,7 @@ export default function TermsPage() {
       <h1>Terms of Use</h1>
       <p className="faint">Last updated {UPDATED}</p>
       <h2>What StockPanic is</h2>
-      <p>StockPanic collects exchange filings and financial news about Indian listed companies, groups duplicates into one story, and links to the original sources. It is an information service, not investment advice. Vote counts and comments are what users think, not StockPanic&apos;s assessment. Decide for yourself, and read the original sources.</p>
+      <p>StockPanic collects financial news about Indian listed companies, groups duplicates into one story, and links to the original sources. It is an information service, not investment advice. Vote counts and comments are what users think, not StockPanic&apos;s assessment. Decide for yourself, and read the original sources.</p>
       <h2>Your account</h2>
       <ul>
         <li>You must be 18 or older to create an account.</li>

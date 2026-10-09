@@ -33,14 +33,16 @@ const latest: StreamQuery = { view: 'latest', eventTypes: [], filingsOnly: false
 describe('stream logic (PRD-001)', () => {
   it('query ↔ URL round-trips; unknown views fall back to Latest', () => {
     const q: StreamQuery = { view: 'watchlist', eventTypes: ['results', 'dividend'], filingsOnly: true };
-    expect(parseQuery(Object.fromEntries(streamParams(q)))).toEqual(q);
+    expect(parseQuery(Object.fromEntries(streamParams(q)))).toEqual({ ...q, filingsOnly: false });
+    expect(parseQuery({ filings_only: 'true' }).filingsOnly).toBe(false);
+    expect(streamParams(q).has('filings_only')).toBe(false);
     expect(parseQuery({ view: 'everything' }).view).toBe('latest');
   });
   it('a live story joins only views it can belong to', () => {
     const c = card({ event_types: ['dividend'] });
     expect(belongsToView(c, latest, null)).toBe(true);
     expect(belongsToView(c, { ...latest, eventTypes: ['results'] }, null)).toBe(false);
-    expect(belongsToView(c, { ...latest, filingsOnly: true }, null)).toBe(false);
+    expect(belongsToView({ ...c, primary_item: { ...c.primary_item, kind: 'filing' } }, latest, null)).toBe(false);
     expect(belongsToView(c, { ...latest, view: 'watchlist' }, new Set([A]))).toBe(true);
     expect(belongsToView(c, { ...latest, view: 'watchlist' }, new Set(['INE00ZZZ1010']))).toBe(false);
     for (const view of ['important', 'bullish', 'bearish', 'trending'] as const) expect(belongsToView(c, { ...latest, view }, null)).toBe(false);

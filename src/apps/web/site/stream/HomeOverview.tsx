@@ -36,7 +36,7 @@ export function HomeOverview({ trending, comments, onSelectStory }: HomeOverview
         </div>
         <h3 className="home-pro-title">Sub-minute Indian Market Intelligence</h3>
         <p className="home-pro-desc">
-          Zero-noise BSE/NSE filings, breaking market headlines, sentiment signals, and verified participant opinion for Indian equity traders.
+          Indian market headlines, company news, and community opinion in one place.
         </p>
         <Link href="/plans" className="button button-primary home-pro-btn">
           Explore Pro Plans

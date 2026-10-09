@@ -59,7 +59,7 @@ describe.skipIf(!adminUrl)('saved views and account preferences (PostgreSQL)', (
     expect(b(await call('POST', '/v1/saved-views', { name: 'Eleventh', params }))).toEqual({ error: 'saved_view_limit', limit: 10 });
     const list = b(await call('GET', '/v1/saved-views'));
     expect(list).toMatchObject({ limit: 10, disabled: false });
-    expect(list.views[0]).toMatchObject({ name: 'Results', params });
+    expect(list.views[0]).toMatchObject({ name: 'Results', params: { ...params, filings_only: false } });
     expect((await call('DELETE', `/v1/saved-views/${list.views[0].id}`)).status).toBe(204);
     expect((await call('DELETE', `/v1/saved-views/${list.views[0].id}`)).status).toBe(404);
     expect((await call('DELETE', '/v1/saved-views/not-a-number')).status).toBe(404);

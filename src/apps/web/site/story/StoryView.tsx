@@ -9,7 +9,6 @@ import { Icon } from '../Icon.tsx';
 import { PhoneNote } from '../Phone.tsx';
 import type { Instrument, VoteDisplay } from '../types.ts';
 import { StoryVotes } from './StoryVotes.tsx';
-import { SummaryReport } from './SummaryReport.tsx';
 
 export interface StoryItem {
   item_id: string;
@@ -78,9 +77,7 @@ export function StoryView({
   const panel = variant === 'panel';
   const from = panel ? 'stream' : 'story';
   const primary = s.items.find((i) => i.item_id === s.primary_item_id) ?? s.items[0]!;
-  const withdrawn = s.items.some((i) => i.kind === 'filing' && i.status === 'withdrawn_by_exchange');
-  const summarySource = s.summary ? s.items.find((i) => i.item_id === s.summary!.source_item_id) : undefined;
-  const excerpt = !s.summary ? primary.excerpt : undefined;
+  const excerpt = primary.excerpt;
   const Title = panel ? 'h2' : 'h1';
   const votes = (
     <div className="desktop-only">
@@ -104,11 +101,6 @@ export function StoryView({
           </button>
         )}
       </div>
-      {withdrawn && (
-        <div className="notice notice-warn" role="status">
-          Withdrawn by exchange. The exchange has withdrawn this filing; it is kept here for the record.
-        </div>
-      )}
       <Title className="story-headline">
         {s.headline}
         {primary.status !== 'removed_by_source' && (
@@ -121,7 +113,7 @@ export function StoryView({
         )}
       </Title>
       <p className="story-byline muted">
-        {primary.kind === 'filing' && <span className="badge badge-filing">Exchange filing</span>} {primary.source.name} ·{' '}
+        {primary.source.name} ·{' '}
         <time dateTime={primary.published_at ?? s.first_seen_at}>{istDateTime(primary.published_at ?? s.first_seen_at)} IST</time>
         {s.items.length === 1 && primary.revised_at && <> · revised {istDateTime(primary.revised_at)} IST</>}
       </p>
@@ -146,25 +138,6 @@ export function StoryView({
           ))}
       </div>
 
-      {s.summary && (
-        <section className="summary panel" aria-label={s.summary.label}>
-          <p className="summary-label faint">
-            {s.summary.label}
-            {summarySource && (
-              <>
-                {' · '}
-                <a href={summarySource.attachment_url ?? out(summarySource.item_id, from)} target="_blank" rel="noopener noreferrer">
-                  Source document
-                </a>
-              </>
-            )}
-          </p>
-          <p className="summary-text">{s.summary.text}</p>
-          <p className="faint summary-report desktop-only">
-            <SummaryReport storyId={s.story_id} signedIn={signedIn} />
-          </p>
-        </section>
-      )}
       {excerpt && (
         // The publisher's own description, shown only where its terms permit (PRD-002 US-002.5 AC-8; D-055).
         <blockquote className="excerpt">
@@ -183,12 +156,6 @@ export function StoryView({
             Read full story ↗
           </a>
         )}
-        {/* One source: no sources list below, so its filing PDF goes here. */}
-        {s.items.length === 1 && primary.attachment_url && (
-          <a className="button" href={primary.attachment_url} target="_blank" rel="noopener noreferrer">
-            Filing PDF
-          </a>
-        )}
       </p>
 
       {s.items.length > 1 && (
@@ -200,7 +167,7 @@ export function StoryView({
             {s.items.map((i) => (
               <li key={i.item_id} className="source">
                 <div>
-                  {i.kind === 'filing' && <span className="badge badge-filing">Exchange filing</span>} <strong>{i.source.name}</strong>
+                  <strong>{i.source.name}</strong>
                   <span className="faint"> · {istDateTime(i.published_at ?? s.first_seen_at)} IST</span>
                   {i.revised_at && <span className="faint"> · revised {istDateTime(i.revised_at)} IST</span>}
                   {i.status === 'withdrawn_by_exchange' && <span className="tag"> Withdrawn by exchange</span>}
@@ -213,14 +180,6 @@ export function StoryView({
                     <a href={out(i.item_id, from)} target="_blank" rel="noopener noreferrer">
                       {i.headline}
                     </a>
-                  )}
-                  {i.attachment_url && (
-                    <>
-                      {' · '}
-                      <a href={i.attachment_url} target="_blank" rel="noopener noreferrer">
-                        PDF
-                      </a>
-                    </>
                   )}
                 </div>
               </li>

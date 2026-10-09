@@ -51,8 +51,8 @@ export async function generateMetadata({ params }: { params: Promise<{ ref: stri
   const c = r.body;
   const name = c.name ?? c.display_symbol ?? c.isin;
   return {
-    title: `${name} news and filings`,
-    description: `NSE and BSE filings and news for ${name} (${[c.display_symbol, c.exchange_codes.bse, c.isin].filter(Boolean).join(' · ')}), one row per event.`,
+    title: `${name} news`,
+    description: `Financial news for ${name} (${[c.display_symbol, c.exchange_codes.bse, c.isin].filter(Boolean).join(' · ')}), one row per event.`,
     alternates: { canonical: `/c/${c.slug}-${c.isin}` },
   };
 }
@@ -83,7 +83,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
   const [timeline, types, me] = await Promise.all([
     api<{ stories: StoryCard[]; next_cursor: string | null; depth_limit_reached: boolean }>(`/v1/companies/${c.isin}/timeline${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
-    api<{ username: string | null; entitlements: { multi_event_filter: boolean; stream_filings_only: boolean } }>('/v1/me'),
+    api<{ username: string | null; entitlements: { multi_event_filter: boolean } }>('/v1/me'),
   ]);
   const signedIn = me.status === 200;
   const eventTypes = types.status === 200 ? types.body.types : [];
@@ -93,8 +93,8 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
   const base = `/c/${c.slug}-${c.isin}`;
   const newsHeader = (
     <>
-      <h2 className="section-h">News and filings</h2>
-      <Filters query={query} eventTypes={eventTypes} directionalEnabled={false} entitlements={signedIn ? me.body.entitlements : { multi_event_filter: false, stream_filings_only: false }} basePath={base} views={false} />
+      <h2 className="section-h">News</h2>
+      <Filters query={query} eventTypes={eventTypes} directionalEnabled={false} entitlements={signedIn ? me.body.entitlements : { multi_event_filter: false }} basePath={base} views={false} />
     </>
   );
 
@@ -110,7 +110,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
               Now part of <Link href={`/c/${c.successor_isin}`}>{c.successor_isin}</Link>.
             </>
           )}
-          {inactive && ' Past news and filings stay available here.'}
+          {inactive && ' Past news remains available here.'}
         </div>
       )}
       <header className="company-header">
@@ -184,7 +184,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
         </div>
       ) : (
         <div className="state">
-          <h2>{query.eventTypes.length || query.filingsOnly ? 'No stories match these filters' : `No news or filings yet for ${name}`}</h2>
+          <h2>{query.eventTypes.length || query.filingsOnly ? 'No stories match these filters' : `No news yet for ${name}`}</h2>
           {(query.eventTypes.length > 0 || query.filingsOnly) && (
             <p>
               <Link href={base}>Clear filters</Link>

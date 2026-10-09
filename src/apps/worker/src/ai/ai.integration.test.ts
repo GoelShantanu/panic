@@ -212,4 +212,19 @@ describe.skipIf(!adminUrl)('AI layer jobs (PostgreSQL, fake model)', () => {
     expect(mailer.sent.filter((m) => m.subject.includes('reached the monthly cap'))).toHaveLength(1);
     expect((await db.query('SELECT classifier FROM item_analysis WHERE item_id = $1', [item_id])).rows[0].classifier).toBe('model');
   });
+  it('news workers skip legacy filing and summary jobs without deleting records or calling a model', async () => {
+    const sid = await filing('retired-1', 'Financial Results', FILING_TEXT);
+    const item = (await db.query('SELECT item_id FROM story_item WHERE story_id = $1', [sid])).rows[0].item_id;
+    const calls = (await db.query('SELECT count(*)::int n FROM ai_call')).rows[0].n;
+    await db.query(`INSERT INTO job (queue,payload) VALUES ('ai',$1),('pipeline',$2)`, [{kind:'summarise',story_id:sid},{item_id:item,revised:true}]);
+    const ai = await drainAi(db,deps(),{workerId:'retired',newsOnly:true});
+    expect(ai.errors).toEqual([]);
+    expect(ai.counts.skipped).toBeGreaterThan(0);
+    const result = await drainPipeline(db,await buildPipelineContext(db,new Date()),{workerId:'retired',newsOnly:true});
+    expect(result.skipped).toBe(1);
+    expect(result.errors).toEqual([]);
+    expect((await db.query('SELECT count(*)::int n FROM ai_call')).rows[0].n).toBe(calls);
+    expect((await db.query('SELECT id FROM item WHERE id = $1',[item])).rowCount).toBe(1);
+  });
+
 });

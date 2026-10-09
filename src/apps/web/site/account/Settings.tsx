@@ -199,7 +199,6 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
               const p = new URLSearchParams();
               if (v.params.view !== 'latest') p.set('view', v.params.view);
               if (v.params.event_types.length) p.set('event_types', v.params.event_types.join(','));
-              if (v.params.filings_only) p.set('filings_only', 'true');
               return (
                 <li key={v.id}>
                   {savedViews.disabled ? <span>{v.name}</span> : <Link href={p.toString() ? `/?${p}` : '/'}>{v.name}</Link>}{' '}

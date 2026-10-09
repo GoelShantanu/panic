@@ -41,7 +41,7 @@ export default async function StatusPage() {
           {sources.map((s) => (
             <tr key={s.source_id}>
               <td>{s.name}</td>
-              <td className="muted">{s.tier === 1 ? 'Exchange filings' : s.kind === 'filing' ? 'Filings' : 'News'}</td>
+              <td className="muted">News</td>
               <td>
                 <span className={s.health === 'healthy' ? '' : 'overdue'}>{HEALTH[s.health]}</span>
                 {s.health !== 'healthy' && <span className="faint"> since {istDateTime(s.since)} IST</span>}

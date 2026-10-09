@@ -229,7 +229,7 @@ export async function staleTier1Sources(db: pg.ClientBase): Promise<{ source_id:
   const { rows } = await db.query(
     `SELECT s.source_id, s.name, h.state AS health, h.changed_at AS since
        FROM source s JOIN source_health h USING (source_id)
-      WHERE s.enabled AND s.tier = 1 AND h.state <> 'healthy'
+      WHERE s.enabled AND s.kind = 'article' AND s.tier = 1 AND h.state <> 'healthy'
       ORDER BY s.source_id`,
   );
   return rows;
@@ -440,7 +440,7 @@ export async function sourceStatus(db: pg.ClientBase) {
   const { rows } = await db.query(
     `SELECT s.source_id, s.name, s.kind, s.tier, h.state AS health, h.changed_at AS since, h.last_success_at
        FROM source s JOIN source_health h USING (source_id)
-      WHERE s.enabled
+      WHERE s.enabled AND s.kind = 'article'
       ORDER BY s.tier, s.name`,
   );
   return rows;

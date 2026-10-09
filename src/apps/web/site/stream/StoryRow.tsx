@@ -50,7 +50,6 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
         </time>
         <div className="row-body">
           <div className="row-line">
-            {s.primary_item.kind === 'filing' && <span className="badge badge-filing">Filing</span>}
             <Link
               href={`/s/${s.story_id}`}
               className="row-headline"

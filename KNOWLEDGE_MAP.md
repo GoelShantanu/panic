@@ -1,5 +1,7 @@
 # KNOWLEDGE_MAP.md — Navigation System
 
+> **Scope amendment — D-071 (2026-10-09):** Filings requirements, provider research and adapter/schema entries below are historical. Current product scope is amended in [product-definition.md](docs/product/product-definition.md); retirement rationale is in [DECISION_LOG.md](DECISION_LOG.md), operational behavior in the [runbook](docs/ops/release-runbook.md), validation in [QA §13](docs/qa/test-strategy.md#13-filings-retirement--2026-10-09-d-071).
+
 **Purpose:** find any fact, once. If two documents claim the same fact, one of them is a defect.
 
 **Confidence scale:** `High` — sourced/verified, safe to build on · `Medium` — reasoned, challengeable · `Low` — assumption, must be tested before load-bearing use.

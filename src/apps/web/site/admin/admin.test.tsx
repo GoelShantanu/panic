@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SummaryReport } from '../story/SummaryReport.tsx';
 import { outcome } from './call.ts';
 import { Console } from './Console.tsx';
 import type { ConsoleData, Grievance } from './Console.tsx';
@@ -41,7 +40,7 @@ const grievance = (over: Partial<Grievance> = {}): Grievance => ({
 const data = (over: Partial<ConsoleData> = {}): ConsoleData => ({
   grievances: [grievance()],
   corrections: [],
-  summaries: [],
+
   abuse: { vote_bursts: [], shared_ips: [], concentrated_voters: [], bullish_view_sme_share: { total: 0, sme: 0 } },
   settings: { comments_posting_enabled: true, comments_visible: true, directional_voting_enabled: true, article_tags_enabled: true },
   ...over,
@@ -113,16 +112,9 @@ describe('operator console (PRD-006 §5, PRD-002 US-002.11, PRD-004 US-004.4 AC-
     expect(JSON.parse(f.mock.calls[0]![1].body)).toEqual({ add: ['INE00KES1011'], remove: ['INE00AST1016'], reason: 'Readers are right: Kestrel won the order.' });
   });
 
-  it('summaries: hide with a reason', async () => {
-    const f = vi.fn().mockImplementation(async () => json(200, { action: 'hide' }));
-    vi.stubGlobal('fetch', f);
-    render(<Console initial={data({ grievances: [], summaries: [{ story_id: 'st_01M40ZZZZZZZZZZZZZZZZZZZZ3', headline: 'Board outcome', summary: 'The board approved a fictional dividend.', status: 'shown', generated_at: hours(-3), reports: 2, last_report_at: hours(-1) }] })} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Summaries (1)' }));
-    expect(screen.getByText('The board approved a fictional dividend.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide summary' }));
-    fill(screen.getByLabelText(/Reason/), 'Wrong record date.');
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Confirm' })));
-    expect(f.mock.calls[0]).toMatchObject(['/v1/admin/stories/st_01M40ZZZZZZZZZZZZZZZZZZZZ3/summary', { body: '{"action":"hide","reason":"Wrong record date."}' }]);
+  it('does not expose the retired summaries tab', () => {
+    render(<Console initial={data({ grievances: [] })} />);
+    expect(screen.queryByRole('tab', { name: /Summaries/ })).toBeNull();
   });
 
   it('kill switch: turning directional voting off', async () => {
@@ -153,18 +145,5 @@ describe('operator console (PRD-006 §5, PRD-002 US-002.11, PRD-004 US-004.4 AC-
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify' })));
     expect(f.mock.calls[1]).toMatchObject(['/v1/auth/mfa', { body: '{"code":"123456"}' }]);
     expect(refresh).toHaveBeenCalled();
-  });
-});
-
-describe('report an inaccurate summary (PRD-004 US-004.4 AC-5)', () => {
-  it('signed out: a sign-in link back to the story', () => {
-    render(<SummaryReport storyId="st_1" signedIn={false} />);
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/sign-in?next=%2Fs%2Fst_1');
-  });
-  it('signed in: one report, acknowledged; a repeat is explained', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(409, { error: 'already_reported' })));
-    render(<SummaryReport storyId="st_1" signedIn />);
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Report an inaccurate summary' })));
-    expect(screen.getByRole('status').textContent).toBe('You have already reported this summary.');
   });
 });

@@ -15,7 +15,6 @@
 .user-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 .switch-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .totp-secret { font-size: var(--text-lg); letter-spacing: 1px; }
-.summary-report { margin: 6px 0 0; }
 
 
 .wl-table { width: 100%; border-collapse: collapse; }

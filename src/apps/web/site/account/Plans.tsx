@@ -12,13 +12,12 @@ declare global {
 
 // PRD-007 §2.1, as shown to people (C-007.2: depth and convenience only, nothing about any company).
 const ROWS: [string, string, string][] = [
-  ['Live stream, story and company pages, AI filing summaries', 'Included', 'Included'],
+  ['Live stream, story and company pages', 'Included', 'Included'],
   ['Watchlist size', '20 companies', '200 companies'],
   ['Individual alerts per day', 'Up to 5', 'Up to 30'],
   ['Daily digest', 'Included', 'Included'],
   ['Stream and company history', 'Last 30 days', 'All since launch'],
   ['Event-type filter', 'One type at a time', 'Combine several'],
-  ['Filings-only stream', '—', 'Included'],
   ['Saved views', '—', 'Up to 10'],
   ['Alert history', '30 days', '1 year'],
   ['Voting and comments', 'Included', 'Included, same rules'],

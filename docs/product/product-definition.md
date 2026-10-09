@@ -1,5 +1,7 @@
 # StockPanic India — Product Definition
 
+> **v1.1 scope amendment — 2026-10-09, D-071:** The founder explicitly removed NSE/BSE corporate filings from StockPanic. Filing ingestion, filings-only views, filing document actions and AI filing summaries are outside the active product scope. Financial publisher news, company tagging, deduplication, watchlists and community features remain in scope. This amendment supersedes conflicting filings requirements in the approved baseline below and PRD-001/002/004/007; their historical text and database records remain preserved.
+
 > **Founder amendment, 2026-10-08:** [D-067](../../DECISION_LOG.md#d-067--frontend-improvements-and-limited-mobile-participation) enables phone watchlist/alert management and optional comfortable reading density. Earlier approved mobile restrictions remain historical; voting/commenting stay desktop features. Verification: [QA §10](../qa/test-strategy.md#10-frontend-improvements-2026-10-08-d-067).
 
 | | |

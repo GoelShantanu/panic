@@ -9,7 +9,7 @@ export interface AiDrainResult {
 }
 
 // Processes AI jobs until none are runnable (or maxJobs is reached).
-export async function drainAi(db: pg.ClientBase, deps: AiDeps, opts: { workerId: string; maxJobs?: number; now?: () => Date }): Promise<AiDrainResult> {
+export async function drainAi(db: pg.ClientBase, deps: AiDeps, opts: { workerId: string; newsOnly?: boolean; maxJobs?: number; now?: () => Date }): Promise<AiDrainResult> {
   const out: AiDrainResult = { counts: {}, errors: [] };
   const bump = (k: JobResult | 'retried' | 'failed') => (out.counts[k] = (out.counts[k] ?? 0) + 1);
   const now = opts.now ?? (() => new Date());
@@ -19,7 +19,8 @@ export async function drainAi(db: pg.ClientBase, deps: AiDeps, opts: { workerId:
     const { kind, item_id: itemId, story_id: storyId } = job.payload as Record<string, unknown>;
     try {
       let r: JobResult;
-      if (kind === 'classify' && (typeof itemId === 'string' || typeof itemId === 'number')) r = await runClassify(db, deps, String(itemId), now());
+      if (opts.newsOnly && kind === 'summarise') r = 'skipped';
+      else if (kind === 'classify' && (typeof itemId === 'string' || typeof itemId === 'number')) r = await runClassify(db, deps, String(itemId), now());
       else if (kind === 'summarise' && (typeof storyId === 'string' || typeof storyId === 'number')) r = await runSummarise(db, deps, String(storyId), now());
       else throw new Error(`bad payload ${JSON.stringify(job.payload)}`);
       await completeJob(db, job.id);

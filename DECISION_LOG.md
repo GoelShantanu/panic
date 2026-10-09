@@ -2291,3 +2291,13 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 | **F-1** | Process | Approved research immutable, changes via errata? | Yes — already precedented | 🟢 Low |
 | **F-2** | Research | Continue RE study while product is blocked? | Yes — only unblocked work | 🟢 Low |
 | **F-3** | Process | Do these seven documents need approval to bind? | Assumed yes | 🟢 Low |
+
+## D-071 — Retire corporate filings (2026-10-09)
+
+**Decision:** Founder explicitly requested: “Lets drop this filing feature from the app. remove all the references from my app”. This supersedes the earlier conditional free-source investigation and D-069/D-070 sourcing recommendations. Remove active filing intake, filtering, document/summary surfaces and product claims. Keep publisher news and company features.
+
+**Alternatives:** Free official RSS and paid-provider integration were researched; neither is pursued after this explicit scope change. No purchase or vendor contact is authorised.
+
+**Preservation:** Keep historical research, schema/migrations and existing user/content records. Legacy modules remain for data compatibility and regression coverage, but active workers and public endpoints cannot activate the retired feature. Old saved-view/bookmark filters normalize to normal news behavior. No destructive database change.
+
+**Consequences:** Exchange procurement, exchange display permission and complete filings coverage cease to be launch requirements. News-source permissions and independent tagging/deduplication acceptance remain required. Current product amendment: docs/product/product-definition.md; operations: docs/ops/release-runbook.md; validation: docs/qa/test-strategy.md §13.

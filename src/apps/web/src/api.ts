@@ -97,9 +97,8 @@ interface ListParams {
   before: { at: Date; id: string } | null;
 }
 
-// Shared validation for stream and timeline. `filingsOnlyIsPaid`: the stream toggle is paid;
-// the company-page toggle is free (PRD-007 §2.1, PRD-004 US-004.3 AC-3).
-function parseListParams(params: URLSearchParams, viewer: Viewer, filingsOnlyIsPaid: boolean): ListParams | ApiResponse {
+// Legacy source filters are ignored so bookmarks continue to open news.
+function parseListParams(params: URLSearchParams, viewer: Viewer): ListParams | ApiResponse {
   const rawLimit = params.get('limit');
   const limit = rawLimit === null ? DEFAULT_LIMIT : Number(rawLimit);
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) return invalid('limit');
@@ -110,7 +109,7 @@ function parseListParams(params: URLSearchParams, viewer: Viewer, filingsOnlyIsP
 
   const rawFilings = params.get('filings_only');
   if (rawFilings !== null && rawFilings !== 'true' && rawFilings !== 'false') return invalid('filings_only');
-  const filingsOnly = rawFilings === 'true';
+  const filingsOnly = false;
 
   const rawCursor = params.get('cursor');
   const before = rawCursor === null ? null : decodeCursor(rawCursor);
@@ -118,7 +117,6 @@ function parseListParams(params: URLSearchParams, viewer: Viewer, filingsOnlyIsP
 
   const ent = ENTITLEMENTS[viewer.tier];
   if (eventTypes && eventTypes.length > 1 && !ent.multiEventFilter) return { status: 402, body: upgradeRequired('multi_event_filter') };
-  if (filingsOnly && filingsOnlyIsPaid && !ent.streamFilingsOnly) return { status: 402, body: upgradeRequired('stream_filings_only') };
 
   return { limit, eventTypes, filingsOnly, before };
 }
@@ -150,7 +148,7 @@ async function page(db: pg.ClientBase, view: StreamView, isin: string | null, p:
 export async function getStream(db: pg.ClientBase, params: URLSearchParams, now: Date = new Date(), viewer: Viewer = ANONYMOUS, user: SessionUser | null = null): Promise<ApiResponse> {
   const view = params.get('view') ?? 'latest';
   if (!(VIEWS as readonly string[]).includes(view)) return invalid('view');
-  const p = parseListParams(params, viewer, true);
+  const p = parseListParams(params, viewer);
   if (isResponse(p)) return p;
 
   if (view === 'watchlist' && viewer.userId === null) return { status: 401, body: { error: 'auth_required' } };
@@ -212,7 +210,7 @@ export async function getStory(db: pg.ClientBase, publicId: string, user: Sessio
     event_types: card.event_types,
     instruments: card.instruments.map((i) => ({ ...i, name: extras.names.get(i.isin) ?? null })),
     unresolved_mentions: card.unresolved_mentions,
-    summary: extras.summary,
+    summary: null,
     primary_item_id: extras.primary_item_id,
     items: extras.items,
     related: extras.related,
@@ -262,7 +260,7 @@ export async function getCompanyTimeline(
 ): Promise<ApiResponse> {
   const inst = await knownInstrument(db, rawIsin);
   if (!inst) return notFound();
-  const p = parseListParams(params, viewer, false);
+  const p = parseListParams(params, viewer);
   if (isResponse(p)) return p;
   const result = await page(db, 'latest', inst.isin, p, viewer, now);
   const cutoff = notBefore(viewer, now);
@@ -314,6 +312,7 @@ export async function route(
   const [v1, resource, id, sub] = parts;
   if (v1 !== 'v1') return notFound();
   const path = parts.slice(1).join('/');
+  if ((resource === 'ingest' && id === 'filings') || (resource === 'stories' && sub === 'summary') || (resource === 'admin' && (id === 'summaries' || parts[4] === 'summary'))) return notFound();
 
   const user = await viewerFromToken(db, req.sessionToken, now);
   const viewer: Viewer = user ? { tier: user.tier, userId: user.id } : ANONYMOUS;
@@ -392,7 +391,6 @@ export async function route(
   if (resource === 'comments' && id && parts.length === 3 && method === 'DELETE') return community.deleteComment(db, id, user, now);
   if (resource === 'comments' && id && sub === 'reports' && parts.length === 4 && method === 'POST') return community.postReport(db, id, req.body, user, now);
   if (path === 'grievances' && method === 'POST') return community.postGrievance(db, req.body, now, req.ip ?? null);
-  if (resource === 'stories' && id && sub === 'summary' && parts[4] === 'reports' && parts.length === 5 && method === 'POST') return community.postSummaryReport(db, id, user, now);
   if (path === 'me/replies' && method === 'GET') return community.getReplies(db, user, now);
   if (path === 'me/notifications' && method === 'GET') return community.getNotifications(db, user);
   if (path === 'me/notices/seen' && method === 'POST') return community.postNoticesSeen(db, req.body, user, now);
@@ -449,8 +447,6 @@ async function adminRoute(db: pg.ClientBase, method: string, parts: string[], ur
   }
   if (kind === 'stories' && id && action === 'reports' && parts[5] === 'dismiss' && n === 6 && method === 'POST') return corrections.postDismiss(db, id, body, op, now);
   if (kind === 'corrections' && n === 3 && method === 'GET') return corrections.getCorrectionQueue(db);
-  if (kind === 'summaries' && n === 3 && method === 'GET') return corrections.getSummaryQueue(db);
-  if (kind === 'stories' && id && action === 'summary' && n === 5 && method === 'POST') return corrections.postSummaryAction(db, id, body, op, now);
   if (kind === 'comments' && id && action === 'takedown' && n === 5 && method === 'POST') return community.adminTakedown(db, id, body, op, now);
   if (kind === 'users' && id && n === 5 && method === 'POST') {
     if (action === 'comment-suspension') return community.adminUserRestriction(db, id, 'commenting', body, op, now);

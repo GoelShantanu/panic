@@ -43,6 +43,8 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
   const health = async (id: string) =>
     (await db.query('SELECT state, consecutive_failures FROM source_health WHERE source_id = $1', [id])).rows[0];
 
+
+
   beforeAll(async () => {
     admin = new pg.Client({ connectionString: adminUrl });
     await admin.connect();
@@ -160,5 +162,16 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
         [CADENCE, { type: 'rss', url: feedUrl }],
       ),
     ).rejects.toThrow(/check constraint/);
+  });
+  it('ignores an enabled legacy exchange source without fetching or changing its health', async () => {
+    await db.query(`INSERT INTO source (source_id,name,kind,tier,access_basis,access_checked_on,enabled,cadence,adapter)
+      VALUES ('src_retired_exchange','Retired fixture','filing',1,'test',current_date,true,$1,$2)`,
+      [JSON.stringify(CADENCE), { type: 'filings_poll', url: 'https://example.invalid/retired' }]);
+    await db.query("INSERT INTO source_health (source_id) VALUES ('src_retired_exchange')");
+    const before = await health('src_retired_exchange');
+    const result = await tick(db, at(0), deps);
+    expect(result.fetched.some(s => s.sourceId === 'src_retired_exchange')).toBe(false);
+    expect(result.healthChanges.some(s => s.sourceId === 'src_retired_exchange')).toBe(false);
+    expect(await health('src_retired_exchange')).toEqual(before);
   });
 });

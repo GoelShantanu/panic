@@ -300,7 +300,7 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
       expect((await call(null, 'GET', '/v1/admin/settings')).status).toBe(401);
     });
 
-    it('summary reports: readers report, operators hide, regenerate or dismiss, audited (PRD-004 US-004.4 AC-5)', async () => {
+    it('retired summary routes are unavailable while historical summary data is preserved', async () => {
       await db.query(`INSERT INTO source (source_id, name, kind, tier, cadence) VALUES ('src_bse_f', 'Example Exchange', 'filing', 1, '{}') ON CONFLICT DO NOTHING`);
       const it1 = await db.query(
         `INSERT INTO item (public_id, kind, source_id, dedup_key, headline, url, first_seen_at) VALUES ($1, 'filing', 'src_bse_f', $2, 'Outcome of board meeting', 'https://example.invalid/f', now()) RETURNING id`,
@@ -319,25 +319,12 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
         `INSERT INTO story_summary (story_id, source_item_id, body, citations, checks, model_id, prompt_version, ai_call_id) VALUES ($1, $2, 'The board approved a fictional dividend.', '[]', '{}', 'm', 'p1', 1)`,
         [sid, itemId],
       );
-      expect((await call(null, 'POST', path)).status).toBe(401);
-      expect((await call('veteran', 'POST', path)).status).toBe(201);
-      expect((await call('veteran', 'POST', path)).status).toBe(409);
-      expect((await call('second', 'POST', path)).status).toBe(201);
-      const q = b(await call('mod', 'GET', '/v1/admin/summaries')).queue;
-      expect(q).toEqual([expect.objectContaining({ story_id: pub, reports: 2, summary: 'The board approved a fictional dividend.', status: 'shown' })]);
-      const act = (body: unknown) => call('mod', 'POST', `/v1/admin/stories/${pub}/summary`, body);
-      expect((await act({ action: 'hide' })).status).toBe(400); // reason mandatory
-      expect((await act({ action: 'rewrite', reason: 'x' })).status).toBe(400);
-      expect(b(await act({ action: 'hide', reason: 'Wrong record date.' }))).toMatchObject({ action: 'hide' });
+      expect((await call(null, 'POST', path)).status).toBe(404);
+      expect((await call('veteran', 'POST', path)).status).toBe(404);
+      expect((await call('mod', 'GET', '/v1/admin/summaries')).status).toBe(404);
+      expect((await call('mod', 'POST', `/v1/admin/stories/${pub}/summary`, { action: 'regenerate', reason: 'Retired' })).status).toBe(404);
       expect(b(await call(null, 'GET', `/v1/stories/${pub}`)).summary).toBeNull();
-      expect(b(await call('mod', 'GET', '/v1/admin/summaries')).queue).toEqual([]);
-      expect(b(await act({ action: 'regenerate', reason: 'Try again with the corrected filing.' }))).toMatchObject({ action: 'regenerate' });
-      expect((await db.query('SELECT count(*)::int AS n FROM story_summary WHERE story_id = $1', [sid])).rows[0].n).toBe(0);
-      expect((await db.query(`SELECT count(*)::int AS n FROM job WHERE queue = 'ai' AND payload->>'kind' = 'summarise' AND payload->>'story_id' = $1`, [sid])).rows[0].n).toBe(1);
-      const audits = (await db.query(`SELECT action, before FROM audit_log WHERE entity_id = $1 AND action LIKE 'summary.%' ORDER BY id`, [pub])).rows;
-      expect(audits.map((a) => a.action)).toEqual(['summary.hide', 'summary.regenerate']);
-      expect(audits[1].before).toMatchObject({ body: 'The board approved a fictional dividend.', status: 'hidden_by_operator' });
-      expect((await act({ action: 'hide', reason: 'Nothing to hide now.' })).status).toBe(404);
+      expect((await db.query('SELECT count(*)::int AS n FROM story_summary WHERE story_id = $1', [sid])).rows[0].n).toBe(1);
     });
 
     it('suspension, revocation, discounting, kill switches; reason mandatory', async () => {

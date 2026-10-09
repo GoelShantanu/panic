@@ -34,7 +34,7 @@ export async function postSavedView(db: pg.ClientBase, body: unknown, user: Sess
   if (typeof filingsOnly !== 'boolean') return invalid('params');
   const limit = ENTITLEMENTS[user.tier].savedViews;
   if (limit === 0) return { status: 402, body: upgradeRequired('saved_views') };
-  const r = await createSavedView(db, user.id, name, { view, event_types: eventTypes, filings_only: filingsOnly }, limit);
+  const r = await createSavedView(db, user.id, name, { view, event_types: eventTypes, filings_only: false }, limit);
   if (r.ok) return { status: 201, body: { id: r.id, name } };
   return r.error === 'limit' ? { status: 409, body: { error: 'saved_view_limit', limit } } : { status: 409, body: { error: 'name_taken' } };
 }

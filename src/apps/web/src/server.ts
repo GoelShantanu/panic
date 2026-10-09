@@ -5,7 +5,6 @@ import { SESSION_COOKIE } from '@stockpanic/core';
 import { route } from './api.ts';
 import type { AuthDeps } from './auth.ts';
 import { handleWebhook } from './billing.ts';
-import { INGEST_PREFIX, MAX_PUSH_BYTES, receivePush } from './ingest.ts';
 
 const MAX_BODY_BYTES = 64 * 1024;
 // About one NFR-001.3 budget (300 ms) of queueing at measured throughput (docs/qa/test-strategy.md §3).
@@ -152,16 +151,6 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, sit
     }
     let client: pg.PoolClient | undefined;
     try {
-      // Vendor push: signed raw body, verified before parsing (ingestion.md §3).
-      if (req.method === 'POST' && url.pathname.startsWith(INGEST_PREFIX)) {
-        const raw = await readRaw(req, MAX_PUSH_BYTES);
-        client = await pool.connect();
-        const sig = req.headers['x-sp-signature'];
-        const r = await receivePush(client, decodeURIComponent(url.pathname.slice(INGEST_PREFIX.length)), raw, typeof sig === 'string' ? sig : null, process.env, new Date());
-        res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-        res.end(JSON.stringify(r.body));
-        return;
-      }
       // Payment provider webhook: signature over the raw body (D-036).
       if (req.method === 'POST' && url.pathname === '/v1/billing/webhook') {
         const raw = await readRaw(req, MAX_BODY_BYTES);

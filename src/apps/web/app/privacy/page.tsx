@@ -43,7 +43,7 @@ export default function PrivacyPage() {
       <h2>What we never do</h2>
       <ul>
         <li>We do not sell your data or show you paid placements.</li>
-        <li>We do not send your data to AI models. AI is used only on public exchange filings and headlines.</li>
+        <li>We do not send your data to AI models. AI is used only on public news headlines.</li>
         <li>We do not send marketing email unless you opt in, separately, at sign-up or in settings.</li>
       </ul>
       <h2>Who processes data for us</h2>

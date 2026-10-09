@@ -44,7 +44,6 @@ export interface EntitlementsPayload {
   history_days: number | null;
   alert_history_days: number;
   multi_event_filter: boolean;
-  stream_filings_only: boolean;
   saved_views: number;
 }
 
@@ -56,7 +55,6 @@ export function entitlementsPayload(tier: Tier): EntitlementsPayload {
     history_days: e.historyDays,
     alert_history_days: e.alertHistoryDays,
     multi_event_filter: e.multiEventFilter,
-    stream_filings_only: e.streamFilingsOnly,
     saved_views: e.savedViews,
   };
 }

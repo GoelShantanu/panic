@@ -31,7 +31,7 @@ try {
     log: (line: string) => console.log(line),
   };
   do {
-    const r = await drainAi(db, deps, { workerId: `${hostname()}:${process.pid}` });
+    const r = await drainAi(db, deps, { workerId: `${hostname()}:${process.pid}`, newsOnly: true });
     if (Object.keys(r.counts).length) console.log(Object.entries(r.counts).map(([k, v]) => `${k}=${v}`).join(' '));
     for (const e of r.errors) console.error(e);
     if (!once && !stopping) await new Promise((res) => setTimeout(res, 2_000));

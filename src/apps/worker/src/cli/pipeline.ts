@@ -36,7 +36,7 @@ try {
     }
     const released = await releaseStuckJobs(db, STUCK_LOCK_SECONDS);
     if (released) console.warn(`released ${released} stuck job(s)`);
-    const r = await drainPipeline(db, ctx, { workerId });
+    const r = await drainPipeline(db, ctx, { workerId, newsOnly: true });
     if (r.processed || r.failed || r.retried) {
       console.log(
         `processed=${r.processed} created=${r.created} joined=${r.joined} skipped=${r.skipped} retried=${r.retried} failed=${r.failed}`,

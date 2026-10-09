@@ -27,7 +27,7 @@ export interface DrainResult {
 export async function drainPipeline(
   db: pg.ClientBase,
   ctx: PipelineContext,
-  opts: { workerId: string; maxJobs?: number },
+  opts: { workerId: string; maxJobs?: number; newsOnly?: boolean },
 ): Promise<DrainResult> {
   const result: DrainResult = { processed: 0, created: 0, joined: 0, skipped: 0, retried: 0, failed: 0, errors: [] };
   while (opts.maxJobs === undefined || result.processed + result.failed + result.retried < opts.maxJobs) {
@@ -37,7 +37,8 @@ export async function drainPipeline(
     try {
       if (typeof itemId !== 'string' && typeof itemId !== 'number') throw new PermanentJobError('payload has no item_id');
       await db.query('BEGIN');
-      const r = await processItem(db, String(itemId), ctx, { revised: job.payload['revised'] === true });
+      const retired = opts.newsOnly && (await db.query('SELECT kind FROM item WHERE id = $1', [itemId])).rows[0]?.kind === 'filing';
+      const r = retired ? { skipped: true, created: false } : await processItem(db, String(itemId), ctx, { revised: job.payload['revised'] === true });
       await completeJob(db, job.id);
       await db.query('COMMIT');
       result.processed++;

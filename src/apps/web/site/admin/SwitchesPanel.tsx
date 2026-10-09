@@ -38,7 +38,7 @@ export function SwitchesPanel({ initial }: { initial: Switches }) {
         if (r.status === 200) setS((x) => ({ ...x, directional_voting_enabled: next }));
         return r.status === 200 || outcome(r, '');
       })}
-      {toggle('Article company tags (filing tags always stay)', s.article_tags_enabled, async (next, reason) => {
+      {toggle('Company tags', s.article_tags_enabled, async (next, reason) => {
         const r = await adminCall('PUT', '/v1/admin/settings/article-tags', { enabled: next, reason });
         if (r.status === 200) setS((x) => ({ ...x, article_tags_enabled: next }));
         return r.status === 200 || outcome(r, '');

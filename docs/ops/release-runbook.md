@@ -1,5 +1,16 @@
 # Release and local verification runbook
 
+## Active scope: publisher news only (2026-10-09, D-071)
+
+The founder retired corporate filings. Do not register, poll, push, reconcile or procure exchange feeds. The historical provider research/config examples and setup instructions below are retained as records, not active operations. The reconciliation CLI has been removed and source registration is unavailable. Free feed access does not change the retirement decision.
+
+The normal ingest scheduler selects article sources only; the pipeline and AI CLIs skip queued legacy filing/summary jobs. The filing push and summary HTTP routes return 404. Public source health excludes legacy exchange sources. Existing tables, migrations and records are preserved for compatibility; retained adapter modules and offline fixtures are not live coverage. No migration, reset or deletion is required.
+
+Continue running web/API on port 3002, the live service, news ingest and pipeline with the existing local environment. Source production audits require documented approvals for enabled news publishers; an exchange subscription and a BSE feed/master are no longer filing-launch gates. Registry quality remains necessary for company tagging. Use the existing news-quality and publisher access-review commands below.
+
+Implemented features, external readiness and next priority: [PROJECT_STATE.md](../../PROJECT_STATE.md). Retirement checks: [QA §13](../qa/test-strategy.md#13-filings-retirement--2026-10-09-d-071).
+
+
 **Status:** operational draft; production deployment has not been performed or verified.
 
 ## First three P0 operations (2026-10-09, D-068)

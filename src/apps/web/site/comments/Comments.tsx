@@ -37,7 +37,7 @@ const MAX = 2000; // PRD-006 US-006.1 AC-3
 const EDIT_WINDOW_MS = 10 * 60_000; // US-006.3 AC-1
 const POLL_MS = 10_000; // US-006.1 AC-7: others see a new comment within 10 s
 
-const istDate = (d: string) => new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${d}T00:00:00+05:30`));
+const istDate = (d: string) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${d}T00:00:00+05:30`));
 
 async function send(method: string, url: string, body?: unknown) {
   const res = await fetch(url, { method, credentials: 'same-origin', headers: { 'content-type': 'application/json' }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }).catch(() => null);

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   return { title: (await params).username, robots: { index: false, follow: false } };
 }
 
-const month = (ym: string) => new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric' }).format(new Date(`${ym}-01T00:00:00+05:30`));
+const month = (ym: string) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', year: 'numeric' }).format(new Date(`${ym}-01T00:00:00+05:30`));
 
 // Username, join month and visible comments only: no votes, watchlist, alert settings or tier (AC-2).
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {

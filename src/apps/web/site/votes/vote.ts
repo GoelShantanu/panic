@@ -21,7 +21,7 @@ export function voteRequest(storyId: string, v: VoteDisplay, a: VoteAction): { m
   return has ? { method: 'DELETE', url: `${base}/quality/${a.value}` } : { method: 'PUT', url: `${base}/quality/${a.value}`, body: a.detail ? { detail: a.detail } : {} };
 }
 
-const istDate = (d: string) => new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${d}T00:00:00+05:30`));
+const istDate = (d: string) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${d}T00:00:00+05:30`));
 
 // Server errors in plain words (PRD-005 US-005.2, §9.2).
 export function voteErrorMessage(status: number, body: any): string {

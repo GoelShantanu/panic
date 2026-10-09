@@ -6,7 +6,9 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { addRssSource, listEnabledSources, listPendingRelevance, reviewRelevanceCandidate, setSourceEnabled, storeCandidates } from './ingestion.ts';
+import { addRssSource, listEnabledSources, listPendingRelevance, reviewRelevanceCandidate, reviewPublishedArticle, setSourceEnabled, storeCandidates } from './ingestion.ts';
+import { createStory } from './pipeline.ts';
+import { loadStoryCards, streamPage, streamUnreadCount } from './read.ts';
 import { migrate } from './migrate.ts';
 
 // Registering publisher feeds (admin.ts add-source). Publisher and URLs are fictional.
@@ -80,6 +82,28 @@ describe.skipIf(!adminUrl)('RSS source registration (PostgreSQL)', () => {
     expect((await db.query(`SELECT count(*)::int AS n FROM item WHERE dedup_key = 'guid:review-me'`)).rows[0].n).toBe(1);
     expect((await db.query(`SELECT count(*)::int AS n FROM job WHERE payload->>'item_id' = (SELECT id::text FROM item WHERE dedup_key = 'guid:review-me')`)).rows[0].n).toBe(1);
     expect(await reviewRelevanceCandidate(db, pending[0]!.id, 'discard', 'test-operator')).toBe('not_pending');
+  });
+  it('corrects an already published off-topic item, excluding it from cards, pagination and unread counts; keep restores it', async () => {
+    const stored = (await db.query(`SELECT id, public_id FROM item WHERE dedup_key = 'guid:review-me'`)).rows[0];
+    await db.query('BEGIN');
+    const storyId = await createStory(db, String(stored.id), new Date());
+    await db.query(`INSERT INTO story_event_type (story_id, code, source) VALUES ($1, 'other', 'rule')`, [storyId]);
+    await db.query('COMMIT');
+    const query = { view: 'latest' as const, eventTypes: null, filingsOnly: false, isin: null,
+      watchlistUserId: null, before: null, notBefore: null, limit: 50 };
+    expect(await streamPage(db, query)).toHaveLength(1);
+    expect(await reviewPublishedArticle(db, stored.public_id, 'discard', 'test-reviewer', 'personal success story')).toBe(true);
+    expect(await streamPage(db, query)).toHaveLength(0);
+    expect(await streamUnreadCount(db, query, new Date(0))).toBe(0);
+    expect((await loadStoryCards(db, [storyId])).size).toBe(0);
+    expect((await db.query('SELECT 1 FROM story_item WHERE story_id = $1', [storyId])).rowCount).toBe(1);
+    expect((await db.query(`SELECT "after" FROM audit_log WHERE action = 'article.relevance_corrected'`)).rows[0].after)
+      .toMatchObject({ decision: 'discard', reason: 'personal success story' });
+    expect(await reviewPublishedArticle(db, stored.public_id, 'keep', 'test-reviewer', 'review corrected')).toBe(true);
+    expect(await streamPage(db, query)).toHaveLength(1);
+    expect(await streamUnreadCount(db, query, new Date(0))).toBe(1);
+    expect((await loadStoryCards(db, [storyId])).size).toBe(1);
+    expect(await reviewPublishedArticle(db, 'it_missing', 'discard', 'test-reviewer', 'missing')).toBe(false);
   });
   it('records publisher permission without silently enabling it, and disables revoked access', async () => {
     const directory=await mkdtemp(path.join(tmpdir(),'stockpanic-access-'));

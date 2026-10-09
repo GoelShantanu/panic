@@ -180,6 +180,33 @@ export async function reviewRelevanceCandidate(
   }
 }
 
+/** Correct a relevance decision after publication, preserving the item and story. */
+export async function reviewPublishedArticle(
+  db: pg.ClientBase, itemPublicId: string, decision: 'keep' | 'discard', reviewer: string, reason: string,
+): Promise<boolean> {
+  if (!reviewer.trim() || !reason.trim()) throw new Error('reviewer and reason are required');
+  await db.query('BEGIN');
+  try {
+    const { rows } = await db.query(
+      `SELECT c.* FROM article_relevance_candidate c JOIN item i ON i.id = c.item_id
+        WHERE i.public_id = $1 AND i.kind = 'article' FOR UPDATE OF c`, [itemPublicId],
+    );
+    const candidate = rows[0];
+    if (!candidate) { await db.query('ROLLBACK'); return false; }
+    await db.query(
+      `UPDATE article_relevance_candidate SET classification = 'review', reviewed_decision = $2,
+        reviewed_at = now(), reviewed_by = $3 WHERE id = $1`, [candidate.id, decision, reviewer.trim()],
+    );
+    await db.query(
+      `INSERT INTO audit_log (actor_type, action, entity_type, entity_id, before, after)
+        VALUES ('system', 'article.relevance_corrected', 'item', $1, $2, $3)`,
+      [itemPublicId, candidate, { decision, reviewer: reviewer.trim(), reason: reason.trim() }],
+    );
+    await db.query('COMMIT');
+    return true;
+  } catch (error) { await db.query('ROLLBACK'); throw error; }
+}
+
 // Filings and regulator items outrank articles in the pipeline queue (system overview F9).
 export function pipelinePriority(sourceKind: SourceKind): number {
   return sourceKind === 'article' ? 0 : 10;

@@ -21,3 +21,12 @@ HEXT,Hexaware,INE093A01041
 HAVELLS,Havells,INE176B01034
 SKYGOLD,Sky Gold,INE01IU01018
 BERGEPAINT,Berger Paints,INE463A01038
+# Complete brand names checked against issuer investor pages and frozen ISINs, 2026-10-09.
+COLPAL,Colgate Palmolive,INE259A01022
+MAXHEALTH,Max Healthcare,INE027H01010
+# Primary investor identities verified 2026-10-09; bare Federal needs bank-roundup context.
+FEDERALBNK,Federal Bank,INE171A01029
+FEDERALBNK,Federal,INE171A01029,common_word
+AWL,AWL Agri,INE699H01024
+NAUKRI,Info Edge,INE663F01032
+AJMERA,Ajmera Realty,INE298G01035

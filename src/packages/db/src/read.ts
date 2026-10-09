@@ -8,6 +8,13 @@ import type { DirectionalDisplay, EventTypeCode, VoteDisplay } from '@stockpanic
 const TODAY_IST = `(now() AT TIME ZONE 'Asia/Kolkata')::date`;
 const TAXONOMY_ORDER = new Map<string, number>(EVENT_TYPES.map((t, i) => [t.code, i]));
 
+// Use the same eligibility rule for pagination, unread counts, cards and trending.
+// Records stay available for audit; an explicit off-topic primary item is not news.
+export const PRIMARY_ARTICLE_RELEVANT_SQL = `NOT EXISTS (
+  SELECT 1 FROM article_relevance_candidate rc WHERE rc.item_id = p.id
+    AND coalesce(rc.reviewed_decision, rc.classification) = 'discard'
+)`;
+
 export async function directionalVotingEnabled(db: pg.ClientBase): Promise<boolean> {
   const { rows } = await db.query<{ v: boolean }>(`SELECT (value #>> '{}')::boolean AS v FROM setting WHERE key = 'directional_voting_enabled'`);
   return rows[0]?.v ?? false;
@@ -58,7 +65,7 @@ export async function loadStoryCards(db: pg.ClientBase, storyIds: readonly strin
        JOIN item p ON p.id = s.primary_item_id
        JOIN source src ON src.source_id = p.source_id
        LEFT JOIN story_vote_count v ON v.story_id = s.id
-      WHERE s.id = ANY($1::bigint[])`,
+      WHERE s.id = ANY($1::bigint[]) AND ${PRIMARY_ARTICLE_RELEVANT_SQL}`,
     [storyIds],
   );
   const instruments = await db.query(
@@ -139,6 +146,7 @@ export interface StreamQuery {
 function streamWhere(q: StreamQuery): { sql: string; params: unknown[] } {
   return {
     sql: `s.merged_into IS NULL
+        AND ${PRIMARY_ARTICLE_RELEVANT_SQL}
         AND ${VIEW_SQL[q.view]}
         AND ($1::text[] IS NULL OR EXISTS (SELECT 1 FROM story_event_type e WHERE e.story_id = s.id AND e.code = ANY($1::text[])))
         AND (NOT $2::boolean OR p.kind = 'filing')

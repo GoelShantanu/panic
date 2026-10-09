@@ -31,4 +31,13 @@ describe('market relevance gate', () => {
     expect(classifyMarketRelevance('Fantasy film box office collection crosses Rs 200 crore', 'markets').decision).toBe('discard');
     expect(classifyMarketRelevance('Listed studio reports quarterly revenue after film release', 'general').decision).toBe('keep');
   });
+  it.each([
+    'He left an overseas job to grow vegetables, now earns Rs 3 lakh a month',
+    'This Pune Engineer Earns Rs 6 Lakh From Growing Orchids',
+  ])('holds personal-income headlines despite their currency figures: %s', headline => {
+    expect(classifyMarketRelevance(headline,'markets').decision).toBe('review');
+  });
+  it('keeps an explicit issuer result even when discussing an individual',()=>{
+    expect(classifyMarketRelevance('She reports company revenue growth to Rs 300 crore','markets').decision).toBe('keep');
+  });
 });

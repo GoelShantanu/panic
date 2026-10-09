@@ -3,6 +3,7 @@
 import type pg from 'pg';
 import { TRENDING_BASELINE_DAYS, TRENDING_MIN_SOURCES, TRENDING_WINDOW_MS, expectedActivity, tierWeight, trendingScore, windowActivity } from '@stockpanic/core';
 import type { StreamQuery } from './read.ts';
+import { PRIMARY_ARTICLE_RELEVANT_SQL } from './read.ts';
 
 export interface TrendingRow {
   id: string;
@@ -32,6 +33,7 @@ export async function trendingPage(db: pg.ClientBase, q: Pick<StreamQuery, 'even
        JOIN item i ON i.id = si.item_id
        JOIN source src ON src.source_id = i.source_id
       WHERE s.merged_into IS NULL
+        AND ${PRIMARY_ARTICLE_RELEVANT_SQL}
         AND i.first_seen_at > $1 AND i.first_seen_at <= $2
         AND ($3::text[] IS NULL OR EXISTS (SELECT 1 FROM story_event_type e WHERE e.story_id = s.id AND e.code = ANY($3::text[])))
         AND (NOT $4::boolean OR p.kind = 'filing')

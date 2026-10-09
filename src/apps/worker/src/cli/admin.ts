@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { MUHURAT_DEFAULT, istInstant, isValidDate } from '@stockpanic/core';
-import { addCalendarException, addHoliday, addRssSource, calendarDay, clearCalendarExceptions, grantRole, listPendingRelevance, removeHoliday, reviewRelevanceCandidate, setSettingFromCli, setSourceArticleScope, setSourceEnabled } from '@stockpanic/db';
+import { addCalendarException, addHoliday, addRssSource, calendarDay, clearCalendarExceptions, grantRole, listPendingRelevance, removeHoliday, reviewRelevanceCandidate, reviewPublishedArticle, setSettingFromCli, setSourceArticleScope, setSourceEnabled } from '@stockpanic/db';
 
 const USAGE = `usage: admin.ts <command>
   grant-role <username> <user|operator|admin>
@@ -11,6 +11,7 @@ const USAGE = `usage: admin.ts <command>
   set-source-scope <source_id> <markets|business|general>
   relevance-list [limit]                           show headlines held for human review
   relevance-review <candidate_id> <keep|discard> [reviewer]
+  relevance-correct <item_public_id> <keep|discard> <reviewer> <reason...>
   set-source-enabled <source_id> on|off           stop or resume fetching a source
   set-source-excerpt <source_id> on|off [terms]   publisher blurbs for a source, once its terms permit (D-055)
   add-holiday <YYYY-MM-DD> <name>                 an exchange trading holiday (NSE and BSE)
@@ -93,6 +94,12 @@ try {
         console.error(result === 'not_found' ? `no relevance candidate #${a}` : `candidate #${a} is not awaiting review`);
         process.exitCode = 1;
       }
+      break;
+    }
+    case 'relevance-correct': {
+      if (!a || (b !== 'keep' && b !== 'discard') || !c || !rest.length) fail();
+      if (await reviewPublishedArticle(db, a!, b as 'keep' | 'discard', c!, rest.join(' '))) console.log(`${a}: ${b}`);
+      else { console.error('published article has no relevance candidate'); process.exitCode = 1; }
       break;
     }
     case 'set-source-enabled': {

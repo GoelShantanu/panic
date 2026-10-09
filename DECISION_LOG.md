@@ -2301,3 +2301,31 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Preservation:** Keep historical research, schema/migrations and existing user/content records. Legacy modules remain for data compatibility and regression coverage, but active workers and public endpoints cannot activate the retired feature. Old saved-view/bookmark filters normalize to normal news behavior. No destructive database change.
 
 **Consequences:** Exchange procurement, exchange display permission and complete filings coverage cease to be launch requirements. News-source permissions and independent tagging/deduplication acceptance remain required. Current product amendment: docs/product/product-definition.md; operations: docs/ops/release-runbook.md; validation: docs/qa/test-strategy.md §13.
+
+## D-072 — News matching improvements and separate blind quality audit (2026-10-09)
+
+**Direction:** Founder requested: "in my project improve company tagging and duplicate matching, then independently validate news quality". Improve deterministic resolution/scoring within the existing registry, thresholds and publisher-news scope, then evaluate separately from predictions. Do not represent model annotation as independent human acceptance.
+
+**Implemented:** Possessive subsidiary and former-employer filters; bounded excerpt completion for explicitly omitted subjects and named cohorts; ticker-cased contract context; two complete brand aliases with frozen expected ISINs; short past-tense duplicate matching; comma-separated financial facts and comparisons by metric/unit, including conflicting excerpt evidence. Pair sampling now admits zero-shingle pairs through word overlap and random sampling.
+
+**Evidence:** Blind model audits used frozen captures and successively disjoint article/pair-participant IDs. Samples used for fixes are regression evidence. The final untouched sample fails the precision gate; duplicate recall remains inadequate. [QA §14](docs/qa/test-strategy.md#14-company-tagging-duplicate-matching-and-blind-news-audit--2026-10-09-d-072) owns counts, fingerprints, external spot-check and limits.
+
+**Consequences:** No production quality certification, threshold reduction, live alias import, story reassignment or article-tag switch change. Follow up on the measured remaining commentator/short-name errors and duplicate misses; require fresh dates, representative positive duplicate examples and independent human adjudication before acceptance.
+
+## D-073 — Fix measured news defects (2026-10-09)
+
+**Direction:** Founder requested “fix them now” after the measured commentator, short-name and eight duplicate failures were identified. Fix these within the current news scope and repeat validation.
+
+**Implemented:** Colon-delimited executive affiliations are attribution; issuer executive events remain resolvable. Reviewed Federal Bank, guarded bare Federal, AWL Agri, Info Edge and Ajmera Realty aliases retain current expected ISINs. Compound token boundaries prevent assembling issuer names from AT&T/T-Mobile fragments. Personal-income success stories require relevance review. A small explicit unlisted-event catalogue adds candidate bands and matching for Jio IPO price-band reports and Airtel Money London listing reports, bounded by identical stage, compatible range and six hours; names never become listed-company tags. Telecom/weigh and “hit by” phrase normalization improves remaining measured paraphrases. Rules version is rules-2026-10-09.2.
+
+**Evidence and consequences:** All eight targeted duplicate misses now join and the prior 20-article tagging errors are resolved. Final full suite passes 556 tests. A later 23-article blind phase found additional defects and became regression evidence after fixes; a final untouched three-article phase is too small for acceptance. [QA §15](docs/qa/test-strategy.md#15-measured-news-defects-fixed--2026-10-09-d-073) owns counts and provenance. No merge-threshold reduction, live registry import, historical reassignment or worker restart. Human/fresh-date quality certification remains open.
+
+## D-074 — Correct published off-topic articles (2026-10-09)
+
+**Direction:** Founder flagged the Bengaluru engineer flower-income and Paris-job-offer mushroom-income stories as irrelevant. Both were accepted before D-073; a new ingestion gate does not retrospectively remove old stories.
+
+**Decision:** Support explicit, audited keep/discard correction of an already published article's relevance candidate through the operator CLI. Preserve original classifier fields in the append-only before snapshot, reviewer and reason in the after snapshot, and all item/story/user records. Primary-article discard excludes the story from stream pagination/unread counts, trending and card delivery (including live replay and story detail); reversing to keep restores eligibility. No article is represented as removed by its publisher. No schema migration or bulk cleanup.
+
+**Applied:** Discarded only item IDs `it_01M4GJCHKD7VW09TJW73T53YEQ` and `it_01M4GJCHKKZNWS12V9WGW3Q5TF` with founder review attribution and specific reasons. Local services restarted and feed/SSE verified. Evidence and limits are in QA §16.
+
+**Publication:** Founder subsequently explicitly requested pushing changes to Git and a remaining-work summary. Final full validation passes 557 tests plus strict TypeScript (QA §16). Publish D-072–D-074 code, regression coverage and documentation on the existing main branch; exclude local credentials, dumps and ignored captures. Current release gaps are summarized at the top of PROJECT_STATE.md.

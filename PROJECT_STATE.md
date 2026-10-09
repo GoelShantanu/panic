@@ -1,5 +1,37 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Publication and remaining work — 2026-10-09
+
+[VERIFIED] Final publication check: strict TypeScript and **557/557 tests across 56 files, zero skips**, passed on disposable PostgreSQL 17. This supersedes D-074's earlier focused-only validation. Source diff/whitespace checks pass; local feed remains healthy. Secrets, database dumps and ignored QA captures are excluded from the commit.
+
+Founder requested pushing the D-072–D-074 changes to Git. Current local workers load the new rules and the two personal-income discards are active. Reviewed aliases remain an offline CSV; importing them and previewing/reviewing historical tag reanalysis remain pending. Historical duplicate corrections still require operator review.
+
+**Remaining quality work:** Review hospital-name misses and the separate two-pair semantic challenge; independently human-adjudicate full articles on fresh dates with representative duplicate positives. Model-labelled regression success is not acceptance.
+
+**Release dependencies:** [VERIFIED] Current production source audit reports missing approval records for all 12 enabled news feeds. GitHub's current main-branch API reports `protected=false`; require hosted checks through branch protection/rulesets. Existing commit bf86f72 has successful [CI run 37945024399](https://github.com/GoelShantanu/panic/actions/runs/37945024399); hosted validation of these new changes must be observed after push. Current local configuration has Google login, SMTP credentials, Razorpay and VAPID push unset; mailer is log. Optional AI classification and OPS_EMAIL are also unconfigured. Real provider workflows, deployment supervision, monitoring, backup/restore and rollback acceptance, external security review and real-device checks remain pending. Corporate filings are retired, so exchange-feed procurement is not pending work. Provider setup is owned by the release runbook; validation evidence by QA.
+
+## Published relevance correction — 2026-10-09 (D-074)
+
+[VERIFIED] Founder identified two personal-income articles (flower and mushroom cultivation) as irrelevant. Both had entered before the personal-income gate. Added an audited, reversible `admin.ts relevance-correct` command for already published article candidates; stream pagination/unread counts, story cards and trending honor an explicit discard of the primary article. Applied discard only to those two items, retaining their records and story identities. Local services restarted; stream returns 50 stories without these headlines, their story API routes return 404, and proxied SSE returns 200. Six correction/source tests and 51 other affected read/trending/live/relevance tests pass; strict TypeScript passes. QA §16 owns details.
+
+## Measured news defects fixed — 2026-10-09 (D-073)
+
+[VERIFIED] Local feed restored on founder request after the database stopped. Restarted the existing `stockpanic-db` container and web/live/ingestion/pipeline processes. Homepage, stream and proxied SSE return HTTP 200; stream has 50 stories and zero stale sources, with successful publisher polls. Open at http://localhost:3002. Current PIDs and logs are in ignored `scratch/local-server/processes.json`. Restart loads current local code; curated aliases remain unimported and historical assignments unchanged.
+
+[VERIFIED] Fixed the reported bank-commentator attribution, Federal Bank/AWL Agri/Info Edge short-name misses and eight duplicate misses. The prior 20-article check now returns 12 correct tags, zero wrong and zero missed; the 50-article challenge joins all 14 labelled duplicates with zero false merges among 45 different pairs. These frozen samples are regression evidence. Additional later-news findings drove compound-name boundary protection, the reviewed Ajmera Realty alias and personal-income stories being held for review.
+
+[VERIFIED] Final strict TypeScript checks and full PostgreSQL-backed suite pass: **556 tests across 56 files, zero skips**. A final untouched blind model check of three later articles has one correct tag, no tag errors and no false merges among three different pairs; it is too small and has no positive duplicate pairs to establish news-quality acceptance. Evidence and limitations: [QA §15](docs/qa/test-strategy.md#15-measured-news-defects-fixed--2026-10-09-d-073). Changes remain local; live alias registry, workers and historic story assignments were not changed.
+
+**Next quality work:** Independently human-adjudicated samples on fresh dates with representative duplicate positives; review remaining hospital-name aliases and the separate two-pair semantic challenge. D-071's publisher-news-only scope remains current. Historical D-072 results below describe the earlier implementation.
+
+## News matching follow-up — 2026-10-09 (D-072)
+
+[VERIFIED] Improved possessive subsidiary filtering, former-employer attribution, explicit cohort/omitted-subject excerpt resolution, ticker-cased contract counterparties and curated complete brand aliases. Duplicate matching now handles past-tense short issuer reports, comma-separated figures and metric/unit-specific conflicts across headlines and supplied excerpts. The QA capture includes unigram matches and random pairs even without shared shingles. Local changes only; live aliases, article-tag switch, existing story assignments and running workers were not changed.
+
+[VERIFIED] Full PostgreSQL-backed suite passed 540 tests, zero skips, before the final former-employer safeguard; all 65 affected core tests and strict TypeScript checks passed after that final change. The disposable test container was removed. [VERIFIED] Separate blind model review of 100 articles across three disjoint samples found and drove fixes, then the final untouched 20-article sample returned nine correct tags, one wrong tag and three missed tags. Its 99.5% acceptance check correctly exited 1. Earlier challenge regression still misses eight of 14 duplicate pairs; a second challenge misses both of two duplicate pairs. Detailed evidence and provenance: [QA §14](docs/qa/test-strategy.md#14-company-tagging-duplicate-matching-and-blind-news-audit--2026-10-09-d-072).
+
+**Next priority:** Broaden commentator-affiliation filtering (remaining Equitas bank MD quote), review exact short names (Federal Bank, AWL Agri, Info Edge and hospital names), improve low-overlap duplicate recall and obtain fresh-date human adjudication. Blind model labels, disjoint article IDs and a small factual spot-check do not establish independent human certification or production quality. D-071's publisher-news-only scope remains current.
+
 ## Current scope and next action — 2026-10-09 (D-071)
 
 **Founder decision:** Remove the corporate-filings feature. This supersedes D-069/D-070 sourcing recommendations and all older exchange-feed procurement/coverage launch blockers below. Historical research remains preserved.

@@ -6,7 +6,8 @@ import { PIPELINE_QUEUE, migrate, storeCandidates } from '@stockpanic/db';
 import { buildPipelineContext, drainPipeline } from './runner.ts';
 import { reanalyseStories } from './reprocess.ts';
 
-// All companies, headlines and ISINs are fictional.
+// Instrument records and ISINs are fictional. Reviewed unlisted names below use
+// synthetic amounts/headlines to exercise event retrieval without issuer tags.
 const adminUrl = process.env['TEST_DATABASE_URL'];
 const makeIsin = (body9: string) => {
   const base = `IN${body9}`;
@@ -251,5 +252,17 @@ describe.skipIf(!adminUrl)('pipeline end-to-end (PostgreSQL)', () => {
     expect((await db.query(`SELECT count(*)::int n FROM job WHERE payload->>'story_id'=$1 AND payload->>'correction_removed_isin'=$2`,[s.id,K])).rows[0].n).toBe(1);
     expect((await reanalyseStories(db,{...opts,apply:true})).updated).toBe(0);
     expect((await db.query(`SELECT count(*)::int n FROM audit_log WHERE action='story.reanalysed' AND entity_id=$1`,[s.id])).rows[0].n).toBe(1);
+  });
+  it('retrieves unlisted IPO events from stored bands, preserving different bands and stages', async () => {
+    await article('src_desk_a','ipo-event-a','Jio said to set IPO price band at Rs 1,100-1,200',90);
+    await article('src_desk_b','ipo-event-b','Jio Platforms IPO price band likely to be revealed',95);
+    await article('src_desk_b','ipo-event-change','Jio IPO price band expected at Rs 1,100-1,300',100);
+    await article('src_desk_b','ipo-event-confirmed','Jio IPO price band announced at Rs 1,100-1,200',105);
+    expect(await drain()).toMatchObject({processed:4,created:3,joined:1,failed:0});
+    const first=await storyOf('ipo-event-a');
+    expect((await storyOf('ipo-event-b')).id).toBe(first.id);
+    expect((await storyOf('ipo-event-change')).id).not.toBe(first.id);
+    expect((await storyOf('ipo-event-confirmed')).id).not.toBe(first.id);
+    expect(first.tags).toBeNull();
   });
 });

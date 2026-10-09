@@ -2,7 +2,7 @@
 // a visible duplicate is better than hidden news (PRD-002 §4).
 
 import type { EventTypeCode } from './event-types.ts';
-import { eventNumbers, financialFacts, jaccard, newsTerms, normaliseForMatch, overlaps } from './text.ts';
+import { conflictingFinancialFacts, eventNumbers, financialFacts, jaccard, namedHeadlineEvent, newsTerms, normaliseForMatch, overlaps } from './text.ts';
 
 export const CLUSTER_WINDOW_MS = 48 * 3600 * 1000;
 export const ATTACH_WINDOW_MS = 24 * 3600 * 1000;
@@ -32,12 +32,31 @@ export function pairScore(a: ItemFeatures, b: ItemFeatures): number | null {
   const dt = Math.abs(a.at.getTime() - b.at.getTime());
   if (dt > CLUSTER_WINDOW_MS) return null;
   if (a.isins.length > 0 && b.isins.length > 0 && !overlaps(a.isins, b.isins)) return null;
+  const eventA=a.headline?namedHeadlineEvent(a.headline):null;
+  const eventB=b.headline?namedHeadlineEvent(b.headline):null;
+  // Boilerplate IPO/listing text and identical figures cannot substitute for a
+  // named subject. Refuse another issuer's template even if it is untagged.
+  if((eventA===null)!==(eventB===null)) {
+    const known=eventA??eventB!;
+    const other=normaliseForMatch(eventA?b.headline??'':a.headline??'');
+    if(known.key.startsWith('ipo-price-band:')&&/\bipo\b/.test(other)&&/\bprice band\b/.test(other)) return null;
+    if(known.key.startsWith('exchange-listing:')&&/\blondon\b/.test(other)&&/\b(?:debut|lists|listing|trading)\b/.test(other)) return null;
+  }
+  const sameNamedEvent=eventA!==null&&eventB!==null&&eventA.key===eventB.key;
+  if(sameNamedEvent&&eventA.stage!==eventB.stage) return null;
+  if(sameNamedEvent&&eventA.priceBand.length&&eventB.priceBand.length
+    && eventA.priceBand.join(':')!==eventB.priceBand.join(':')) return null;
+  const explicitEvent=sameNamedEvent&&dt<=6*3600_000;
   const numsA=a.headline ? eventNumbers(a.headline) : a.numbers;
   const numsB=b.headline ? eventNumbers(b.headline) : b.numbers;
-  if (numsA.length > 0 && numsB.length > 0 && !overlaps(numsA, numsB)) return null;
+  // A listing's age superlative and its valuation are different numeric roles.
+  // Only the bounded, explicit named event can bypass this coarse number veto;
+  // price-band, financial-fact and amount conflicts still veto below.
+  if (!explicitEvent && numsA.length > 0 && numsB.length > 0 && !overlaps(numsA, numsB)) return null;
   const eventType = overlaps(specific(a.eventTypes), specific(b.eventTypes)) ? 1 : 0;
   const headlineSim = jaccard(a.shingles, b.shingles);
   let paraphrase=0;
+  if(explicitEvent) paraphrase=0.88;
   if (a.headline && b.headline) {
     const ha=normaliseForMatch(a.headline),hb=normaliseForMatch(b.headline);
     // Recurring price templates describe different snapshots, not one event.
@@ -49,10 +68,15 @@ export function pairScore(a: ItemFeatures, b: ItemFeatures): number | null {
       if(x.length&&y.length&&!overlaps(x,y)) return null;
     }
     const fa=financialFacts(a.headline),fb=financialFacts(b.headline);
-    for (const [role,values] of fa) if(fb.has(role)&&!overlaps([...values],[...fb.get(role)!])) return null;
+    if(conflictingFinancialFacts(fa,fb)) return null;
+    // Supplied excerpts can corroborate a report only if they do not contradict it.
+    // A shared revenue figure must not mask a changed profit in the same period.
+    const fullA=financialFacts(a.headline+' '+(a.excerpt??''));
+    const fullB=financialFacts(b.headline+' '+(b.excerpt??''));
+    if(conflictingFinancialFacts(fullA,fullB)) return null;
     const direction=(h:string,role:string)=>{
-      const match=h.match(new RegExp(`\\b${role}\\b.{0,30}?\\b(grows?|rises?|increases?|jumps?|falls?|drops?|declines?|decreases?)\\b`));
-      return !match?null:/^(?:fall|drop|decline|decrease)/.test(match[1]!)?'down':'up';
+      const match=h.match(new RegExp(`\\b${role}\\b.{0,30}?\\b(grows?|grew|rises?|rose|increases?|increased|jumps?|jumped|falls?|fell|drops?|dropped|declines?|declined|decreases?|decreased)\\b`));
+      return !match?null:/^(?:fall|fell|drop|decline|decrease)/.test(match[1]!)?'down':'up';
     };
     for(const role of ['revenue','sales','profit','earnings','ebitda']) {
       const da=direction(ha,role),db=direction(hb,role);
@@ -64,7 +88,7 @@ export function pairScore(a: ItemFeatures, b: ItemFeatures): number | null {
     const oneMissing=(a.isins.length===0)!==(b.isins.length===0);
     // Strong lexical corroboration is required even with a shared issuer. Merely
     // being the same company's news or the same event category cannot merge it.
-    if (!oneMissing && common.length>=5 && dice>=0.72) paraphrase=0.8*dice+0.2*(1-dt/CLUSTER_WINDOW_MS);
+    if (!oneMissing && common.length>=5 && dice>=0.72) paraphrase=Math.max(paraphrase,0.8*dice+0.2*(1-dt/CLUSTER_WINDOW_MS));
     // A short-window paraphrase can reorder a longer headline. Demand six
     // shared content terms and substantial coverage on both sides; shared
     // company/category alone never supplies this evidence.
@@ -84,6 +108,11 @@ export function pairScore(a: ItemFeatures, b: ItemFeatures): number | null {
       if ((bothPolicy&&bothForecast&&common.length>=5)||sameQuote) paraphrase=Math.max(paraphrase,0.85+0.1*(1-dt/CLUSTER_WINDOW_MS));
     }
     const sameIssuer=a.isins.length>0&&jaccard(a.isins,b.isins)===1;
+    // Short issuer headlines can carry the same event in just four content terms.
+    // Require near-complete lexical agreement, beyond the issuer name alone.
+    if(sameIssuer&&dt<=6*3600_000&&common.length>=4&&dice>=0.85) {
+      paraphrase=Math.max(paraphrase,0.86);
+    }
     const amounts=(h:string)=>[...h.matchAll(/\b(\d[\d,]*(?:\.\d+)?)\s+(crore|lakh|million|billion)\b/gi)].map(m=>`${Number(m[1]!.replace(/,/g,''))}:${m[2]!.toLowerCase()}`);
     const aa=amounts(a.headline),ab=amounts(b.headline);
     if(aa.length&&ab.length&&!overlaps(aa,ab)) return null;

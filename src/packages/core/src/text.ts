@@ -58,11 +58,16 @@ const NEWS_EQUIVALENTS: Record<string,string> = {
   notices:'notice', issues:'issue', ads:'advertising', claims:'claim', reacts:'reaction',
   program:'programme', programs:'programme', programmes:'programme', suspending:'suspended',
   deliveries:'delivery', engines:'engine', stocks:'stock', prices:'price',
+  fall:'falls', dropped:'falls', fell:'falls', declined:'falls', declines:'falls',
+  rose:'rise', rising:'rise', gained:'rise', jumped:'rise', jumps:'rise',
+  accelerates:'accelerate', accelerated:'accelerate', delivering:'delivery',
+  telecoms:'telecom', weighs:'weigh', weighed:'weigh',
 };
 const NEWS_FILLER = new Set(['today','updates','update','live','stock','stocks','share','shares','what','how','why','can','be','could','may','will','said','says','over','up','after','before','new','latest']);
 
 export function newsTerms(headline: string): string[] {
-  const text=headline.replace(/\bshort (?:term|run)\b/gi,'shortterm').replace(/\bsouth korea\b/gi,'korea').replace(/\bwall st\b/gi,'wall street');
+  const text=headline.replace(/\bshort (?:term|run)\b/gi,'shortterm').replace(/\bsouth korea\b/gi,'korea').replace(/\bwall st\b/gi,'wall street')
+    .replace(/\bhit by\b/gi,'weighed by');
   return [...new Set(wordSet(text).map(w=>NEWS_EQUIVALENTS[w]??w).filter(w=>!NEWS_FILLER.has(w)))].sort();
 }
 
@@ -74,7 +79,35 @@ export function articleCandidateBands(headline: string): bigint[] {
     const key=`news-anchor:${words[i]}:${words[j]}`;
     anchors.push(BigInt.asIntN(64,(BigInt(fnv1a32(key,19))<<32n)|BigInt(fnv1a32(key,23))));
   }
+  const event = namedHeadlineEvent(headline);
+  if (event) {
+    const key=`news-event:${event.key}:${event.stage}`;
+    anchors.push(BigInt.asIntN(64,(BigInt(fnv1a32(key,29))<<32n)|BigInt(fnv1a32(key,31))));
+  }
   return [...new Set([...lshBands(headlineShingles(headline)),...lshBands(newsTerms(headline).map(w=>`news-word:${w}`)),...anchors])];
+}
+
+export interface NamedHeadlineEvent {
+  readonly key: string;
+  readonly stage: 'reported' | 'announced' | 'planned' | 'trading';
+  readonly priceBand: readonly string[];
+}
+
+// Exact unlisted-entity names used solely as event identities, never as listed
+// instrument tags. A broad IPO/listing category alone is insufficient evidence.
+// Keep this small reviewed catalogue separate from issuer/parent ISIN aliases.
+export function namedHeadlineEvent(headline: string): NamedHeadlineEvent | null {
+  const text=normaliseForMatch(headline);
+  if (/\bjio\b/.test(text) && /\bipo\b/.test(text) && /\bprice band\b/.test(text)) {
+    const range=headline.match(/(?:₹|rs\.?\s*)?([\d,]+(?:\.\d+)?)\s*[-–—]\s*(?:₹|rs\.?\s*)?([\d,]+(?:\.\d+)?)/i);
+    const priceBand=range?[String(Number(range[1]!.replace(/,/g,''))),String(Number(range[2]!.replace(/,/g,'')))]:[];
+    return {key:'ipo-price-band:jio-platforms',stage:/\b(?:said|report|reported|likely|expected)\b/.test(text)?'reported':'announced',priceBand};
+  }
+  if (/\bairtel money\b/.test(text) && /\blondon\b/.test(text)
+    && /\b(?:debut|lists|listing|trading)\b/.test(text)) {
+    return {key:'exchange-listing:airtel-money:london',stage:/\b(?:to debut|to list|will debut|will list|expected to|plans to)\b/.test(text)?'planned':'trading',priceBand:[]};
+  }
+  return null;
 }
 
 export function eventNumbers(headline: string): string[] {
@@ -89,13 +122,30 @@ export function eventNumbers(headline: string): string[] {
 
 export function financialFacts(text: string): Map<string,Set<string>> {
   const facts=new Map<string,Set<string>>();
-  const pattern=/\b(revenue|sales|profit|earnings|ebitda)\b[^\d.;]{0,45}?(\d+(?:\.\d+)?)\s*(%|per cent|crore|lakh|million|billion)(?![a-z])/gi;
+  const pattern=/\b(revenue|sales|profit|earnings|ebitda)\b[^\d.;]{0,45}?(\d[\d,]*(?:\.\d+)?)\s*(%|per cent|crore|lakh|million|billion)(?![a-z])/gi;
   for (const m of text.matchAll(pattern)) {
     const role=m[1]!.toLowerCase();
-    const value=`${Number(m[2])}:${m[3]!.toLowerCase()==='per cent'?'%':m[3]!.toLowerCase()}`;
+    const value=`${Number(m[2]!.replace(/,/g,''))}:${m[3]!.toLowerCase()==='per cent'?'%':m[3]!.toLowerCase()}`;
     const values=facts.get(role)??new Set<string>(); values.add(value);facts.set(role,values);
   }
   return facts;
+}
+
+// Growth percentages and absolute amounts describe different aspects of a metric.
+// Only compare values with the same metric and unit; sharing a percentage cannot
+// excuse a conflicting amount, and a percentage is not in conflict with an amount.
+export function conflictingFinancialFacts(a: Map<string,Set<string>>, b: Map<string,Set<string>>): boolean {
+  for (const [role, values] of a) {
+    const other = b.get(role);
+    if (!other) continue;
+    const units = new Set([...values].map(v => v.split(':')[1]));
+    for (const unit of units) {
+      const left = [...values].filter(v => v.split(':')[1] === unit);
+      const right = [...other].filter(v => v.split(':')[1] === unit);
+      if (right.length && !overlaps(left,right)) return true;
+    }
+  }
+  return false;
 }
 
 export function jaccard(a: readonly string[], b: readonly string[]): number {

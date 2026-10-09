@@ -375,3 +375,104 @@ Snapshot SHA-256: `4defb9e25acfbbcefd5e34dceb322d4becada100f3cfc85e0cf7e67543cdf
 [VERIFIED] The read-only source audit still finds missing production-use approvals for 12 news publishers and zero enabled legacy exchange sources. Exchange-feed procurement and master/reconciliation requirements are retired by D-071. No application migration, reset, seed or historical-content deletion was performed; normal news workers continue their writes. Existing research/config examples remain historical records.
 
 **Failures and limits:** Initial focused validation found three outdated expectations/setup assumptions (retired routes, source-status visibility and lazily initialized health rows); these were corrected and all affected tests rerun. A subsequent attempt could not connect because Docker had stopped; restarting Docker and discovering the new disposable mapped port resolved the infrastructure failure. An existing local dev log showed a relative-age hydration boundary mismatch (`now` versus `1m`); it was not reproduced in the dedicated browser checks and is not fixed by this scope change. Hosted CI for this commit, production deployment/provider configuration, publisher approvals and fresh human-adjudicated data-quality acceptance are not established by these tests. Earlier historical findings remain in their dated sections.
+
+## 14. Company tagging, duplicate matching and blind news audit — 2026-10-09 (D-072)
+
+**Outcome:** [VERIFIED] Code safeguards and matching improved; **news-quality acceptance still fails**. Testing success does not close the precision or duplicate-recall gates.
+
+### 14.1 Implementation checks
+
+[VERIFIED] Full `npm run test:ci` passed **540 tests across 56 files, zero skips**, using a disposable PostgreSQL 17 server. This run preceded the final former-employer safeguard. After that change, **65/65 affected resolution/clustering/pipeline core tests** and `npm run typecheck` passed. No UI changes, browser checks or production build were needed for this scope. Removed only the newly created `stockpanic-quality-test-db` container; application data and existing services were not changed.
+
+Regressions cover possessive subsidiary names while preserving issuer possessives, foreign subsidiaries versus listed parents, ticker-cased contract counterparties versus ordinary words, multi-company cohorts and explicitly omitted stock subjects, former-employer lists, short past-tense duplicate reports, opposite metric directions, comma-separated figures, different-unit complementary facts and conflicting same-unit excerpt facts. Complete Colgate Palmolive and Max Healthcare aliases retain expected ISINs in the operator CSV; they were evaluated offline and not imported into the live registry.
+
+### 14.2 Separate blind evaluation and remaining defects
+
+[VERIFIED] Read-only capture since **12:00 IST on 9 October 2026** froze 231 previously unseen normalized headlines from stored articles and held relevance candidates. Initial selection used deterministic hash sampling for 50 articles and 60 enriched pairs. Pair selection uses word/shingle overlap and random pairs, including zero-shingle/zero-overlap examples, independently of production tags, scores, retrieval bands and stored clusters.
+
+Labels were written from headlines and provided feed excerpts **before predictions were read**. The first audit exposed the Airtel Money parent false tag and the earnings growth/absolute-profit unit issue. A second sample excluded every first-sample article ID and every first-pair participant; it exposed former-employer attribution. Those two samples became regression evidence after fixes. The final sample excluded all IDs/participants from both earlier audits, and its labels and predictions did not lead to further tuning. An unlabelled intermediate holdout with too many price templates was superseded before scoring; it is not acceptance evidence.
+
+| Corpus | Articles | Final correct / wrong / missed tags | Final duplicate joins / labelled same pairs | False merges / labelled different pairs | Status |
+| --- | ---: | --- | --- | --- | --- |
+| `scratch/quality-2026-10-09-independent` | 50 | 19 / 0 / 4 | 6 / 14 | 0 / 45 | Regression; 1 uncertain tag article and 1 uncertain pair excluded |
+| `scratch/quality-2026-10-09-holdout-final` | 30 | 16 / 0 / 1 | 0 / 2 | 0 / 28 | Regression after former-employer fix |
+| `scratch/quality-2026-10-09-final-check` | 20 | 9 / 1 / 3 | No positive pairs | 0 / 20 | Untouched final blind model check |
+
+The first corpus improved from **16 correct / 1 wrong / 7 missed tags and 5/14 duplicate joins** to the table's result. It fixes the foreign Airtel subsidiary error and adds one earnings duplicate through unit-aware financial comparisons. The second corpus initially falsely tagged Pfizer, Hindustan Unilever and Vedanta as subjects of a Pidilite CFO appointment because they were previous employers; its final regression now returns none of those false tags.
+
+**Final acceptance failure:** [VERIFIED] Precision **90% (9/10)** and recall **75% (9/12)** on the final 20-article sample; `--require-tag-target` correctly **exited 1**. The remaining false tag is `q83244`, an Equitas Small Finance Bank MD commenting on MSME support, rather than an issuer event. Missed short names are Federal Bank (`1209`), AWL Agri (`q52973`) and Info Edge (`1214`). The untouched final sample has no positive duplicate pairs and therefore cannot establish duplicate recall. Earlier regressions still miss eight of 14 and both of two labelled duplicates. Do not claim production precision, duplicate recall or a population false-merge rate from these challenge sets.
+
+[VERIFIED] Relevance kept **zero labelled off-topic articles** and discarded **zero labelled relevant articles** across the samples. All 15 labelled off-topic articles were held for review; another 24 relevant articles were also held. These figures measure triage, not automatic rejection or factual correctness. The NSDL/CDSL article in the first corpus has uncertain tags because NSDL has no symbol in the frozen NSE registry; the whole article is excluded from tag metrics, including its known CDSL subject.
+
+### 14.3 Evidence, external spot-check and limits
+
+Raw snapshots, blind inputs, gold labels with reviewer/method timestamps, initial and final reports remain in the ignored directories above. Reports fingerprint the core implementation, snapshot, gold and alias CSV. The final extra-alias SHA-256 is `fd090af2176333fc550e4f893d235268b0cdfed04324e768c175b0e684d5681f`; QA capture source SHA-256 is `01c5b795db667c8dd1fe9f05129af69ff2d58dc9335c459fe53728b4108216ca`.
+
+| Corpus suffix | Snapshot SHA-256 | Gold SHA-256 |
+| --- | --- | --- |
+| `independent` | `21f664abc4db59a551ff509f309d9aa101cac8be080997e05f8209e393aca670` | `fdff5f1ec1064df840fe035cfbbe1e68491702848c3efb5abb1678985335ac6a` |
+| `holdout-final` | `49d937c9f061b9701055cf8629618cb807da28f3d5eebd1d8aa80f3b46aa3a92` | `9abe1db023f391b7614c10be8c6e17f996c25c8600461f8741fda5eed92d9ad9` |
+| `final-check` | `a345abc69f0b1b7d06ce95b4d8885db3ee761059d444918a43978a265cf51945` | `10401ab004c28f4dcf947a4b8052dccc926b5f54a0bcc817f674a5b25dfdc9f1` |
+
+Reproduce the final check (expected exit 1):
+
+```powershell
+node src/apps/worker/src/cli/qa-quality.ts score scratch/quality-2026-10-09-final-check --aliases docs/ops/curated-aliases.csv --report report-tag-gate.json --require-tag-target
+```
+
+[VERIFIED] A separate factual spot-check corroborated the TCS dividend article's ₹12 dividend, 14 October 2026 record date and 30 October payment date against [TCS's own Q2 FY27 release](https://www.tcs.com/who-we-are/newsroom/press-release/tcs-financial-results-q2-fy-2027). The alias identities were cross-checked against [Colgate India's investor site](https://www.colgateinvestors.co.in/) and [Max Healthcare's investor site](https://www.maxhealthcare.in/investors), together with the frozen registry ISINs. These are narrow checks, not verification of all publisher claims. Anand Rathi headlines contain different profit measures/figures; a definitive reconciliation against its current primary report was not established by the available [issuer financial page](https://www.anandrathiwealth.in/financial), so neither publisher is declared wrong.
+
+**Limits:** Annotation was performed by the same model in a separate blind phase, **not an independent human reviewer**. All samples share one date and publishers; disjoint IDs/participants do not ensure independent events. Labels are provisional and mostly based on short feed text. The capture uses a single-date frozen alias registry and does not certify historical registry correctness, complete market coverage, source-use permission, article truth or production source health. Retain scratch artifacts separately for reproduction; they are not pushed. Live aliases, thresholds, article-tag switch and historic clusters remain unchanged. Required next work is broader commentator-affiliation filtering, reviewed short aliases, better low-overlap duplicate recall, full-article adjudication and fresh-date independently human-labelled acceptance.
+
+## 15. Measured news defects fixed — 2026-10-09 (D-073)
+
+**Outcome:** [VERIFIED] The reported bank-commentator false tag, three short-name misses and eight duplicate misses are fixed on their frozen regressions. General news-quality acceptance remains unestablished.
+
+### 15.1 Implementation verification
+
+[VERIFIED] Final `npm run typecheck` and `npm run test:ci` passed: **556 tests across 56 files, zero skips**, with disposable PostgreSQL 17. Coverage includes executive affiliation versus issuer events, guarded Federal shorthand, compound token boundaries, personal-income relevance review, named-event retrieval through stored database bands, changed IPO ranges, event-stage separation, six-hour limits and financial-conflict safeguards. The final full run completed in 173.80 seconds. Only the task-created `stockpanic-matching-test-db` container was removed afterward; no application database migration, registry import, historical reanalysis or worker restart occurred.
+
+The alias CSV adds Federal Bank/Federal, AWL Agri, Info Edge and Ajmera Realty. Current identities were checked against [Federal Bank shareholder disclosures](https://www.federalbank.co.in/-/shareholder-disclosures-content), [AWL investor information](https://www.awl.in/investor/) and its [NSE annual-report cover](https://nsearchives.nseindia.com/corporate/AWL_01062024171327_AnnualReportCoveringletter.pdf), [Info Edge investor FAQs](https://www.infoedgeindia.com/InvestorRelations/Investor_Services_faqs) and [Ajmera's current NSE disclosure](https://nsearchives.nseindia.com/corporate/AJMERA_22012026182312_Intimation-sd.pdf). In particular, Info Edge uses current ISIN INE663F01032 and Ajmera INE298G01035; older identity records were not substituted. These checks establish alias identity, not all article claims.
+
+### 15.2 Regression and later blind phases
+
+| Corpus | Correct / wrong / missed tags | Duplicate joins / labelled same | False merges / labelled different | Status |
+| --- | --- | --- | --- | --- |
+| `quality-2026-10-09-independent` (50 articles) | 19 / 0 / 4 | 14 / 14 | 0 / 45 | Prior frozen challenge regression; uncertain cases excluded as in §14 |
+| `quality-2026-10-09-final-check` (20 articles) | 12 / 0 / 0 | No positive pairs | 0 / 20 | Prior blind sample now regression |
+| `quality-2026-10-09-fix-validation-final` (23 later articles) | 4 / 0 / 0 | No positive pairs | 0 / 50 | Later blind phase became regression after fixes |
+| `quality-2026-10-09-fix-heldout` (3 later articles) | 1 / 0 / 0 | No positive pairs | 0 / 3 | Final untouched blind model phase |
+
+Reports are in ignored `scratch/<corpus>/`: `report-fix-followup.json` for the first two, `report-final-regression.json` for the 23-article sample and `report-blind-validation.json` for the final three. Gold labels were frozen before predictions were read; prior gold files were preserved. Captures were read-only and selected later arrivals without production predictions. The 23-article phase initially found one false T T tag from AT&T/T-Mobile fragments, one missing Ajmera tag and two personal-income stories automatically kept. After fixes, seven relevant articles are kept, four relevant and twelve off-topic articles held for review, with no labelled off-topic article kept. This is triage evidence, not factual certification. The final untouched three articles have two relevant keeps and one relevant review.
+
+The original eight duplicate misses now join through bounded event matching and lexical normalization. The separate older two-pair semantic challenge (Redington stock impact versus Apple order cuts; TCS market close versus broad recovery analysis) is outside those eight fixes and remains unresolved. Four hospital-name tags remain missed in the 50-article regression. No production recall claim follows from these selected samples.
+
+### 15.3 Reproduction and limits
+
+Final aliases SHA-256: `a41c9439a1dfb6641bdf5caec2366890d4e1bc6a82b21a7200457a996a69e5ed`.
+
+| Later corpus suffix | Snapshot SHA-256 | Gold SHA-256 |
+| --- | --- | --- |
+| `fix-validation-final` | `6ebe6d8c7645429d734fa887325d2eecd0bd100b6465e25c5564b5df49592ef1` | `622cd075845c30e9a5e77d715e66d25df74330084e5b9ab6792a7b0f9d567238` |
+| `fix-heldout` | `6423ddd7675c44787d581cc30b86c08a03f50a8fb8914a36a6c9b4879bade80b` | `6678584ec182e4a9ee9137999b5b8cf6b08cc0a2b2527e635a9f4ada8fa02c4d` |
+
+```powershell
+node src/apps/worker/src/cli/qa-quality.ts score scratch/quality-2026-10-09-independent --aliases docs/ops/curated-aliases.csv --report report-reproduce-d073.json
+node src/apps/worker/src/cli/qa-quality.ts score scratch/quality-2026-10-09-fix-heldout --aliases docs/ops/curated-aliases.csv --report report-reproduce-d073.json
+```
+
+Report filenames must be new because reports are exclusive-create. Reports fingerprint implementation and labels; retain ignored captures separately for reproduction. The §14 command's expected tag-gate failure remains appropriate: even the now-correct small regression cannot establish the population 99.5% target.
+
+**Limits:** Blind phases used the same model, not an independent human reviewer; all data shares one date. The final three-article sample has only one positive tag and no positive duplicate pairs, so its zero errors cannot certify precision or duplicate recall. No full-article factual adjudication, representative fresh-date acceptance, hosted CI or production deployment was established. Changes remain local and thresholds, live registry and historic assignments remain unchanged. Required next quality work is independent human review across fresh dates and representative duplicate positives.
+
+## 16. Published relevance correction — 2026-10-09 (D-074)
+
+[VERIFIED] Founder identified the flower-growing engineer and mushroom-growing personal-income stories as off-topic. Read-only inspection found items 1331/1332 and relevance candidates 84704/84705 still classified keep from before D-073. Applied exactly two explicit discards through the new `relevance-correct` CLI; append-only audits preserve the previous classification and reviewer/reason. Records and story IDs remain intact. An explicit keep can restore eligibility.
+
+[VERIFIED] Strict TypeScript passes. On disposable PostgreSQL, 51 affected API/trending/live/relevance tests passed. The added correction test initially failed because its synthetic story lacked the required event type, then because the fixture omitted the event classification source; corrected fixture satisfies existing constraints. Final correction/source suite passes **6/6**, testing pagination, unread counts, card exclusion, audit contents, retained membership, restoration and missing-item handling. No assertions or schema constraints weakened. Full 557-test suite was not rerun; D-073's 556-test result predates this correction.
+
+[VERIFIED] Restarted local web/live/ingestion/pipeline. `/v1/stream` returns 50 stories, zero stale sources and neither headline; both corrected story API routes return 404; proxied SSE returns 200. Removed only the newly created `stockpanic-relevance-test-db` container. No application reset, item deletion, historical cluster reassignment or alias import. Existing client rows require refresh to disappear; no new live removal event is introduced. Eligibility follows the primary article decision, so this is not an item-by-item replacement of a discarded primary within a mixed-source story.
+
+### Final publication check
+
+[VERIFIED] On the founder's subsequent push request, strict TypeScript and full `npm run test:ci` passed **557/557 tests across 56 files, zero skips**, in 201.96 seconds using disposable PostgreSQL 17. This supersedes the earlier focused-only result for D-074. Diff whitespace checks pass. Only the newly created `stockpanic-push-test-db` container was removed afterward. Hosted validation of the new commit is a separate check; the prior bf86f72 CI run 37945024399 completed successfully. No browser workflow was rerun locally for this publication; GitHub's configured CI includes production builds and desktop/mobile browser workflows.

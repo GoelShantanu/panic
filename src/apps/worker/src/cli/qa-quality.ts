@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import pg from 'pg';
-import { AliasIndex, articleCandidateBands, classifyHeadline, classifyMarketRelevance, extractNumbers, headlineShingles, jaccard, normaliseForMatch, pairScore, resolveArticle } from '@stockpanic/core';
+import { AliasIndex, articleCandidateBands, classifyHeadline, classifyMarketRelevance, extractNumbers, headlineShingles, jaccard, normaliseForMatch, pairScore, resolveArticle, wordSet } from '@stockpanic/core';
 import type { AliasEntry, ArticleScope } from '@stockpanic/core';
 import { loadAliasEntries } from '@stockpanic/db';
 
@@ -62,19 +62,22 @@ if (command === 'capture') {
     // Sampling never uses company predictions, relevance decisions, or stored clusters.
     const sample = [...items].sort((a,b) => hash(seed+a.id).localeCompare(hash(seed+b.id))).slice(0,n).map(r => r.id);
     const shingles = new Map(items.map(r => [r.id, headlineShingles(r.headline)]));
+    const words = new Map(items.map(r => [r.id, wordSet(r.headline)]));
     const possible: { ids: [string,string]; similarity: number }[] = [];
     for (let i=0;i<items.length;i++) for (let j=i+1;j<items.length;j++) {
       const a=items[i]!,b=items[j]!;
       if (Math.abs(Date.parse(a.at)-Date.parse(b.at)) > 48*3600_000) continue;
-      const similarity=jaccard(shingles.get(a.id)!,shingles.get(b.id)!);
-      if (similarity>0) possible.push({ids:[a.id,b.id],similarity});
+      // Independent lexical sampling also includes reordered headlines with no shared
+      // shingle. Do not select pairs using production scores, tags or retrieval bands.
+      const similarity=Math.max(jaccard(shingles.get(a.id)!,shingles.get(b.id)!),jaccard(words.get(a.id)!,words.get(b.id)!));
+      possible.push({ids:[a.id,b.id],similarity});
     }
     // Deliberately enriched challenge set; pair metrics are not population estimates.
     possible.sort((a,b) => b.similarity-a.similarity || hash(seed+a.ids.join(':')).localeCompare(hash(seed+b.ids.join(':'))));
     const template = (p: typeof possible[number]) => p.ids.every(id => /Share Price Live Updates/i.test(items.find(i=>i.id===id)!.headline));
-    const pairs=[...possible.filter(template).slice(0,20),...possible.filter(p=>!template(p)).slice(0,30)].map(p=>p.ids);
+    const pairs=[...possible.filter(template).slice(0,10),...possible.filter(p=>!template(p)&&p.similarity>0).slice(0,30)].map(p=>p.ids);
     const selected = new Set(pairs.map(p => p.join(':')));
-    pairs.push(...possible.filter(p => !selected.has(p.ids.join(':'))&&!template(p)).sort((a,b) => hash(seed+a.ids.join(':')).localeCompare(hash(seed+b.ids.join(':')))).slice(0,10).map(p => p.ids));
+    pairs.push(...possible.filter(p => !selected.has(p.ids.join(':'))&&!template(p)).sort((a,b) => hash(seed+a.ids.join(':')).localeCompare(hash(seed+b.ids.join(':')))).slice(0,20).map(p => p.ids));
     pairs.sort((a,b)=>hash(seed+a.join(':')).localeCompare(hash(seed+b.join(':'))));
     const snapshot: Snapshot = {version:1,capturedAt:new Date().toISOString(),since,asOf,seed,aliases,symbols,mergeThreshold:threshold,items,sample,pairs};
     await mkdir(out,{recursive:true});

@@ -5,7 +5,7 @@
 import { EVENT_TYPES } from './event-types.ts';
 import type { EventTypeCode } from './event-types.ts';
 
-export const RULES_VERSION = 'rules-2026-10-09.1';
+export const RULES_VERSION = 'rules-2026-10-09.2';
 export const MAX_EVENT_TYPES = 3;
 
 interface Rule {

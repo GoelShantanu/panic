@@ -15,6 +15,9 @@ interface StreamBody {
   stories: StoryCard[];
   next_cursor: string | null;
   unread_count?: number;
+  history_days?: number;
+  history_access?: 'free' | 'trial' | 'paid';
+  history_cutoff?: string;
 }
 
 // The page's heading for screen readers; the tabs show the view visually.

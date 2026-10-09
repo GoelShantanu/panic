@@ -8,6 +8,8 @@ import { Filters } from '../../../site/stream/Filters.tsx';
 import { parseQuery, streamParams } from '../../../site/stream/logic.ts';
 import { loadReader } from '../../../site/story/loadReader.ts';
 import { Stream } from '../../../site/stream/Stream.tsx';
+import { HistoryNotice } from '../../../site/stream/HistoryNotice.tsx';
+import type { FeedHistory } from '../../../site/stream/HistoryNotice.tsx';
 import type { EventType, StoryCard, VoteDisplay } from '../../../site/types.ts';
 import { CommunityOpinion } from '../../../site/votes/VoteControls.tsx';
 
@@ -81,7 +83,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
   const query = { ...parseQuery(await searchParams), view: 'latest' as const };
   const qs = streamParams(query).toString();
   const [timeline, types, me] = await Promise.all([
-    api<{ stories: StoryCard[]; next_cursor: string | null; depth_limit_reached: boolean }>(`/v1/companies/${c.isin}/timeline${qs ? `?${qs}` : ''}`),
+    api<{ stories: StoryCard[]; next_cursor: string | null; depth_limit_reached: boolean } & FeedHistory>(`/v1/companies/${c.isin}/timeline${qs ? `?${qs}` : ''}`),
     api<{ types: EventType[] }>('/v1/event-types'),
     api<{ username: string | null; entitlements: { multi_event_filter: boolean } }>('/v1/me'),
   ]);
@@ -185,6 +187,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
       ) : (
         <div className="state">
           <h2>{query.eventTypes.length || query.filingsOnly ? 'No stories match these filters' : `No news yet for ${name}`}</h2>
+          <p><HistoryNotice {...timeline.body} /></p>
           {(query.eventTypes.length > 0 || query.filingsOnly) && (
             <p>
               <Link href={base}>Clear filters</Link>

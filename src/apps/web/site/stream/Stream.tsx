@@ -17,9 +17,11 @@ import { applyUpdate, belongsToView, markUnread, mergeStories, streamParams, unr
 import { useReaderNavigation } from './useReaderNavigation.ts';
 import { readLocalSeen, useSeen } from './useSeen.ts';
 import { StoryRow } from './StoryRow.tsx';
+import { HistoryNotice } from './HistoryNotice.tsx';
+import type { FeedHistory } from './HistoryNotice.tsx';
 
 export interface StreamProps {
-  initial: { stories: StoryCard[]; next_cursor: string | null; unread_count?: number };
+  initial: { stories: StoryCard[]; next_cursor: string | null; unread_count?: number } & FeedHistory;
   query: StreamQuery;
   eventLabels: [string, string][];
   signedIn: boolean;
@@ -64,6 +66,7 @@ export function Stream({
   const [stories, setStories] = useState<StoryCard[]>(initial.stories);
   const [unreadCount, setUnreadCount] = useState<number | null>(signedIn ? (initial.unread_count ?? 0) : null);
   const [cursor, setCursor] = useState(initial.next_cursor);
+  const [history, setHistory] = useState({ days: initial.history_days, access: initial.history_access, cutoff: initial.history_cutoff });
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [pending, setPending] = useState<StoryCard[]>([]);
@@ -130,6 +133,7 @@ export function Stream({
   }, [flush]);
 
   useLiveEvent('story.created', (e: { story: StoryCard }) => {
+    if (history.days && Date.parse(e.story.first_seen_at) < Date.now() - history.days * 86_400_000) return;
     if (timeline && !e.story.instruments.some((i) => i.isin === timeline.isin)) return;
     if (belongsToView(e.story, query, watchlist)) buffer.current.push(e.story);
   });
@@ -163,7 +167,8 @@ export function Stream({
       const base = timeline ? `/v1/companies/${timeline.isin}/timeline` : '/v1/stream';
       const res = await fetch(`${base}?${streamParams(query, cursor)}`, { credentials: 'same-origin' });
       if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { stories: StoryCard[]; next_cursor: string | null; depth_limit_reached?: boolean };
+      const body = (await res.json()) as StreamProps['initial'] & { depth_limit_reached?: boolean };
+      if (body.history_days) setHistory({ days: body.history_days, access: body.history_access, cutoff: body.history_cutoff });
       if (body.depth_limit_reached) setDepthLimit(true);
       setStories((list) => mergeStories(list, signedIn ? body.stories : markUnread(body.stories, readLocalSeen(query.view))));
       setCursor(body.next_cursor);
@@ -254,7 +259,7 @@ export function Stream({
             )}
           </div>
           {stories.length === 0 && empty ? (
-            empty
+            <>{empty}{!cursor && query.view !== 'trending' && <div className="stream-end"><HistoryNotice history_days={history.days} history_access={history.access} /></div>}</>
           ) : (
             <>
               <ol className="rows panel" ref={listRef} aria-label="Stories">
@@ -289,7 +294,9 @@ export function Stream({
                   </span>
                 )}
                 {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
-                  <span className="faint">{depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}</span>
+                  <span className="faint">
+                    {history.days ? <HistoryNotice history_days={history.days} history_access={history.access} /> : depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}
+                  </span>
                 )}
                 {cursor && !loadingMore && !loadError && (
                   <button type="button" className="button" onClick={() => void loadMore()}>

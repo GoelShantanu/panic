@@ -12,7 +12,7 @@ import {
   newPublicId,
   safeEqualHex,
 } from '@stockpanic/core';
-import type { Tier } from '@stockpanic/core';
+import type { Tier, HistoryAccess } from '@stockpanic/core';
 
 export const ACCOUNT_QUEUE = 'account';
 
@@ -162,6 +162,7 @@ export async function createSession(db: pg.ClientBase, tokenHash: string, userId
 
 export interface SessionUser extends UserRef {
   tier: Tier;
+  historyAccess?: HistoryAccess;
   role: 'user' | 'operator' | 'admin';
   emailVerified: boolean;
   createdAt: Date;
@@ -176,7 +177,10 @@ export async function sessionUser(db: pg.ClientBase, tokenHash: string, now: Dat
   const { rows } = await db.query(
     `SELECT u.id, u.public_id, u.username, t.tier, u.role, u.email_verified_at IS NOT NULL AS email_verified, u.created_at,
             u.voting_revoked_at IS NOT NULL AS voting_revoked, u.comment_suspended_at IS NOT NULL AS comment_suspended,
-            u.totp_enabled, s.mfa_verified_at, s.last_seen_at
+            u.totp_enabled, s.mfa_verified_at, s.last_seen_at,
+            CASE WHEN EXISTS (SELECT 1 FROM subscription sub WHERE sub.user_id=u.id AND sub.status <> 'expired' AND sub.current_period_end > $2)
+              THEN 'paid' WHEN EXISTS (SELECT 1 FROM trial tr WHERE tr.user_id=u.id AND tr.ends_at > $2)
+              THEN 'trial' ELSE 'free' END AS history_access
        FROM user_session s JOIN app_user u ON u.id = s.user_id JOIN user_tier t ON t.user_id = u.id
       WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.auth_version = u.auth_version AND u.deleted_at IS NULL AND u.deletion_requested_at IS NULL
         AND s.last_seen_at > $2::timestamptz - make_interval(days => $3)`,
@@ -190,6 +194,7 @@ export async function sessionUser(db: pg.ClientBase, tokenHash: string, now: Dat
   return {
     ...userRef(r),
     tier: r.tier,
+    historyAccess: r.history_access,
     role: r.role,
     emailVerified: r.email_verified,
     createdAt: r.created_at,

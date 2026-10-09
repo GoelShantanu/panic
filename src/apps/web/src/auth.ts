@@ -179,7 +179,7 @@ export async function getMe(db: pg.ClientBase, viewer: SessionUser | null): Prom
       sign_in_methods: [...(me.password_set ? ['password'] : []), ...(me.google_linked ? ['google'] : [])],
       role: viewer.role,
       totp_enabled: viewer.totpEnabled,
-      entitlements: entitlementsPayload(me.tier),
+      entitlements: entitlementsPayload(me.tier, viewer.historyAccess ?? me.tier),
     },
   };
 }

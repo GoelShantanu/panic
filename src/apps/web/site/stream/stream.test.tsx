@@ -109,6 +109,31 @@ describe('<Stream>', () => {
   const rows = () => [...document.querySelectorAll<HTMLElement>('li.row')];
   const headlines = () => rows().map((li) => li.querySelector('.row-headline')!.textContent);
 
+  it.each([['free', 3], ['trial', 10], ['paid', 30]] as const)('explains the %s history limit after the final page', (access, days) => {
+    mount([], { initial: { stories: [card()], next_cursor: null, history_days: days, history_access: access } });
+    expect(screen.getAllByRole('status').some((s) => s.textContent?.includes(`all available stories from the last ${days} days`))).toBe(true);
+    expect(document.querySelector('.stream-end')!.textContent).toContain(access === 'trial' ? 'your trial' : access === 'paid' ? 'your paid plan' : 'free plan');
+    expect(document.querySelector('.stream-end a') !== null).toBe(access !== 'paid');
+  });
+
+  it('waits for pagination to finish before displaying the history limit', async () => {
+    const initial = { stories: [card()], next_cursor: 'c1', history_days: 3, history_access: 'free' as const };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...initial, stories: [card()], next_cursor: null }))));
+    mount([], { initial });
+    expect(document.querySelector('.stream-end')!.textContent).not.toContain('all available stories');
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Load more' })));
+    expect(headlines()).toHaveLength(2);
+    expect(document.querySelector('.stream-end')!.textContent).toContain('all available stories from the last 3 days');
+  });
+
+  it('ignores live replay stories outside the history window', async () => {
+    mount([], { initial: { stories: [card()], next_cursor: null, history_days: 3, history_access: 'free' } });
+    const expired = card({ first_seen_at: new Date(Date.now() - 4 * 86400000).toISOString() });
+    act(() => emit('story.created', { story: expired }));
+    await act(async () => void vi.advanceTimersByTime(1100));
+    expect(headlines()).not.toContain(expired.headline);
+  });
+
   it('J/K select rows; Esc clears; shortcuts pause in text fields', () => {
     const [a, b] = [card(), card()];
     mount([b!, a!]);

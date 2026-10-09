@@ -4,7 +4,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { isinCheckDigit, newPublicId, upgradeRequired } from '@stockpanic/core';
 import { addItemToStory, createStory, migrate, setStoryDerived } from '@stockpanic/db';
-import { route } from './api.ts';
+import { encodeCursor, getStream, getCompanyTimeline, route } from './api.ts';
 import { clientIp, createApiServer } from './server.ts';
 
 // All companies, headlines and ISINs are fictional.
@@ -355,6 +355,40 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
     expect(clientIp(req('198.51.100.7', '::ffff:127.0.0.1'), false)).toBe('127.0.0.1'); // header ignored unless trusted
     expect(clientIp(req('spoofed, 198.51.100.7', '127.0.0.1'), true)).toBe('198.51.100.7'); // client-supplied entries ignored
     expect(clientIp(req(undefined, '203.0.113.9'), true)).toBe('203.0.113.9');
+  });
+
+  it('history windows include every eligible story across pages and reject older cursors (D-077)', async () => {
+    const ages = [2, 3, 3 + 1 / 86400000, 5, 10, 10 + 1 / 86400000, 20, 30, 30 + 1 / 86400000];
+    const names: string[] = [];
+    for (let i = 0; i < ages.length; i++) {
+      const name = `H${i}`;
+      names.push(name);
+      const at = new Date(now.getTime() - Math.round(ages[i]! * 86400000));
+      const a = await item('article', 'src_desk', name, `Fictional historical story ${i}`, at);
+      await story(name, [a], at, { primaryItemId: a, sourceCount: 1, eventTypes: ['other'], tags: [{ isin: K, method: 'rule' }], unresolved: [] });
+    }
+    {
+      for (const [access, days] of [['free', 3], ['trial', 10], ['paid', 30]] as const) {
+        const viewer = { tier: access === 'free' ? 'free' as const : 'paid' as const, userId: null, historyAccess: access };
+        for (const company of [false, true]) {
+          let cursor: string | null = null;
+          const seen: string[] = [];
+          do {
+            const params = new URLSearchParams({ limit: '2' });
+            if (cursor) params.set('cursor', cursor);
+            const result = body(await (company ? getCompanyTimeline(db, K, params, now, viewer) : getStream(db, params, now, viewer)));
+            expect(result).toMatchObject({ history_access: access, history_days: days, history_cutoff: new Date(now.getTime() - days * 86400000).toISOString() });
+            seen.push(...result.stories.map((s: any) => s.story_id));
+            expect(result.stories.every((s: any) => new Date(s.first_seen_at).getTime() >= now.getTime() - days * 86400000)).toBe(true);
+            cursor = result.next_cursor;
+          } while (cursor);
+          expect(new Set(seen).size).toBe(seen.length);
+          expect(seen.filter((id) => names.some((name) => ids[name]!.pub === id))).toEqual(names.filter((_, i) => ages[i]! <= days).map((name) => ids[name]!.pub));
+          const beyond = new URLSearchParams({ cursor: encodeCursor(new Date(now.getTime() - (days + 1) * 86400000), ids['S4']!.id) });
+          expect(body(await getStream(db, beyond, now, viewer)).stories).toEqual([]);
+        }
+      }
+    }
   });
 
   it('HTTP server: the anonymous first page of Latest is shared for 2 s; past capacity it fails fast (D-050)', async () => {

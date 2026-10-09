@@ -2,8 +2,8 @@
 // Served today by server.ts; the Frontend phase's page framework calls the same handlers.
 
 import type pg from 'pg';
-import { ENTITLEMENTS, isEventTypeCode, parseIsin, upgradeRequired } from '@stockpanic/core';
-import type { Tier } from '@stockpanic/core';
+import { ENTITLEMENTS, HISTORY_DAYS, isEventTypeCode, parseIsin, upgradeRequired } from '@stockpanic/core';
+import type { Tier, HistoryAccess } from '@stockpanic/core';
 import {
   communityOpinion,
   companySlug,
@@ -75,6 +75,7 @@ export interface ApiResponse {
 export interface Viewer {
   tier: Tier;
   userId: string | null;
+  historyAccess?: HistoryAccess;
 }
 
 // Signed-out visitors get the free tier (PRD-007 §2.1).
@@ -124,8 +125,12 @@ function parseListParams(params: URLSearchParams, viewer: Viewer): ListParams | 
 const isResponse = (v: unknown): v is ApiResponse => typeof v === 'object' && v !== null && 'status' in v && 'body' in v;
 
 function notBefore(viewer: Viewer, now: Date): Date | null {
-  const days = ENTITLEMENTS[viewer.tier].historyDays;
-  return days === null ? null : new Date(now.getTime() - days * 86_400_000);
+  return new Date(now.getTime() - HISTORY_DAYS[viewer.historyAccess ?? viewer.tier] * 86_400_000);
+}
+
+function historyInfo(viewer: Viewer, now: Date) {
+  const access = viewer.historyAccess ?? viewer.tier;
+  return { history_access: access, history_days: HISTORY_DAYS[access], history_cutoff: notBefore(viewer, now)!.toISOString() };
 }
 
 function streamQuery(view: StreamView, isin: string | null, watchlistUserId: string | null, p: ListParams, viewer: Viewer, now: Date): StreamQuery {
@@ -163,6 +168,7 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
     return ok({
       stories: stories.map((s) => ({ ...s, trending: { score: info.get(s.story_id)!.score, sources_in_window: info.get(s.story_id)!.sourceCount, window_hours: 2 } })),
       next_cursor: null,
+      ...historyInfo(viewer, now),
       session: await sessionInfo(db, now),
       stale_sources: await staleTier1Sources(db),
     });
@@ -185,6 +191,7 @@ export async function getStream(db: pg.ClientBase, params: URLSearchParams, now:
   return ok({
     stories: unread ? stories.map((s) => ({ ...s, is_unread: unread.is_unread(s) })) : stories,
     next_cursor,
+    ...historyInfo(viewer, now),
     ...(unread ? { unread_count: unread.unread_count } : {}),
     session: await sessionInfo(db, now),
     stale_sources: await staleTier1Sources(db),
@@ -267,6 +274,7 @@ export async function getCompanyTimeline(
   return ok({
     stories: await community.personaliseVotes(db, result.stories, user, now),
     next_cursor: result.next_cursor,
+    ...historyInfo(viewer, now),
     depth_limit_reached: result.exhausted && cutoff !== null && (await olderStoriesExist(db, inst.isin, cutoff)),
   });
 }
@@ -315,7 +323,7 @@ export async function route(
   if ((resource === 'ingest' && id === 'filings') || (resource === 'stories' && sub === 'summary') || (resource === 'admin' && (id === 'summaries' || parts[4] === 'summary'))) return notFound();
 
   const user = await viewerFromToken(db, req.sessionToken, now);
-  const viewer: Viewer = user ? { tier: user.tier, userId: user.id } : ANONYMOUS;
+  const viewer: Viewer = user ? { tier: user.tier, userId: user.id, historyAccess: user.historyAccess ?? user.tier } : ANONYMOUS;
 
   if (method === 'POST' && resource === 'auth') {
     if (!deps) return { status: 503, body: { error: 'auth_unavailable' } };

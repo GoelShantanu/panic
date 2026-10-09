@@ -16,7 +16,7 @@ const ROWS: [string, string, string][] = [
   ['Watchlist size', '20 companies', '200 companies'],
   ['Individual alerts per day', 'Up to 5', 'Up to 30'],
   ['Daily digest', 'Included', 'Included'],
-  ['Stream and company history', 'Last 30 days', 'All since launch'],
+  ['Stream and company history', 'Last 3 days', 'Last 30 days'],
   ['Event-type filter', 'One type at a time', 'Combine several'],
   ['Saved views', '—', 'Up to 10'],
   ['Alert history', '30 days', '1 year'],
@@ -124,7 +124,7 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
       </div>
       {signedIn && !trialUsed && tier === 'free' && (
         <p>
-          Or <Link href="/settings">start a 14-day free trial</Link> from settings, with no payment details needed.
+          Or <Link href="/settings">start a 14-day free trial</Link> from settings, including 10 days of news history, with no payment details needed.
         </p>
       )}
       <p className="faint">UPI AutoPay, cards and net banking through Razorpay. StockPanic never sees your card or bank details. Cancel any time from settings in one step; paid features last until the end of the period you paid for.</p>

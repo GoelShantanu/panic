@@ -134,7 +134,7 @@ describe.skipIf(!adminUrl)('accounts (PRD-007) against PostgreSQL', () => {
       const r = await call('POST', '/v1/auth/signup/complete', { username: 'first_trader', age_confirmed: true, terms_accepted: true, privacy_consent: true }, pending);
       expect(r.status).toBe(201);
       const me = await call('GET', '/v1/me', null, (r.body as any).session);
-      expect(me.body).toMatchObject({ username: 'first_trader', email, tier: 'free', email_verified: true, entitlements: { watchlist_limit: 20, history_days: 30 } });
+      expect(me.body).toMatchObject({ username: 'first_trader', email, tier: 'free', email_verified: true, entitlements: { watchlist_limit: 20, history_days: 3 } });
       expect((await call('POST', '/v1/auth/signup/complete', { username: 'other', age_confirmed: true, terms_accepted: true, privacy_consent: true }, pending)).status).toBe(401);
     });
 
@@ -219,9 +219,19 @@ describe.skipIf(!adminUrl)('accounts (PRD-007) against PostgreSQL', () => {
     const s = await signUp('trial@example.invalid', 'trial_user');
     expect((await call('GET', '/v1/stream?event_types=results,pledge', null, s)).status).toBe(402);
     expect((await call('POST', '/v1/billing/trial', {}, s)).status).toBe(200);
-    expect((await call('GET', '/v1/me', null, s)).body).toMatchObject({ tier: 'paid', trial: { used: true }, entitlements: { watchlist_limit: 200, history_days: null } });
+    expect((await call('GET', '/v1/me', null, s)).body).toMatchObject({ tier: 'paid', trial: { used: true }, entitlements: { watchlist_limit: 200, history_days: 10 } });
     expect((await call('GET', '/v1/stream?event_types=results,pledge', null, s)).status).toBe(200);
     expect((await call('POST', '/v1/billing/trial', {}, s)).body).toEqual({ error: 'trial_used' });
+    expect((await call('GET', '/v1/stream', null, s)).body).toMatchObject({ history_access: 'trial', history_days: 10 });
+    const userId = (await db.query("SELECT id FROM app_user WHERE username='trial_user'")).rows[0].id;
+    await db.query(`INSERT INTO subscription (user_id, plan, status, provider_ref, current_period_end) VALUES ($1, 'monthly', 'active', 'history-test', now() + interval '30 days')`, [userId]);
+    expect((await call('GET', '/v1/me', null, s)).body).toMatchObject({ entitlements: { history_days: 30 } });
+    expect((await call('GET', '/v1/stream', null, s)).body).toMatchObject({ history_access: 'paid', history_days: 30 });
+    await db.query("UPDATE subscription SET status='expired' WHERE user_id=$1", [userId]);
+    expect((await call('GET', '/v1/stream', null, s)).body).toMatchObject({ history_access: 'trial', history_days: 10 });
+    await db.query("UPDATE trial SET started_at=now()-interval '15 days', ends_at=now()-interval '1 day' WHERE user_id=$1", [userId]);
+    expect((await call('GET', '/v1/me', null, s)).body).toMatchObject({ tier: 'free', entitlements: { history_days: 3 } });
+    expect((await call('GET', '/v1/stream', null, s)).body).toMatchObject({ history_access: 'free', history_days: 3 });
   });
 
   it('username change: once per 30 days; the old name is held for others', async () => {

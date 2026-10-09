@@ -86,9 +86,9 @@ describe('event taxonomy (PRD-004 §1)', () => {
 });
 
 describe('entitlements (PRD-007 §2.1)', () => {
-  it('free history is 30 days; paid is unlimited (D-023)', () => {
-    expect(ENTITLEMENTS.free.historyDays).toBe(30);
-    expect(ENTITLEMENTS.paid.historyDays).toBeNull();
+  it('free history is 3 days; paid is 30 days (D-077)', () => {
+    expect(ENTITLEMENTS.free.historyDays).toBe(3);
+    expect(ENTITLEMENTS.paid.historyDays).toBe(30);
   });
 
   it('default budget never exceeds the ceiling', () => {

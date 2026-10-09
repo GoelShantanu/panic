@@ -2256,6 +2256,14 @@ Verification and limits are owned by [QA §10](docs/qa/test-strategy.md#10-front
 
 Verification and remaining release gates are owned by [QA §11](docs/qa/test-strategy.md#11-first-three-p0-implementation--2026-10-09-d-068). Provider selection/credentials, complete official BSE data and recorded publisher approval remain external dependencies. The quality samples are provisional model labels, not an independent human release certification.
 
+## D-069 — Offline filings acceptance preparation and exchange-scoped reconciliation (2026-10-09)
+
+**Decision:** Retain the vendor-neutral implementation and add an offline sample checker using its existing parsers. Fix backfill accounting to scope reused announcement IDs to the originating exchange. The founder authorised credential-free preparation, sequential validation and publication; no vendor purchase/contact or activation is authorised by this decision.
+
+**Reasoning:** [VERIFIED] Public supplier examples leave identity, timestamp, status and daily-completeness semantics unresolved. [INFERRED] A guessed provider adapter would encode unverified assumptions. TrueData remains the recommended first combined-feed trial candidate, not a selected or licensed provider. Runbook owns supplier comparison, contract gaps, setup and remaining release gates; QA owns validation evidence.
+
+**Limits:** Local fixtures and disposable database tests are not live exchange coverage. Source procurement, permission and independent production acceptance remain open.
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

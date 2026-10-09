@@ -202,6 +202,24 @@ describe.skipIf(!adminUrl)('filings adapter (PostgreSQL, fake vendor)', () => {
     } finally {await db.query(`UPDATE source SET adapter=$1 WHERE source_id='src_vendor_poll'`,[original]);}
   });
 
+  it('counts backfills per exchange when a combined feed reuses an announcement ID', async () => {
+    const date = '2026-10-09';
+    const announcements = ['BSE', 'NSE'].map(exchange => env('SHARED-ID', { exchange, published_at: '2026-10-09T10:00:00+05:30' }));
+    const fetchImpl: FetchLike = async () => new Response(JSON.stringify({ announcements }));
+    const first = await reconcileFilings(db, await source('src_vendor_poll'), date, new Date(), { ...deps, fetchImpl });
+    expect(first.error).toBeNull();
+    expect(first.byExchange).toEqual([
+      expect.objectContaining({ exchange: 'BSE', expected: 1, ingested: 0, backfilled: 1 }),
+      expect.objectContaining({ exchange: 'NSE', expected: 1, ingested: 0, backfilled: 1 }),
+    ]);
+    const replay = await reconcileFilings(db, await source('src_vendor_poll'), date, new Date(), { ...deps, fetchImpl });
+    expect(replay.error).toBeNull();
+    expect(replay.byExchange).toEqual([
+      expect.objectContaining({ exchange: 'BSE', expected: 1, ingested: 1, backfilled: 0 }),
+      expect.objectContaining({ exchange: 'NSE', expected: 1, ingested: 1, backfilled: 0 }),
+    ]);
+  });
+
   it('rejects invalid or paginated reconciliation without recording optimistic coverage',async()=>{
     const date='2026-10-09';
     const count=async()=>(await db.query('SELECT count(*)::int n FROM reconciliation_run')).rows[0].n;

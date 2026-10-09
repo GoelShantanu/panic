@@ -52,6 +52,68 @@ node --env-file-if-exists=.env.local src/apps/worker/src/cli/sources.ts audit --
 
 This records the operator's documentary review and audits the change; it does not grant permission. Approval never silently enables an inactive source. Revocation (`access_approved: false`, `excerpt_allowed: false`) disables it. The source audit is a narrow preflight, not proof of real provider health, licence adequacy or global release readiness. Exercise actual poll/replay/revision/withdrawal/reconciliation and BSE-only issuer resolution in staging after provider setup. Quality evidence and remaining misses are in [QA §11](../qa/test-strategy.md#11-first-three-p0-implementation--2026-10-09-d-068).
 
+## Obtaining live NSE/BSE filings (research checked 2026-10-09)
+
+[INFERRED] Retain the filings integration: viable supply routes exist. Request a combined NSE/BSE corporate-announcements trial and public-display quote from TrueData first; compare Global Datafeeds and BSE direct. This recommendation is not a provider selection or an activation. Setup commands above remain the implementation instructions.
+
+| Route | Publicly documented capability | What needs a quote or confirmation |
+| --- | --- | --- |
+| TrueData | [VERIFIED] Its [Corporate Announcements API](https://www.truedata.in/products/marketdataapi) advertises NSE/BSE filings over REST/WebSockets, with PDF URLs. Use “Request Announcements Feed”. The same page requires exchange approval/licensing for public display or redistribution. | [UNVERIFIED] StockPanic-specific price, delivery guarantee, complete issuer coverage, retention and trial conditions. An internal-use subscription does not establish public-display permission. |
+| BSE direct | [VERIFIED] The [official data portal](https://marketdata.bseindia.com/) lists a corporate-data API with announcements, selected trial feeds, and registration → KYC → plan → agreement/payment → access. | [UNVERIFIED] Announcements plan, frequency, public-display rights and current price. This route alone does not establish NSE access. |
+| Global Datafeeds | [VERIFIED] [SubscribeCorporateAnnouncements](https://docs.globaldatafeeds.in/subscribecorporateannouncements-2174523m0) documents streaming with a BSE example; [GetCorporateAnnouncements](https://docs.globaldatafeeds.in/getcorporateannouncements-15575575e0) documents REST retrieval. Contact [sales](https://globaldatafeeds.in/global-datafeeds-apis/global-datafeeds-apis/contact/contact-sales/) at sales@globaldatafeeds.in. | [UNVERIFIED] NSE announcements coverage, live endpoints, app-display licence, price and complete daily backfill. The REST documentation's test service uses data dated 2025-02-27, not live data. |
+| NSE direct | [VERIFIED] The [corporate data product](https://www.nseindia.com/static/market-data/corporate-data-subscription) includes announcements and requires a customer-owned dedicated leased line. The [2026 domestic tariff](https://nsearchives.nseindia.com/web/mediaattachment/2026-04/Download_Pricing_file_-_Domestic_clients_20260424122229.pdf) lists ₹10,60,000 annually, excluding taxes. The separate ₹5,00,000/year end-of-day product arrives by SFTP after 20:00 IST. Contact [NSE Data & Analytics](https://www.nseindia.com/static/nse-data-and-analytics/contact-us) at marketdata@nse.co.in. | [UNVERIFIED] Connectivity costs and StockPanic's required display/derived-use licensing. End-of-day delivery does not satisfy live updates. |
+
+[VERIFIED] NSE also publishes an [RSS directory](https://www.nseindia.com/static/rss-feed) listing announcements and other disclosures for feed readers. [UNVERIFIED] This research did not validate a working announcement XML endpoint, completeness/replay behaviour or StockPanic public-display permission. Clarify this potential low-cost NSE pilot with NSE under its [data usage policy](https://www.nseindia.com/static/market-data/nse-data-policy). No equivalent authorised free BSE feed was established in this review.
+
+### Enquiry to send (not sent)
+
+> Subject: NSE/BSE announcements API trial and public-display quote
+>
+> We are building StockPanic, an Indian listed-company news web application. Please quote an announcements-only feed covering NSE/BSE mainboard, SME and BSE-only companies, with original filing/PDF links. We need public display of headlines, company tags and links for free and paid accounts; please specify separate rights for document storage, text extraction, summaries and alerts. We do not need price ticks or order-book data.
+>
+> Please provide a trial, monthly/annual charges including exchange/display fees, retention terms, delivery latency, production API documentation, rate limits and outage backfill. Please confirm stable announcement IDs, scrip-code/ISIN masters, timestamps/timezone, revised/withdrawn filing behaviour, and a complete daily list for reconciliation.
+
+### Connecting the selected provider
+
+[INFERRED] Prefer REST polling plus complete daily reconciliation for the first provider if supported. After authorised trial credentials arrive:
+
+1. Inspect real payloads and company masters; verify coverage, IDs, timestamps and revision/withdrawal semantics.
+2. Configure existing polling field mappings, adding provider-specific normalisation where needed. Credentials remain in the local environment. The existing example is disabled and uses fictional URLs.
+3. Import complete reviewed exchange masters and register access conditions. Exercise ingestion, company resolution, replay, revisions/withdrawals and daily reconciliation in staging using the commands above.
+4. Enable the source after validation, then observe exchange-labelled filings and original PDF links in the live feed. Streaming needs a reconnect/backfill bridge; the signed push receiver cannot consume a vendor WebSocket directly.
+
+**Limits:** [UNVERIFIED] No vendor contacted, subscription purchased, trial authenticated or live provider activated. Published capabilities are supplier claims, not StockPanic acceptance tests. BSE's pricing PDF failed to open, so no BSE price is asserted. Commercial rights, all-company coverage and delivery guarantees need written responses and trial evidence. Procurement and real-provider validation remain release prerequisites.
+
+### Offline contract preparation (2026-10-09, D-069)
+
+[VERIFIED] `filings-check.ts` reads local JSON only; it does not connect to a provider/database, require tokens, register a source or publish filings. It reuses the production configuration/envelope parsers. Run the fictional example first, then use sanitised authorised trial samples in ignored `scratch/`:
+
+```powershell
+node src/apps/worker/src/cli/filings-check.ts docs/ops/filings-source.example.json docs/ops/filings-payload.example.json --date 2026-10-09
+node src/apps/worker/src/cli/filings-check.ts scratch/provider-source.json scratch/provider-poll.json
+node src/apps/worker/src/cli/filings-check.ts scratch/provider-source.json scratch/provider-daily.json --date 2026-10-09
+```
+
+[VERIFIED] Reports contain counts and bounded row/field diagnostics, not headlines, URLs, tokens or cursor values. Invalid envelopes, wrong IST dates and partial daily pages fail with exit 1. Repeated exchange/announcement identities are reported, not rejected: replay/revision samples can legitimately repeat them. An empty response can be structurally valid; it never establishes coverage. `productionValidated` is always false. The example remains disabled and is **fictional**, with no link to a vendor schema. For a combined feed, map an explicit originating exchange; both NSE and BSE ticker symbols on an issuer do not identify which exchange published a filing.
+
+[VERIFIED — public-document review] TrueData's [published sample](https://www.truedata.in/products/marketdataapi) lacks an explicit originating-exchange field and filing URL and does not define `file_status` semantics or REST pagination. Its offset-free timestamp needs confirmed timezone semantics. These are contract questions, not safe defaults for a production adapter. Global Datafeeds' [REST example](https://docs.globaldatafeeds.in/getcorporateannouncements-15575575e0) has date-format/casing differences between samples and does not establish a stable announcement ID. Obtain the actual subscribed contract before implementing either mapping. No trial endpoint was called or credential copied.
+
+[VERIFIED — implementation] Combined-feed reconciliation now counts each inserted backfill only for its originating exchange, including when both exchanges use the same announcement ID. The regression covers first ingestion and replay in disposable PostgreSQL. Existing storage, users and source configuration are unchanged.
+
+### Release readiness and next priority (2026-10-09)
+
+| Area | Implemented / locally exercised | External configuration and production evidence still needed |
+| --- | --- | --- |
+| Exchange filings | Poll/push, mapping, registry tooling, offline checks, replay and reconciliation tests | Subscription or authorised trial; credentials and documented API contract; written public-display rights; complete current masters; real NSE/BSE, SME/BSE-only, revision/withdrawal and outage-recovery acceptance |
+| News quality | RSS ingestion, resolver safeguards, conservative deduplication, audit/reanalysis tooling | Independent human labels on fresh news; tagging precision/recall and duplicate-recall acceptance; historical corrections review; recorded permissions for all 12 enabled RSS sources |
+| Identity and notifications | Password/verification/recovery, Google verifier, SMTP and push transports | Google client, SMTP credentials, VAPID and operations destination; real login, mail receipt, recovery and push checks |
+| Billing | Checkout, webhook, invoices and cancellation tested with stand-ins | Razorpay account/plans/secrets; provider test-mode end-to-end run; seller/GST review before paid launch |
+| Deployment | Passing prior hosted CI and local app; security controls and operational runbook | Required branch checks, production host/TLS/supervision/monitoring, restore and rollback drills, external security review, approved legal/contact details and real-device checks |
+
+[INFERRED] Next development priority while provider access is pending: fresh-date, independently adjudicated tagging/deduplication acceptance, then targeted fixes to measured misses. The current small provisional samples cannot certify release quality. Source procurement remains the first external dependency; do not substitute demo filings or website scraping. After the contract and access arrive, prioritise staging provider acceptance over additional UI features.
+
+**Limits:** [UNVERIFIED] No subscription, credentials, public-display permission or live exchange acceptance was obtained. A subscription enables API access only to the extent of its contract; it must separately cover public headlines/links and any storage, extraction, summaries and alerts required by StockPanic. No vendor was contacted. BSE's portal yielded no readable text during this follow-up, so its previous research remains preserved rather than claimed as independently revalidated. The read-only production source audit still fails for missing prerequisites; local service health is not production validation.
+
 ## Frontend browser checks (2026-10-08, D-067)
 
 Install dependencies with `npm ci`, then `npx playwright install chromium` (Linux CI uses `--with-deps`). Run against a disposable PostgreSQL 17 service, never the application database:

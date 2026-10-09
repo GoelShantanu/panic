@@ -1,0 +1,10 @@
+{
+  "notice": "FICTIONAL OFFLINE FIXTURE. Not vendor data or live exchange coverage.",
+  "data": {
+    "records": [
+      { "id": "FICTIONAL-1", "securityCode": "500101", "subject": "Fictional board meeting", "publishedAt": "2026-10-09 10:00:00", "url": "https://vendor.example/fictional/1", "attachmentUrl": "https://vendor.example/fictional/1.pdf", "category": "Board Meeting", "status": "published" },
+      { "id": "FICTIONAL-2", "securityCode": "500102", "subject": "Fictional withdrawn notice", "publishedAt": "2026-10-09 11:00:00", "url": "https://vendor.example/fictional/2", "status": "withdrawn" }
+    ]
+  },
+  "pagination": { "next": null }
+}

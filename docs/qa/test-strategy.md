@@ -1,5 +1,7 @@
 # QA — Test Strategy and Results
 
+> **Filings preparation addendum, v1.2 (2026-10-09, D-069):** §12 records offline contract checks and exchange-scoped reconciliation validation. Earlier phase exits do not establish live provider acceptance.
+
 > **Release revalidation, v1.1 (2026-10-08, D-064):** the original Phase 8 exit below is historical. The current real-news pilot does **not** demonstrate the 99.5% tagging target. See §8 for current results, fixes, reproduction steps, and limits.
 
 | | |
@@ -349,3 +351,15 @@ Snapshot SHA-256: `4defb9e25acfbbcefd5e34dceb322d4becada100f3cfc85e0cf7e67543cdf
 [VERIFIED] The first hosted Node 24/26 runs exposed two pre-existing UI date failures: comment/vote eligibility dates used the host timezone despite constructing IST midnight. Linux UTC displayed the preceding date. Fixed both formatters and the equivalent profile join-month formatter to use explicit `Asia/Kolkata`. All **36 affected component/page tests pass with `TZ=UTC`**, and strict TypeScript checks pass. Subsequent hosted validation must establish the final 527-test suite and browser/build result; earlier cancelled/failing runs are not passing release evidence.
 
 [VERIFIED] Corrective implementation commit `ed396ff` passed hosted [CI run 37886742833](https://github.com/GoelShantanu/panic/actions/runs/37886742833): Node 24 and Node 26 verification jobs and the desktop/mobile Chromium browser job all completed with conclusion `success`. Verification includes mandatory full tests (527 total, zero skips), SQL constraints, migrations, strict checking and production builds. This supersedes the pending hosted-result statements above. Branch protection is not verified or changed. A headless browser also inspected the actual local app, received HTTP 200, rendered “Latest Indian market news” and reported zero page errors. Latest local worker logs show continued ingestion and an 81-item pipeline batch with zero failures. Screenshot: ignored `scratch/local-server/p0-local-preview.png`.
+
+## 12. Filings preparation — 2026-10-09 (D-069)
+
+[VERIFIED] The six offline-preflight tests cover mapped fictional payloads, NSE/BSE identity separation and repeated identities, IST midnight boundaries, partial daily-page rejection, invalid dates, bounded diagnostics without payload/cursor echo, and empty-response limits. Twelve filings integration tests passed against a new disposable PostgreSQL 17 container, including a combined feed whose NSE/BSE announcements share an ID: first reconciliation records one backfill per exchange; replay records zero new backfills and one held filing per exchange. Strict TypeScript checks passed.
+
+[VERIFIED] Executed the offline CLI using the checked-in disabled source and fictional sample: matching date exits 0, reports two BSE fixture rows/one withdrawal/one attachment, and explicitly reports productionValidated=false. Wrong IST date exits 1 and reports both rows. An initial fixture test exposed a mismatched status field in the new sample; it was corrected to the existing mapping and rerun successfully.
+
+[VERIFIED] Read-only application source audit exits 1 with missing production-use approval records for all 12 RSS sources, no enabled authorised filings source, and no verified complete BSE master. Homepage, stream API and proxied SSE return HTTP 200; the stream has 50 stories and no stale sources. Existing web/live/ingestion/pipeline PIDs remain running, with ongoing successful ingestion and zero failures in the latest pipeline batches. Application users/data were not migrated, seeded, reset or reprocessed by this work.
+
+**Limits:** [UNVERIFIED] No live vendor payload, credentials, public-display licence, master completeness or real reconciliation was tested. Fixtures are fictional and were never inserted into the application database. Offline mapping/date checks cannot prove daily completeness. No frontend behavior changed; browser/build checks from the prior release remain historical evidence, not repeated checks for this change. Production blockers and next priority are owned by the release runbook.
+
+[VERIFIED] Full strict CI command on Node 26.3.0 and disposable PostgreSQL collected **534 tests across 56 files**, with **533 passed and one failed**: the existing multi-hash password test exceeded its default 5,000 ms timeout (5,080 ms observed). No tests skipped. A subsequent isolated rerun of the unchanged password suite passed **3/3** at the original timeout. All changed-code tests passed in both targeted and full runs. This is an observed timing flake, not a clean single-run full-suite pass; the failed log remains in ignored `scratch/local-server/filings-test-ci.log`. No assertions/timeouts were weakened. Hosted CI for this change is not yet observed.

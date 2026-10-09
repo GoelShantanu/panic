@@ -50,7 +50,7 @@ interface Tally {
   errors: string[];
 }
 
-async function ingestEnvelopes(db: pg.ClientBase, sourceId: string, list: unknown, now: Date, tally: Tally, backfill = false, onStored?: (outcome: UpsertOutcome, id: string) => void) {
+async function ingestEnvelopes(db: pg.ClientBase, sourceId: string, list: unknown, now: Date, tally: Tally, backfill = false, onStored?: (outcome: UpsertOutcome, exchange: string) => void) {
   if (!Array.isArray(list)) throw new Error('announcements is not an array');
   for (const raw of list) {
     const e = parseFilingEnvelope(raw);
@@ -63,7 +63,7 @@ async function ingestEnvelopes(db: pg.ClientBase, sourceId: string, list: unknow
     if (outcome === 'inserted') tally.inserted++;
     else if (outcome === 'duplicate') tally.duplicates++;
     else tally.revised++;
-    onStored?.(outcome, e.value.announcementId);
+    onStored?.(outcome, e.value.exchange);
   }
 }
 
@@ -206,9 +206,9 @@ export async function reconcileFilings(db: pg.ClientBase, source: SourceRow, ist
     const e = parseFilingEnvelope(raw);
     return e.ok && !heldBefore.get(e.value.exchange)!.has(e.value.announcementId);
   });
-  await ingestEnvelopes(db, source.sourceId, missing, now, tally, true, (outcome, id) => {
+  await ingestEnvelopes(db, source.sourceId, missing, now, tally, true, (outcome, exchange) => {
     if (outcome !== 'inserted') return;
-    for (const [ex, ids] of expectedByExchange) if (ids.has(id)) backfilled.set(ex, (backfilled.get(ex) ?? 0) + 1);
+    backfilled.set(exchange, (backfilled.get(exchange) ?? 0) + 1);
   });
 
   const byExchange: ReconcileResult['byExchange'] = [];

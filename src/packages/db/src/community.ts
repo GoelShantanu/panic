@@ -592,5 +592,7 @@ export async function purgeExpiredContent(db: pg.ClientBase, now: Date): Promise
   const a = await db.query('DELETE FROM removed_content WHERE purge_after <= $1', [now]);
   const b = await db.query('DELETE FROM comment_revision WHERE purge_after <= $1', [now]);
   const c = await db.query('DELETE FROM pending_signup WHERE expires_at <= $1', [now]);
+  // Keep recent used codes through the request-rate window, then erase signup credentials.
+  await db.query("DELETE FROM auth_challenge WHERE expires_at <= $1 AND created_at <= $1::timestamptz - interval '1 hour'", [now]);
   return { removedContent: a.rowCount ?? 0, revisions: b.rowCount ?? 0, pendingSignups: c.rowCount ?? 0 };
 }

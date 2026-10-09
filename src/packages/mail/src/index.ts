@@ -93,3 +93,10 @@ export function signInCodeEmail(code: string): { subject: string; text: string }
     ].join('\n'),
   };
 }
+
+export function verificationCodeEmail(code: string): { subject: string; text: string } {
+  return { subject: 'Verify your StockPanic email', text: `Your email verification code is ${code}.\n\nIt expires in 10 minutes and can be used once.\nIf you did not request this, ignore this email.` };
+}
+export function passwordResetEmail(code: string): { subject: string; text: string } {
+  return { subject: 'Reset your StockPanic password', text: `Your password reset code is ${code}.\n\nUse it with a new password. It expires in 10 minutes and can be used once. This code cannot sign you in.\nIf you did not request this, ignore this email. Your password will stay unchanged.` };
+}

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import pg from 'pg';
-import { AliasIndex, classifyHeadline, classifyMarketRelevance, extractNumbers, headlineShingles, jaccard, lshBands, normaliseForMatch, pairScore, resolveArticle } from '@stockpanic/core';
+import { AliasIndex, articleCandidateBands, classifyHeadline, classifyMarketRelevance, extractNumbers, headlineShingles, jaccard, normaliseForMatch, pairScore, resolveArticle } from '@stockpanic/core';
 import type { AliasEntry, ArticleScope } from '@stockpanic/core';
 import { loadAliasEntries } from '@stockpanic/db';
 
@@ -103,11 +103,21 @@ if (command === 'capture') {
     if (label.symbols && new Set(label.symbols).size!==label.symbols.length) throw new Error(`Duplicate gold symbol for ${id}`);
   }
   for (const p of selectedPairs) if (typeof gold.pairs[p.join(':')]!=='boolean'&&gold.pairs[p.join(':')]!=='uncertain') throw new Error(`Missing pair label ${p.join(':')}`);
-  const aliases=new AliasIndex(snapshot.aliases);
+  const aliasPath=option('--aliases','');
+  const aliasRaw=aliasPath?await readFile(aliasPath,'utf8'):null;
+  const extraAliases: AliasEntry[]=[];
+  for (const line of aliasRaw?.split(/\r?\n/)??[]) {
+    const [code,text,expectedIsin,...flags]=line.split(',').map(s=>s.trim());
+    if (!code || code.startsWith('#') || code==='symbol') continue;
+    const isin=Object.entries(snapshot.symbols).find(([,s])=>s===code)?.[0];
+    if (!text || !isin || isin!==expectedIsin) throw new Error(`Alias ISIN mismatch in frozen registry: ${code}`);
+    extraAliases.push({isin,text,source:'alias',ambiguous:flags.includes('ambiguous'),commonWord:flags.includes('common_word')});
+  }
+  const aliases=new AliasIndex([...snapshot.aliases,...extraAliases]);
   const predictions=snapshot.items.map(item => {
     const resolved=resolveArticle(aliases,item.headline,item.excerpt);
     const isins=resolved.isins;
-    const features={isins,shingles:headlineShingles(item.headline),numbers:extractNumbers(item.headline),eventTypes:classifyHeadline(item.headline),at:new Date(item.at)};
+    const features={headline:item.headline,excerpt:item.excerpt,isins,shingles:headlineShingles(item.headline),numbers:extractNumbers(item.headline),eventTypes:classifyHeadline(item.headline),at:new Date(item.at)};
     return {item,symbols:isinSymbols(isins),headlineSymbols:isinSymbols(aliases.resolve(item.headline).isins),relevance:classifyMarketRelevance(item.headline,item.scope).decision,features};
   });
   function isinSymbols(isins: string[]) { return isins.map(i=>snapshot.symbols[i]??i); }
@@ -129,7 +139,7 @@ if (command === 'capture') {
   const pairs=selectedPairs.map(([a,b])=>{
     const x=predictions.find(p=>p.item.id===a)!,y=predictions.find(p=>p.item.id===b)!;
     const score=pairScore(x.features,y.features);
-    const candidate=x.features.isins.some(i=>y.features.isins.includes(i))||lshBands(x.features.shingles).some(v=>lshBands(y.features.shingles).includes(v));
+    const candidate=x.features.isins.some(i=>y.features.isins.includes(i))||articleCandidateBands(x.item.headline).some(v=>articleCandidateBands(y.item.headline).includes(v));
     return {key:`${a}:${b}`,same:gold.pairs[`${a}:${b}`]!,score,candidate,modelMerge:candidate&&score!==null&&score>=snapshot.mergeThreshold,storedMerge:!!x.item.story&&x.item.story===y.item.story,published:!!x.item.story&&!!y.item.story};
   });
   const ratio=(n:number,d:number)=>d?n/d:null;
@@ -140,7 +150,10 @@ if (command === 'capture') {
   };
   const implementationSha256=Object.fromEntries(await Promise.all(['resolution.ts','relevance.ts','clustering.ts','text.ts'].map(async file=>[file,hash(await readFile(new URL(`../../../../packages/core/src/${file}`,import.meta.url),'utf8'))])));
   const report={split,snapshotSha256:hash(raw),goldSha256:hash(await readFile(path.join(out,'gold.json'),'utf8')),implementationSha256,articles:sample.length,tagUncertain:sample.filter(id=>gold.items[id]!.symbols===null),tags:{tp,fp,fn,precision:ratio(tp,tp+fp),recall:ratio(tp,tp+fn),zeroErrorOneSided95LowerBound:fp===0&&tp?Math.pow(0.05,1/tp):null},relevance,pairs:{model:pairMetrics('modelMerge'),stored:pairMetrics('storedMerge')},errors,pairDetails:pairs,itemPredictions:predictions.filter(p=>sample.includes(p.item.id)).map(p=>({id:p.item.id,symbols:p.symbols,headlineSymbols:p.headlineSymbols,relevance:p.relevance}))};
-  await writeFile(path.join(out,`report-${split}.json`),JSON.stringify(report,null,2)+'\n');
+  Object.assign(report,{extraAliasSha256:aliasRaw?hash(aliasRaw):null});
+  const reportFile=option('--report',`report-${split}.json`);
+  if (!/^[a-zA-Z0-9_-]+\.json$/.test(reportFile)) throw new Error('Invalid --report filename');
+  await writeFile(path.join(out,reportFile),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({...report,pairDetails:undefined,itemPredictions:undefined},null,2));
   if (flags.includes('--require-tag-target') && (report.tags.precision===null || report.tags.precision<0.995 || report.tags.zeroErrorOneSided95LowerBound===null || report.tags.zeroErrorOneSided95LowerBound<0.995)) {
     console.error('Tagging target not demonstrated: requires 99.5% precision and a one-sided 95% lower confidence bound of at least 99.5%.');

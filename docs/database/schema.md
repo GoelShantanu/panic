@@ -225,3 +225,11 @@ WORKFLOW DoD item 9 ("verified, not asserted") is met for the schema. Query plan
 | **Grievance contact retention unset** | To be decided in the Security phase. |
 | **Cluster-wide role creation** | Migration 0001 creates the `stockpanic_app` role, which is cluster-wide, while the runner's advisory lock is per database. **Never migrate two databases on one PostgreSQL server concurrently** (e.g. staging and production sharing a server). Found in Backend B3 when parallel test suites raced; tests now run serially. 0001 is frozen (D-028), so this is handled operationally rather than by editing it. |
 | **Event-trigger scope** | Catches names, not meaning: a column called `mood` would pass. Migration review remains a control. |
+
+---
+
+## 10. Authentication schema extension — 2026-10-08 (D-065)
+
+[VERIFIED] Forward migration [0019_password_auth.sql](migrations/0019_password_auth.sql) preserves existing users while adding nullable private first/last names and a constrained scrypt hash to `app_user`, and the same optional identity material to `pending_signup`. Deleted users must have names/hashes cleared. `auth_version` on users and sessions invalidates sessions after password changes.
+
+[VERIFIED] `auth_challenge` separates signup, recovery and Google mailbox proofs from legacy login codes. Purpose-specific constraints restrict stored identity material; codes carry expiry, attempts and consumption time. Lookup/expiry indexes support verification and maintenance, and the app role receives table access. Application deletion erases proofs and pending identities across canonical email aliases; exports omit hashes. Maintenance purges expired challenges after the one-hour rate-limit window. Account locking, single-use verification, password hashing and email delivery remain application responsibilities. Implementation evidence and provider limits: [QA §9](../qa/test-strategy.md#9-authentication-extension-verification--2026-10-08-d-065).

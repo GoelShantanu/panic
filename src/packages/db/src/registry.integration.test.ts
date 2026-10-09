@@ -1,11 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { isinCheckDigit, parseNseEquityList } from '@stockpanic/core';
+import { AliasIndex, isinCheckDigit, parseBseEquityList, parseNseEquityList } from '@stockpanic/core';
 import type { MasterRow } from '@stockpanic/core';
 import { migrate } from './migrate.ts';
 import { loadAliasEntries, resolveExchangeCode } from './pipeline.ts';
-import { MasterListRefused, applyMasterList } from './registry.ts';
+import { MasterListRefused, addCuratedAlias, applyMasterList } from './registry.ts';
 
 // All companies are fictional.
 const adminUrl = process.env['TEST_DATABASE_URL'];
@@ -102,10 +102,33 @@ describe.skipIf(!adminUrl)('registry upkeep from master lists (PostgreSQL)', () 
     expect((await history(V)).filter((h) => h.t === 'code')).toEqual([{ t: 'code', v: 'VELORA', valid: '[2026-10-08,)' }]);
   });
 
-  it('refuses a list that would close more than half the registry (a truncated download)', async () => {
+  it('loads BSE-only equities and dual listings without overwriting NSE canonical names',async()=>{
+    const bseOnly=isin('E00BSE101');
+    const csv=`Scrip Code,Instrument Code,Group Name,Scrip Name,ISIN CODE,Security Type Flag\n500101,AST,A,Asterion Ind.,${A},EQ\n500199,BEACON,MT,Beacon Engines Limited,${bseOnly},EQ`;
+    const parsed=parseBseEquityList(csv);if('error' in parsed) throw new Error(parsed.error);
+    await applyMasterList(db,'BSE',parsed.rows,'2026-10-09',{sha256:'a'.repeat(64),complete:true});
+    expect((await db.query(`SELECT "after" FROM audit_log WHERE action='registry.master_applied' AND entity_id='BSE' ORDER BY id DESC LIMIT 1`)).rows[0].after).toMatchObject({input_sha256:'a'.repeat(64),complete:true,rows:2});
+    expect(await resolveExchangeCode(db,'BSE','500101','2026-10-09')).toBe(A);
+    expect(await resolveExchangeCode(db,'BSE','500199','2026-10-09')).toBe(bseOnly);
+    expect((await history(A)).filter(h=>h.t==='name')).toEqual([{t:'name',v:'Asterion Industries Limited',valid:'[2010-04-01,)'}]);
+    expect(new AliasIndex(await loadAliasEntries(db,'2026-10-09')).resolve('Beacon Engines wins an order').isins).toEqual([bseOnly]);
+    expect((await db.query('SELECT segment FROM instrument WHERE isin=$1',[bseOnly])).rows[0].segment).toBe('sme');
+    expect(await applyMasterList(db,'BSE',parsed.rows,'2026-10-09')).toMatchObject({added:0,recoded:0,renamed:0,unchanged:2});
+  });
+
+  it('refuses alias codes mapping to multiple issuers and guards expected ISIN',async()=>{
+    await db.query(`INSERT INTO instrument_code (isin,exchange,code,valid) VALUES ($1,'BSE','ASTERIND','[2026-10-08,)')`,[V]);
+    const alias={code:'ASTERIND',alias:'Short name',ambiguous:false,commonWord:false,asOf:'2026-10-09',actor:'test'};
+    expect(await addCuratedAlias(db,alias)).toHaveProperty('error');
+    expect(await addCuratedAlias(db,{...alias,code:A,expectedIsin:V})).toHaveProperty('error');
+    await db.query(`DELETE FROM instrument_code WHERE exchange='BSE' AND code='ASTERIND'`);
+  });
+
+  it('refuses a list that would close more than five percent of the registry (a truncated download)', async () => {
     const many = Array.from({ length: 120 }, (_, n) => row({ isin: isin(`E00F${String(n).padStart(3, '0')}01`), code: `FIC${n}`, name: `Fiction ${n} Limited` }));
     await applyMasterList(db, 'NSE', many, '2026-10-09');
     await expect(applyMasterList(db, 'NSE', many.slice(0, 40), '2026-10-10')).rejects.toBeInstanceOf(MasterListRefused);
+    await expect(applyMasterList(db, 'NSE', many.slice(0, 112), '2026-10-10')).rejects.toBeInstanceOf(MasterListRefused);
     expect(await resolveExchangeCode(db, 'NSE', 'FIC100', '2026-10-10')).not.toBeNull(); // nothing was closed
   });
 });

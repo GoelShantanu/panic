@@ -4,6 +4,7 @@
 
 import { createPublicKey, verify } from 'node:crypto';
 import type { webcrypto } from 'node:crypto';
+import { normaliseEmail } from '@stockpanic/core';
 
 export type Jwk = webcrypto.JsonWebKey & { kid?: string };
 
@@ -16,6 +17,9 @@ export interface GoogleIdentity {
   sub: string;
   email: string;
   emailVerified: true;
+  emailAuthoritative: boolean;
+  firstName: string | null;
+  lastName: string | null;
 }
 
 export type JwksFetcher = () => Promise<Jwk[]>;
@@ -66,8 +70,13 @@ export function createGoogleVerifier(clientId: string, fetchJwks: JwksFetcher = 
       if (typeof claims['exp'] !== 'number' || claims['exp'] + CLOCK_SKEW_S < nowS) return null;
       if (typeof claims['iat'] === 'number' && claims['iat'] - CLOCK_SKEW_S > nowS) return null;
       if (claims['email_verified'] !== true && claims['email_verified'] !== 'true') return null;
-      if (typeof claims['sub'] !== 'string' || typeof claims['email'] !== 'string') return null;
-      return { sub: claims['sub'], email: claims['email'].toLowerCase(), emailVerified: true };
+      if (typeof claims['sub'] !== 'string' || !claims['sub'] || claims['sub'].length > 255 || typeof claims['email'] !== 'string') return null;
+      const email = normaliseEmail(claims['email']);
+      if (!email) return null;
+      const name = (value: unknown) => typeof value === 'string' && value.trim() && value.trim().length <= 80 ? value.trim() : null;
+      return { sub: claims['sub'], email, emailVerified: true,
+        emailAuthoritative: email.endsWith('@gmail.com') || (typeof claims['hd'] === 'string' && claims['hd'].length > 0),
+        firstName: name(claims['given_name']), lastName: name(claims['family_name']) };
     },
   };
 }

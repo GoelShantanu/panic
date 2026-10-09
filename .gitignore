@@ -34,3 +34,5 @@ coverage/
 .next-*/
 next-env.d.ts
 ui-snapshot/
+test-results/
+playwright-report/

@@ -5,6 +5,7 @@ import { SessionStatus } from './LiveStatus.tsx';
 import { NavLinks } from './NavLinks.tsx';
 import { Search } from './Search.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
+import { DensityToggle } from './DensityToggle.tsx';
 
 export interface Viewer {
   username: string | null;
@@ -47,6 +48,7 @@ export function Header({ session, viewer }: { session: SessionInfo | null; viewe
           </Link>
         )}
         <ThemeToggle />
+        <DensityToggle />
       </div>
     </header>
   );

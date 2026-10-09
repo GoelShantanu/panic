@@ -34,7 +34,7 @@ export function parseFilingEnvelope(raw: unknown): { ok: true; value: FilingEnve
   const category = r['category'] === null || r['category'] === undefined ? null : str('category');
   if (r['category'] !== null && r['category'] !== undefined && !category) return { ok: false, error: 'category' };
   const publishedRaw = str('published_at');
-  const publishedAt = publishedRaw && /^\d{4}-\d{2}-\d{2}T/.test(publishedRaw) ? new Date(publishedRaw) : null;
+  const publishedAt = publishedRaw && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(publishedRaw) ? new Date(publishedRaw) : null;
   if (!publishedAt || Number.isNaN(publishedAt.getTime())) return { ok: false, error: 'published_at' };
   const url = str('url');
   if (!url || !HTTP_URL.test(url)) return { ok: false, error: 'url' };
@@ -68,3 +68,49 @@ export function verifyPush(secret: string, body: string, header: string | null |
 }
 
 export const RECONCILIATION_ALERT_COVERAGE = 0.995; // ingestion.md §3.1
+
+function providerPath(value:unknown,path:string):unknown {
+  if(!/^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+){0,7}$/.test(path)||path.split('.').some(p=>['__proto__','constructor','prototype'].includes(p))) throw new Error('invalid provider field path');
+  let current=value;
+  for(const part of path.split('.')) {
+    if(!current||typeof current!=='object'||!Object.hasOwn(current,part)) return undefined;
+    current=(current as Record<string,unknown>)[part];
+  }
+  return current;
+}
+
+// A licensed JSON vendor can be mapped without changing ingestion/storage. The
+// operator must supply that vendor's documented fields; no exchange endpoints are guessed.
+export function parseProviderPage(body:unknown,adapter:Record<string,unknown>,reconcile=false):{announcements:unknown[];nextCursor:string|null} {
+  const mapping=adapter['mapping'];
+  if(mapping!==undefined&&(!mapping||typeof mapping!=='object'||Array.isArray(mapping))) throw new Error('mapping must be an object');
+  const m=(mapping??{}) as Record<string,unknown>;
+  const listPath=m['announcements_path']??'announcements';
+  const cursorPath=m['cursor_path']??'next_cursor';
+  if(typeof listPath!=='string'||typeof cursorPath!=='string') throw new Error('invalid response mapping paths');
+  const raw=providerPath(body,listPath);
+  if(!Array.isArray(raw)) throw new Error('announcements is not an array');
+  const cursor=providerPath(body,cursorPath);
+  if(cursor!==null&&cursor!==undefined&&(typeof cursor!=='string'||cursor.length>4096)) throw new Error('invalid next cursor');
+  if(reconcile&&typeof cursor==='string'&&cursor) throw new Error('reconciliation requires a complete list, not a partial page');
+  const fields=m['fields'];
+  if(fields===undefined) return {announcements:raw,nextCursor:typeof cursor==='string'&&cursor?cursor:null};
+  if(!fields||typeof fields!=='object'||Array.isArray(fields)) throw new Error('fields must be an object');
+  const allowed=['exchange','announcement_id','scrip_code','subject','category','published_at','url','attachment_url','status'];
+  const f=fields as Record<string,unknown>;
+  for(const [key,path] of Object.entries(f)) if(!allowed.includes(key)||typeof path!=='string') throw new Error('invalid envelope field mapping');
+  const announcements=raw.map(row=>{
+    const envelope:Record<string,unknown>={};
+    for(const [key,path] of Object.entries(f)) envelope[key]=providerPath(row,path as string);
+    if(envelope['exchange']===undefined&&m['exchange']!==undefined) envelope['exchange']=m['exchange'];
+    for(const key of ['announcement_id','scrip_code']) if(typeof envelope[key]==='number'&&Number.isSafeInteger(envelope[key])) envelope[key]=String(envelope[key]);
+    if(m['timezone']==='Asia/Kolkata'&&typeof envelope['published_at']==='string'&&/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(envelope['published_at'])) envelope['published_at']=envelope['published_at'].replace(' ','T')+'+05:30';
+    if(envelope['status']!==undefined&&m['status_values']!==undefined) {
+      const values=m['status_values'];
+      if(!values||typeof values!=='object'||typeof envelope['status']!=='string'||!Object.hasOwn(values,envelope['status'])) throw new Error('unmapped provider status');
+      envelope['status']=(values as Record<string,unknown>)[envelope['status']];
+    }
+    return envelope;
+  });
+  return {announcements,nextCursor:typeof cursor==='string'&&cursor?cursor:null};
+}

@@ -130,3 +130,11 @@ After an item joins or creates a story, in the same transaction:
 | --- | --- |
 | **Headlines only** | Short text limits accuracy; weights and thresholds are guesses until the labelled set exists. |
 | **No semantic model** | Paraphrased headlines with no shared words won't cluster. A local embedding model on the worker is a possible later improvement, added only if false-split rate exceeds 5%. |
+
+## 10. Implementation supplement — 2026-10-09 (D-068)
+
+Article retrieval now combines original shingle bands with separately namespaced word bands and bounded pairs of content-word anchors. Scoring retains the configured merge threshold and adds explicit lexical equivalences and short-window paraphrase evidence. Exact issuer/period and matching financial facts in supplied excerpts can corroborate an earnings report; exact deal amounts can corroborate a next-day report. Excerpts are feed-provided text, not scraped full articles. No embedding provider or new model is introduced.
+
+Conflicting companies, event amounts, quarterly/fiscal periods and headline metric directions veto a pair. Share-price reaction percentages can vary without changing the underlying corporate event. Differing recurring price-update templates remain separate. The existing any-member veto prevents a similar newcomer from bridging incompatible stories. Reanalysis warms retrieval bands for existing articles but deliberately preserves historic assignments; operator merge/split remains the correction path.
+
+The challenge shows both improvements and substantial remaining paraphrase misses. These rules do not establish the release false-split target or guarantee semantic equivalence; full-article human adjudication and fresh-day validation remain necessary. See [QA §11](../qa/test-strategy.md#11-first-three-p0-implementation--2026-10-09-d-068).

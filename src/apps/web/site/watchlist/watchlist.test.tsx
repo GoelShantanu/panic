@@ -60,6 +60,18 @@ describe('watchlist (PRD-003 §2)', () => {
     expect(screen.getByRole('status').textContent).toContain('Added 1');
   });
 
+  it('keeps failed removals selected so they can be retried, without claiming success', async () => {
+    const remaining = entry({ isin: 'INE00MER1011', display_symbol: 'MERIDIAN' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(204)).mockResolvedValueOnce(json(503)).mockResolvedValueOnce(json(200, { instruments: [remaining] })));
+    render(<Watchlist initial={[entry(), remaining]} limit={20} welcome={false} />);
+    fireEvent.click(screen.getByLabelText('Select all'));
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Remove selected (2)' })));
+    expect(screen.queryByLabelText('Select ASTERION')).toBeNull();
+    expect((screen.getByLabelText('Select MERIDIAN') as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole('alert').textContent).toContain('1 company could not be removed');
+    expect(screen.getByRole('button', { name: 'Remove selected (1)' })).toBeTruthy();
+  });
+
   it('files over 1 MB are refused before upload', async () => {
     const f = vi.fn();
     vi.stubGlobal('fetch', f);
@@ -67,7 +79,7 @@ describe('watchlist (PRD-003 §2)', () => {
     const big = new File(['x'.repeat(1024 * 1024 + 1)], 'big.csv', { type: 'text/csv' });
     await act(async () => void fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [big] } }));
     expect(f).not.toHaveBeenCalled();
-    expect(screen.getByRole('status').textContent).toContain('over 1 MB');
+    expect(screen.getByRole('alert').textContent).toContain('over 1 MB');
   });
 });
 
@@ -82,12 +94,22 @@ const settings: Settings = {
 };
 
 describe('alert settings (PRD-003 US-003.7)', () => {
+  it('restores the saved value on failure and permits a successful retry', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(503)).mockResolvedValueOnce(json(200, { ...settings, channels: { email: false, push: false } })));
+    render(<AlertSettings initial={settings} eventTypes={[]} vapidKey={null} tier="free" />);
+    await act(async () => void fireEvent.click(screen.getByLabelText('Email')));
+    expect((screen.getByLabelText('Email') as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole('alert').textContent).toContain('could not be saved');
+    await act(async () => void fireEvent.click(screen.getByLabelText('Email')));
+    expect((screen.getByLabelText('Email') as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByRole('status').textContent).toContain('Saved.');
+  });
   it('shows budget used today; push is unavailable without a key; event types save', async () => {
     const f = vi.fn().mockResolvedValue(json(200, { ...settings, event_types: { results: true, routine_compliance: true } }));
     vi.stubGlobal('fetch', f);
     render(<AlertSettings initial={settings} eventTypes={[{ code: 'results', label: 'Results' }, { code: 'routine_compliance', label: 'Routine compliance' }]} vapidKey={null} tier="free" />);
     expect(screen.getByText(/2 used today, resets at midnight IST/)).toBeTruthy();
-    expect((screen.getByLabelText(/Desktop browser notifications/) as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText(/Browser notifications/) as HTMLInputElement).disabled).toBe(true);
     await act(async () => void fireEvent.click(screen.getByLabelText('Routine compliance')));
     expect(f.mock.calls[0]).toMatchObject(['/v1/alerts/settings', { method: 'PUT', body: '{"event_types":{"routine_compliance":true}}' }]);
     expect((screen.getByLabelText('Routine compliance') as HTMLInputElement).checked).toBe(true);

@@ -1,4 +1,9 @@
 import { randomBytes } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { mkdtemp, writeFile, unlink, rmdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { addRssSource, listEnabledSources, listPendingRelevance, reviewRelevanceCandidate, setSourceEnabled, storeCandidates } from './ingestion.ts';
@@ -11,6 +16,7 @@ describe.skipIf(!adminUrl)('RSS source registration (PostgreSQL)', () => {
   const dbName = `sp_src_${randomBytes(4).toString('hex')}`;
   let admin: pg.Client;
   let db: pg.Client;
+  let testUrl: string;
   const feed = { sourceId: 'src_example_markets', name: 'Example Daily (markets)', tier: 2, articleScope: 'markets' as const, url: 'https://news.example.in/markets/rss', accessBasis: 'https://news.example.in/terms (read 2026-10-04)' };
 
   beforeAll(async () => {
@@ -19,6 +25,7 @@ describe.skipIf(!adminUrl)('RSS source registration (PostgreSQL)', () => {
     await admin.query(`CREATE DATABASE ${dbName}`);
     const url = new URL(adminUrl!);
     url.pathname = `/${dbName}`;
+    testUrl=url.toString();
     db = new pg.Client({ connectionString: url.toString() });
     await db.connect();
     await migrate(db);
@@ -73,5 +80,22 @@ describe.skipIf(!adminUrl)('RSS source registration (PostgreSQL)', () => {
     expect((await db.query(`SELECT count(*)::int AS n FROM item WHERE dedup_key = 'guid:review-me'`)).rows[0].n).toBe(1);
     expect((await db.query(`SELECT count(*)::int AS n FROM job WHERE payload->>'item_id' = (SELECT id::text FROM item WHERE dedup_key = 'guid:review-me')`)).rows[0].n).toBe(1);
     expect(await reviewRelevanceCandidate(db, pending[0]!.id, 'discard', 'test-operator')).toBe('not_pending');
+  });
+  it('records publisher permission without silently enabling it, and disables revoked access', async () => {
+    const directory=await mkdtemp(path.join(tmpdir(),'stockpanic-access-'));
+    const file=path.join(directory,'review.json');
+    const review={source_id:feed.sourceId,access_basis:'Written publisher approval reference',access_checked_on:'2026-10-09',access_approved:true,excerpt_allowed:true};
+    const run=async(value:unknown)=>{
+      await writeFile(file,JSON.stringify(value));
+      return promisify(execFile)(process.execPath,['src/apps/worker/src/cli/sources.ts','record-access',file],{env:{...process.env,DATABASE_URL:testUrl}});
+    };
+    try {
+      await run(review);
+      expect((await db.query('SELECT enabled,excerpt_allowed,adapter FROM source WHERE source_id=$1',[feed.sourceId])).rows[0]).toMatchObject({enabled:false,excerpt_allowed:true,adapter:{access_reviewed:true,url:feed.url,type:'rss'}});
+      await setSourceEnabled(db,feed.sourceId,true);
+      await run({...review,access_approved:false,excerpt_allowed:false});
+      expect((await db.query('SELECT enabled,excerpt_allowed,adapter FROM source WHERE source_id=$1',[feed.sourceId])).rows[0]).toMatchObject({enabled:false,excerpt_allowed:false,adapter:{access_reviewed:false}});
+      expect((await db.query(`SELECT "after" FROM audit_log WHERE entity_type='source' AND entity_id=$1 AND "after"->'adapter'->>'access_reviewed'='false'`,[feed.sourceId])).rowCount).toBeGreaterThan(0);
+    } finally {await unlink(file);await rmdir(directory);}
   });
 });

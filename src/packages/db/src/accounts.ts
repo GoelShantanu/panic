@@ -35,12 +35,19 @@ async function tx<T>(db: pg.ClientBase, fn: () => Promise<T>): Promise<T> {
 // ---------------------------------------------------------------- sign-in codes (PRD-007 US-007.1 AC-3)
 
 export async function recentCodeCount(db: pg.ClientBase, email: string, since: Date): Promise<number> {
-  const { rows } = await db.query('SELECT count(*)::int AS n FROM email_code WHERE email_canonical(email::text) = email_canonical($1) AND created_at > $2', [email, since]);
+  const { rows } = await db.query(`SELECT count(*)::int AS n FROM (
+    SELECT created_at FROM email_code WHERE email_canonical(email::text) = email_canonical($1)
+    UNION ALL SELECT created_at FROM auth_challenge WHERE email_canonical(email::text) = email_canonical($1)
+  ) codes WHERE created_at > $2`, [email, since]);
   return rows[0].n;
 }
 
 export async function createEmailCode(db: pg.ClientBase, email: string, codeHash: string, now: Date, expiresAt: Date): Promise<void> {
-  await db.query('INSERT INTO email_code (email, code_hash, created_at, expires_at) VALUES ($1, $2, $3, $4)', [email, codeHash, now, expiresAt]);
+  await tx(db, async () => {
+    await db.query('SELECT pg_advisory_xact_lock(hashtextextended(email_canonical($1), 0))', [email]);
+    await db.query('UPDATE email_code SET used_at = $2 WHERE email_canonical(email::text) = email_canonical($1) AND used_at IS NULL', [email, now]);
+    await db.query('INSERT INTO email_code (email, code_hash, created_at, expires_at) VALUES ($1, $2, $3, $4)', [email, codeHash, now, expiresAt]);
+  });
 }
 
 export type CodeCheck = 'ok' | 'invalid' | 'locked';
@@ -49,13 +56,13 @@ export type CodeCheck = 'ok' | 'invalid' | 'locked';
 export async function checkEmailCode(db: pg.ClientBase, email: string, codeHash: string, now: Date): Promise<CodeCheck> {
   return tx(db, async () => {
     const { rows } = await db.query(
-      `SELECT id, code_hash, attempts FROM email_code
-        WHERE email = $1 AND used_at IS NULL AND expires_at > $2
+      `SELECT id, code_hash, attempts, used_at, expires_at FROM email_code
+        WHERE email = $1
         ORDER BY created_at DESC, id DESC LIMIT 1 FOR UPDATE`,
-      [email, now],
+      [email],
     );
     const row = rows[0];
-    if (!row) return 'invalid';
+    if (!row || row.used_at || row.expires_at <= now) return 'invalid';
     if (row.attempts >= OTP_MAX_ATTEMPTS) return 'locked';
     if (safeEqualHex(row.code_hash, codeHash)) {
       await db.query('UPDATE email_code SET used_at = $2 WHERE id = $1', [row.id, now]);
@@ -87,22 +94,26 @@ export async function findUserByGoogleSub(db: pg.ClientBase, sub: string): Promi
 }
 
 // PRD-007 §6: the same email through email-code and Google is one account.
-export async function linkGoogleSub(db: pg.ClientBase, userId: string, sub: string): Promise<void> {
-  await db.query('UPDATE app_user SET google_sub = $2, email_verified_at = coalesce(email_verified_at, now()) WHERE id = $1', [userId, sub]);
+export async function linkGoogleSub(db: pg.ClientBase, userId: string, sub: string): Promise<boolean> {
+  const r = await db.query('UPDATE app_user SET google_sub = $2, email_verified_at = coalesce(email_verified_at, now()) WHERE id = $1 AND (google_sub IS NULL OR google_sub = $2) AND deleted_at IS NULL AND deletion_requested_at IS NULL', [userId, sub]);
+  return r.rowCount === 1;
 }
 
 export interface PendingIdentity {
   email: string | null;
   googleSub: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  passwordHash?: string | null;
 }
 
 export async function createPendingSignup(db: pg.ClientBase, tokenHash: string, id: PendingIdentity, expiresAt: Date): Promise<void> {
-  await db.query('INSERT INTO pending_signup (token_hash, email, google_sub, expires_at) VALUES ($1, $2, $3, $4)', [tokenHash, id.email, id.googleSub, expiresAt]);
+  await db.query('INSERT INTO pending_signup (token_hash, email, google_sub, expires_at, first_name, last_name, password_hash) VALUES ($1, $2, $3, $4, $5, $6, $7)', [tokenHash, id.email, id.googleSub, expiresAt, id.firstName ?? null, id.lastName ?? null, id.passwordHash ?? null]);
 }
 
 export async function takePendingSignup(db: pg.ClientBase, tokenHash: string, now: Date): Promise<PendingIdentity | null> {
-  const { rows } = await db.query('DELETE FROM pending_signup WHERE token_hash = $1 AND expires_at > $2 RETURNING email, google_sub', [tokenHash, now]);
-  return rows[0] ? { email: rows[0].email, googleSub: rows[0].google_sub } : null;
+  const { rows } = await db.query('DELETE FROM pending_signup WHERE token_hash = $1 AND expires_at > $2 RETURNING email, google_sub, first_name, last_name, password_hash', [tokenHash, now]);
+  return rows[0] ? { email: rows[0].email, googleSub: rows[0].google_sub, firstName: rows[0].first_name, lastName: rows[0].last_name, passwordHash: rows[0].password_hash } : null;
 }
 
 export type UserError = 'username_taken' | 'username_reserved' | 'email_taken';
@@ -121,15 +132,18 @@ export interface NewUser {
   googleSub: string | null;
   marketingOptIn: boolean;
   now: Date;
+  firstName?: string | null;
+  lastName?: string | null;
+  passwordHash?: string | null;
 }
 
 // Runs inside the caller's transaction; on a known error the caller must roll back.
 export async function createUser(db: pg.ClientBase, u: NewUser): Promise<{ ok: true; user: UserRef } | { ok: false; error: UserError }> {
   try {
     const { rows } = await db.query(
-      `INSERT INTO app_user (public_id, username, email, email_verified_at, google_sub, age_confirmed_at, terms_accepted_at, privacy_consent_at, marketing_opt_in)
-       VALUES ($1, $2, $3, $4, $5, $4, $4, $4, $6) RETURNING id, public_id, username`,
-      [newPublicId('us'), u.username, u.email, u.now, u.googleSub, u.marketingOptIn],
+      `INSERT INTO app_user (public_id, username, email, email_verified_at, google_sub, age_confirmed_at, terms_accepted_at, privacy_consent_at, marketing_opt_in, first_name, last_name, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $4, $4, $4, $6, $7, $8, $9) RETURNING id, public_id, username`,
+      [newPublicId('us'), u.username, u.email, u.now, u.googleSub, u.marketingOptIn, u.firstName ?? null, u.lastName ?? null, u.passwordHash ?? null],
     );
     return { ok: true, user: userRef(rows[0]) };
   } catch (err) {
@@ -142,7 +156,8 @@ export async function createUser(db: pg.ClientBase, u: NewUser): Promise<{ ok: t
 // ---------------------------------------------------------------- sessions (PRD-007 US-007.1 AC-6)
 
 export async function createSession(db: pg.ClientBase, tokenHash: string, userId: string, now: Date): Promise<void> {
-  await db.query('INSERT INTO user_session (token_hash, user_id, created_at, last_seen_at) VALUES ($1, $2, $3, $3)', [tokenHash, userId, now]);
+  await db.query(`INSERT INTO user_session (token_hash, user_id, created_at, last_seen_at, auth_version)
+    SELECT $1, id, $3, $3, auth_version FROM app_user WHERE id = $2 AND deleted_at IS NULL AND deletion_requested_at IS NULL`, [tokenHash, userId, now]);
 }
 
 export interface SessionUser extends UserRef {
@@ -163,7 +178,7 @@ export async function sessionUser(db: pg.ClientBase, tokenHash: string, now: Dat
             u.voting_revoked_at IS NOT NULL AS voting_revoked, u.comment_suspended_at IS NOT NULL AS comment_suspended,
             u.totp_enabled, s.mfa_verified_at, s.last_seen_at
        FROM user_session s JOIN app_user u ON u.id = s.user_id JOIN user_tier t ON t.user_id = u.id
-      WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND u.deleted_at IS NULL AND u.deletion_requested_at IS NULL
+      WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.auth_version = u.auth_version AND u.deleted_at IS NULL AND u.deletion_requested_at IS NULL
         AND s.last_seen_at > $2::timestamptz - make_interval(days => $3)`,
     [tokenHash, now, SESSION_IDLE_DAYS],
   );
@@ -217,7 +232,7 @@ export async function revokeAllSessions(db: pg.ClientBase, userId: string, now: 
 
 export async function loadMe(db: pg.ClientBase, userId: string) {
   const { rows } = await db.query(
-    `SELECT u.public_id, u.username, u.email, u.created_at, u.email_verified_at IS NOT NULL AS email_verified,
+    `SELECT u.public_id, u.username, u.email, u.first_name, u.last_name, u.password_hash IS NOT NULL AS password_set, u.created_at, u.email_verified_at IS NOT NULL AS email_verified,
             u.marketing_opt_in, u.google_sub IS NOT NULL AS google_linked, t.tier, tr.ends_at AS trial_ends_at,
             (SELECT row_to_json(x) FROM (SELECT plan, status, current_period_end AS renews_at, cancel_at_period_end
                FROM subscription s WHERE s.user_id = u.id AND s.status <> 'expired' ORDER BY s.created_at DESC LIMIT 1) x) AS subscription
@@ -308,8 +323,9 @@ export async function processDeletion(db: pg.ClientBase, userId: string, now: Da
   await db.query(`DELETE FROM alert WHERE user_id = $1 AND kind = 'correction'`, [userId]);
   await db.query(`DELETE FROM alert WHERE user_id = $1`, [userId]);
   if (u.email) {
-    await db.query('DELETE FROM email_code WHERE email = $1', [u.email]);
-    await db.query('DELETE FROM pending_signup WHERE email = $1', [u.email]);
+    await db.query('DELETE FROM auth_challenge WHERE user_id = $1 OR email_canonical(email::text) = email_canonical($2)', [userId, u.email]);
+    await db.query('DELETE FROM email_code WHERE email_canonical(email::text) = email_canonical($1)', [u.email]);
+    await db.query('DELETE FROM pending_signup WHERE email_canonical(email::text) = email_canonical($1)', [u.email]);
   }
   await db.query(
     `INSERT INTO username_hold (username, user_id, held_until) VALUES ($1, $2, $3)
@@ -317,7 +333,7 @@ export async function processDeletion(db: pg.ClientBase, userId: string, now: Da
     [u.username, userId, daysFrom(now, DELETED_USERNAME_HOLD_DAYS)],
   );
   await db.query(
-    `UPDATE app_user SET email = NULL, google_sub = NULL, username = NULL, replies_seen_at = NULL, marketing_opt_in = false, deleted_at = $2
+    `UPDATE app_user SET email = NULL, google_sub = NULL, username = NULL, first_name = NULL, last_name = NULL, password_hash = NULL, replies_seen_at = NULL, marketing_opt_in = false, deleted_at = $2
       WHERE id = $1`,
     [userId, now],
   );
@@ -346,7 +362,7 @@ export async function processExport(db: pg.ClientBase, exportId: string, now: Da
   const q = async (sql: string) => (await db.query(sql, [userId])).rows;
   const data = {
     generated_at: now,
-    account: (await q(`SELECT public_id, username, email, created_at, marketing_opt_in FROM app_user WHERE id = $1`))[0],
+    account: (await q(`SELECT public_id, username, email, first_name, last_name, created_at, marketing_opt_in FROM app_user WHERE id = $1`))[0],
     watchlist: await q(`SELECT isin, added_at, alerts_enabled FROM watchlist_entry WHERE user_id = $1 ORDER BY added_at`),
     alert_settings: (await q(`SELECT * FROM alert_settings WHERE user_id = $1`))[0] ?? null,
     alerts: await q(`SELECT s.public_id AS story_id, a.kind, a.via, a.channels, a.sent_at FROM alert a JOIN story s ON s.id = a.story_id WHERE a.user_id = $1 ORDER BY a.created_at`),

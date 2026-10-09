@@ -1,6 +1,7 @@
 // Exchange equity master lists → registry rows (entity-resolution.md §2.2; D-049).
 
 import { parseIsin } from './isin.ts';
+import { isValidDate } from './calendar.ts';
 
 export interface MasterRow {
   code: string; // NSE symbol or BSE scrip code
@@ -35,6 +36,36 @@ function cells(line: string): string[] {
   }
   out.push(cur.trim());
   return out;
+}
+
+// BSE's standard security master: required headers prevent a debt/ETF list or
+// a differently ordered vendor export from being mistaken for the equity master.
+export function parseBseEquityList(csv: string): { rows: MasterRow[]; rejected: { line:number; reason:string }[]; excluded:number } | { error:string } {
+  const lines=csv.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim());
+  if (!lines.length) return {error:'empty file'};
+  const header=cells(lines[0]!).map(h=>h.toUpperCase().replace(/[ _]/g,''));
+  const find=(...keys:string[])=>header.findIndex(h=>keys.includes(h));
+  const codeCol=find('SCRIPCODE','SECURITYCODE'),nameCol=find('SCRIPNAME','SECURITYNAME'),isinCol=find('ISINCODE','ISINNO','ISINNUMBER'),groupCol=find('GROUPNAME','GROUP'),typeCol=find('SECURITYTYPEFLAG');
+  if ([codeCol,nameCol,isinCol,groupCol,typeCol].some(i=>i<0)) return {error:'missing Scrip Code, Scrip Name, ISIN CODE, Group Name or Security Type Flag column'};
+  const rows: MasterRow[]=[],rejected:{line:number;reason:string}[]=[];
+  const codes=new Set<string>(),isins=new Set<string>();
+  let excluded=0;
+  const dateCol=find('DATEOFLISTING','LISTINGDATE');
+  for (const [offset,line] of lines.slice(1).entries()) {
+    const c=cells(line),type=c[typeCol]?.toUpperCase();
+    if (type!=='EQ') {
+      if (['MF','DB','GS'].includes(type??'')) excluded++;
+      else rejected.push({line:offset+2,reason:'unknown Security Type Flag'});
+      continue;
+    }
+    const code=c[codeCol]??'',name=c[nameCol]??'',isin=(c[isinCol]??'').toUpperCase(),group=(c[groupCol]??'').toUpperCase();
+    const listedOn=dateCol>=0?c[dateCol]??'':'';
+    const reason=!/^\d{6}$/.test(code)?'invalid BSE scrip code':!name?'missing name':!parseIsin(isin)?'invalid ISIN':!group?'missing settlement group':codes.has(code)||isins.has(isin)?'duplicate code or ISIN':listedOn&&!isValidDate(listedOn)?'listing date must be YYYY-MM-DD':null;
+    if(reason) {rejected.push({line:offset+2,reason});continue;}
+    codes.add(code);isins.add(isin);
+    rows.push({code,name,isin,segment:['M','MT','MS','TS'].includes(group)?'sme':'mainboard',listedOn:listedOn||null});
+  }
+  return {rows,rejected,excluded};
 }
 
 // NSE EQUITY_L.csv / SME_EQUITY_L.csv: SYMBOL, NAME OF COMPANY, SERIES, DATE OF LISTING, …, ISIN NUMBER, …

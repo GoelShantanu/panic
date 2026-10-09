@@ -33,7 +33,7 @@ describe('Google ID token verification (PRD-007 US-007.1)', () => {
   const verifier = () => createGoogleVerifier(CLIENT_ID, async () => [jwk]);
 
   it('accepts a valid token and lower-cases the email', async () => {
-    expect(await verifier().verify(token(good), now)).toEqual({ sub: good.sub, email: 'trader@example.in', emailVerified: true });
+    expect(await verifier().verify(token(good), now)).toEqual({ sub: good.sub, email: 'trader@example.in', emailVerified: true, emailAuthoritative: false, firstName: null, lastName: null });
   });
 
   it('rejects the wrong audience, issuer or an expired token', async () => {
@@ -44,6 +44,13 @@ describe('Google ID token verification (PRD-007 US-007.1)', () => {
 
   it('rejects an unverified email', async () => {
     expect(await verifier().verify(token({ ...good, email_verified: false }), now)).toBeNull();
+  });
+
+  it('distinguishes authoritative Google email from third-party addresses and carries profile names', async () => {
+    expect(await verifier().verify(token({ ...good, email: 'ada@gmail.com', given_name: 'Ada', family_name: 'Lovelace' }), now)).toMatchObject({ emailAuthoritative: true, firstName: 'Ada', lastName: 'Lovelace' });
+    expect(await verifier().verify(token({ ...good, hd: 'example.in' }), now)).toMatchObject({ emailAuthoritative: true });
+    expect(await verifier().verify(token({ ...good, email: 'not-an-email' }), now)).toBeNull();
+    expect(await verifier().verify(token({ ...good, sub: '' }), now)).toBeNull();
   });
 
   it('rejects a signature from a different key, an unknown key id, or a non-RS256 header', async () => {

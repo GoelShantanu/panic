@@ -4,6 +4,7 @@ import {
   CLUSTER_WINDOW_MS,
   RULES_VERSION,
   attachScore,
+  articleCandidateBands,
   bestArticleStory,
   classifyFiling,
   classifyHeadline,
@@ -28,6 +29,7 @@ import {
   enqueueAiJob,
   enqueueAlertEvaluation,
   loadPipelineItem,
+  loadAliasEntries,
   loadStoryItems,
   resolveExchangeCode,
   saveItemAnalysis,
@@ -43,6 +45,8 @@ export class PermanentJobError extends Error {}
 
 export interface PipelineContext {
   aliases: AliasIndex;
+  aliasDate: string;
+  historicalAliases: Map<string, AliasIndex>;
   thresholds: { merge: number; attach: number };
 }
 
@@ -50,7 +54,7 @@ const IST_OFFSET_MS = 5.5 * 3600 * 1000;
 export const istDate = (d: Date) => new Date(d.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
 const itemTime = (item: PipelineItem) => item.publishedAt ?? item.firstSeenAt;
 
-async function analyse(db: pg.ClientBase, item: PipelineItem, ctx: PipelineContext): Promise<ItemAnalysis> {
+export async function analyseItem(db: pg.ClientBase, item: PipelineItem, ctx: PipelineContext): Promise<ItemAnalysis> {
   let eventTypes;
   let tags: ItemTag[] = [];
   let unresolved: string[] = [];
@@ -60,7 +64,14 @@ async function analyse(db: pg.ClientBase, item: PipelineItem, ctx: PipelineConte
     if (isin) tags = [{ isin, method: 'exchange_code' }];
   } else {
     eventTypes = classifyHeadline(item.headline);
-    const r = resolveArticle(ctx.aliases, item.headline, item.excerpt);
+    const date = istDate(itemTime(item));
+    let aliases = date === ctx.aliasDate ? ctx.aliases : ctx.historicalAliases.get(date);
+    if (!aliases) {
+      aliases = new AliasIndex(await loadAliasEntries(db, date));
+      if (ctx.historicalAliases.size >= 64) ctx.historicalAliases.clear();
+      ctx.historicalAliases.set(date, aliases);
+    }
+    const r = resolveArticle(aliases, item.headline, item.excerpt);
     tags = r.isins.map((isin) => ({ isin, method: 'rule' }));
     unresolved = r.unresolved;
   }
@@ -74,7 +85,9 @@ async function analyse(db: pg.ClientBase, item: PipelineItem, ctx: PipelineConte
   };
 }
 
-const features = (a: ItemAnalysis, at: Date): ItemFeatures => ({
+const features = (a: ItemAnalysis, at: Date, headline: string, excerpt: string | null = null): ItemFeatures => ({
+  headline,
+  excerpt,
   shingles: a.shingles,
   numbers: a.numbers,
   isins: a.tags.map((t) => t.isin),
@@ -83,7 +96,7 @@ const features = (a: ItemAnalysis, at: Date): ItemFeatures => ({
 });
 
 const filingFeatures = (a: ItemAnalysis, at: Date, exchange: string, subject: string): FilingFeatures => ({
-  ...features(a, at),
+  ...features(a, at, subject),
   exchange,
   subjectWords: wordSet(subject),
 });
@@ -93,7 +106,7 @@ function chooseTarget(item: PipelineItem, analysis: ItemAnalysis, candidates: St
   for (const c of candidates) byStory.set(c.storyId, [...(byStory.get(c.storyId) ?? []), c]);
   const stories = [...byStory.entries()];
   const hasFiling = (items: StoryItem[]) => items.some((i) => i.kind === 'filing');
-  const self = features(analysis, itemTime(item));
+  const self = features(analysis, itemTime(item), item.headline, item.excerpt);
 
   if (item.filing) {
     // S2: the same announcement on the other exchange.
@@ -105,7 +118,7 @@ function chooseTarget(item: PipelineItem, analysis: ItemAnalysis, candidates: St
     }
     // S3: each filing anchors its own story, unless it explains an article-only story.
     for (const [storyId, items] of stories) {
-      if (!hasFiling(items) && filingExplainsStory(self, items.map((i) => features(i.analysis, i.at)))) return storyId;
+      if (!hasFiling(items) && filingExplainsStory(self, items.map((i) => features(i.analysis, i.at, i.headline)))) return storyId;
     }
     return null;
   }
@@ -114,7 +127,7 @@ function chooseTarget(item: PipelineItem, analysis: ItemAnalysis, candidates: St
   let best: { storyId: string; score: number } | null = null;
   for (const [storyId, items] of stories) {
     for (const f of items.filter((i) => i.kind === 'filing')) {
-      const score = attachScore(self, features(f.analysis, f.at));
+      const score = attachScore(self, features(f.analysis, f.at, f.headline));
       if (score !== null && score >= ctx.thresholds.attach && (!best || score > best.score)) best = { storyId, score };
     }
   }
@@ -123,7 +136,7 @@ function chooseTarget(item: PipelineItem, analysis: ItemAnalysis, candidates: St
   // S5: article ↔ article, conservatively.
   return bestArticleStory(
     self,
-    stories.filter(([, items]) => !hasFiling(items)).map(([id, items]) => ({ id, items: items.map((i) => features(i.analysis, i.at)) })),
+    stories.filter(([, items]) => !hasFiling(items)).map(([id, items]) => ({ id, items: items.map((i) => features(i.analysis, i.at, i.headline, i.excerpt)) })),
     ctx.thresholds.merge,
   );
 }
@@ -153,7 +166,7 @@ export async function processItem(db: pg.ClientBase, itemId: string, ctx: Pipeli
   const existing = await storyOfItem(db, itemId);
   if (existing && !opts.revised) return { storyId: existing, created: false, skipped: true };
 
-  const analysis = await analyse(db, item, ctx);
+  const analysis = await analyseItem(db, item, ctx);
   await saveItemAnalysis(db, itemId, analysis);
   if (existing) {
     await db.query('SELECT pg_advisory_xact_lock($1)', [CLUSTER_LOCK_KEY]);
@@ -166,7 +179,7 @@ export async function processItem(db: pg.ClientBase, itemId: string, ctx: Pipeli
 
   await db.query('SELECT pg_advisory_xact_lock($1)', [CLUSTER_LOCK_KEY]);
   const at = itemTime(item);
-  const bands = lshBands(analysis.shingles);
+  const bands = item.kind==='article' ? articleCandidateBands(item.headline) : lshBands(analysis.shingles);
   const candidates = await loadStoryItems(
     db,
     await candidateStoryIds(db, analysis.tags.map((t) => t.isin), bands, new Date(at.getTime() - CLUSTER_WINDOW_MS)),

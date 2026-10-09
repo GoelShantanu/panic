@@ -7,6 +7,8 @@ import type { PipelineContext } from './process-item.ts';
 export async function buildPipelineContext(db: pg.ClientBase, now: Date): Promise<PipelineContext> {
   return {
     aliases: new AliasIndex(await loadAliasEntries(db, istDate(now))),
+    aliasDate: istDate(now),
+    historicalAliases: new Map(),
     thresholds: await clusterThresholds(db),
   };
 }

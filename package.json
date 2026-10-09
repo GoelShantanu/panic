@@ -12,14 +12,18 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json && tsc -p src/apps/web/tsconfig.json",
     "web:build": "next build src/apps/web",
+    "web:dev": "node --env-file-if-exists=.env.local src/apps/web/src/cli/serve.ts",
     "test": "vitest run",
     "test:ci": "vitest run --config vitest.ci.config.ts",
+    "test:browser": "playwright test",
     "db:migrate": "node src/packages/db/src/cli/migrate.ts",
     "db:local:up": "docker compose up -d db",
     "db:local:status": "docker compose ps db",
     "db:local:logs": "docker compose logs -f db"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.4",
     "@types/nodemailer": "^8.0.2",

@@ -1,0 +1,31 @@
+{
+  "source_id": "src_licensed_bse",
+  "name": "Licensed BSE vendor — configure before enabling",
+  "access_basis": "Replace with the signed licence/reference and permitted display/storage usage",
+  "access_checked_on": "2026-10-09",
+  "access_approved": false,
+  "enabled": false,
+  "adapter": {
+    "type": "filings_poll",
+    "url": "https://vendor.example/announcements",
+    "reconcile_url": "https://vendor.example/daily-announcements",
+    "token_env": "FILINGS_VENDOR_TOKEN",
+    "mapping": {
+      "announcements_path": "data.records",
+      "cursor_path": "pagination.next",
+      "exchange": "BSE",
+      "timezone": "Asia/Kolkata",
+      "fields": {
+        "announcement_id": "id",
+        "scrip_code": "securityCode",
+        "subject": "subject",
+        "published_at": "publishedAt",
+        "url": "url",
+        "attachment_url": "attachmentUrl",
+        "category": "category",
+        "status": "status"
+      },
+      "status_values": { "published": "live", "withdrawn": "withdrawn" }
+    }
+  }
+}

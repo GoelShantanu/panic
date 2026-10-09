@@ -12,10 +12,22 @@ const index = new AliasIndex([
   { isin: 'RIL', text: 'Jio', source: 'alias', ambiguous: false, commonWord: false },
   { isin: 'LT', text: 'L&T', source: 'alias', ambiguous: false, commonWord: false },
   { isin: 'MO', text: 'Motilal Oswal', source: 'alias', ambiguous: false, commonWord: false },
+  { isin: 'ITC', text: 'ITC Limited', source: 'name', ambiguous: false, commonWord: false },
   { isin: 'AMBIGUOUS', text: 'Gamma Group', source: 'alias', ambiguous: true, commonWord: false },
 ]);
 
 describe('article resolution attribution safeguards', () => {
+  it('distinguishes input tax credit from the issuer in tax coverage', () => {
+    expect(index.resolve('GST Council allows employers to claim ITC on group insurance').isins).toEqual([]);
+    expect(index.resolve('Input tax credit (ITC) rules change').isins).toEqual([]);
+    expect(index.resolve('ITC shares fall after GST tax hike').isins).toEqual(['ITC']);
+    expect(index.resolve('ITC revenue rises after input tax credit adjustment').isins).toEqual(['ITC']);
+  });
+  it('distinguishes broker recommendations from broker company results', () => {
+    expect(index.resolve('Orion Textiles Q2 results: Motilal Oswal remains bullish').isins).toEqual(['CHILD']);
+    expect(index.resolve('Motilal Oswal reiterates buy on Orion Textiles').isins).toEqual(['CHILD']);
+    expect(index.resolve('Motilal Oswal profit rises after Q2 results').isins).toEqual(['MO']);
+  });
   it('does not tag institutions or analyst subsidiaries from excerpts', () => {
     expect(resolveArticle(index, 'Policy outlook', 'The Reserve Bank of India raised rates. SBI Securities forecasts another hike.').isins).toEqual([]);
     expect(index.resolve('Bank of India shares rise after quarterly results').isins).toEqual(['BANK']);
@@ -54,5 +66,47 @@ describe('article resolution attribution safeguards', () => {
     expect(index.resolve('Motilal Oswal shares rise after profit growth').isins).toEqual(['MO']);
     expect(resolveArticle(index, 'Motilal Oswal leads mutual-fund AUM growth', 'Motilal Oswal logged strong growth.').isins).toEqual([]);
     expect(resolveArticle(index, 'Nifty earnings seen rising sharply: Motilal Oswal', 'Motilal Oswal believes the outlook is positive.').isins).toEqual([]);
+  });
+});
+
+
+
+// Fictional companies keep behavioural regressions separate from the evaluation corpus.
+const issuerIndex = new AliasIndex([
+  ['A', 'Asterion Industries Limited', 'name'], ['A', 'Asterion', 'alias'],
+  ['K', 'Kestrel Power Limited', 'name'], ['K', 'Kestrel', 'alias'],
+  ['B', 'Beacon Ratings Limited', 'name'], ['B', 'Beacon Ratings', 'alias'],
+  ['P', 'Orion Ports and Special Economic Zone Limited', 'name'], ['P', 'Orion Ports', 'alias'],
+  ['S', 'Sunrise Small Finance Bank Limited', 'name'], ['S', 'Sunrise SFB', 'alias'],
+].map(([isin, text, source]) => ({ isin: isin!, text: text!, source: source as 'name' | 'alias', ambiguous: false, commonWord: false })));
+
+describe('issuer subjects and analyst attribution', () => {
+  it.each([
+    'Q2 earnings may grow 20%, says Asterion',
+    'Kestrel shares gain after tariff hike, Asterion retains buy',
+    'Inflation outlook: Priya Sharma, Beacon Ratings',
+  ])('does not tag the commentator: %s', headline => {
+    const r = issuerIndex.resolve(headline);
+    expect(r.isins).toEqual(headline.includes('Kestrel') ? ['K'] : []);
+  });
+  it('ignores an interviewee affiliation in the excerpt', () => {
+    expect(resolveArticle(issuerIndex, 'Smart Talk: Why investors should watch inflation',
+      'Priya Sharma, CIO – Equity, Asterion Industries, discusses the risks in the market.').isins).toEqual([]);
+  });
+  it.each(['Asterion shares rise after Q2 results', 'Asterion revenue grows 20%', 'Analysts say Kestrel shares could benefit'])('preserves issuer news: %s', headline => {
+    expect(issuerIndex.resolve(headline).isins).toEqual(headline.includes('Kestrel') ? ['K'] : ['A']);
+  });
+  it('does not truncate a company when and introduces the next company', () => {
+    expect(issuerIndex.resolve('Stocks in news: Orion Ports and Sunrise SFB').isins).toEqual(['P', 'S']);
+  });
+  it('completes an explicit roundup from its excerpt', () => {
+    expect(resolveArticle(issuerIndex, 'Asterion among 3 stocks in focus', 'Asterion, Kestrel and Orion Ports shares gained.').isins).toEqual(['A', 'K', 'P']);
+  });
+  it('does not add incidental excerpt companies to an ordinary issuer headline', () => {
+    expect(resolveArticle(issuerIndex, 'Asterion posts record profit', 'Asterion beat Kestrel in market value.').isins).toEqual(['A']);
+  });
+  it('retains ambiguity even when an excerpt has another issuer', () => {
+    const ambiguous = new AliasIndex([{isin: 'A', text: 'Orbit', source: 'alias', ambiguous: true, commonWord: false}, {isin: 'K', text: 'Kestrel', source: 'alias', ambiguous: false, commonWord: false}]);
+    expect(resolveArticle(ambiguous, 'Orbit restructuring', 'Kestrel shares rise')).toEqual({isins: [], unresolved: ['Orbit']});
   });
 });

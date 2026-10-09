@@ -170,6 +170,7 @@ export interface StoryItem {
   sourceId: string;
   tier: number;
   headline: string;
+  excerpt: string | null;
   at: Date; // published time if known, else first seen
   exchange: string | null;
   analysis: ItemAnalysis;
@@ -178,7 +179,7 @@ export interface StoryItem {
 export async function loadStoryItems(db: pg.ClientBase, storyIds: readonly string[]): Promise<StoryItem[]> {
   if (storyIds.length === 0) return [];
   const { rows } = await db.query(
-    `SELECT si.story_id, i.id, i.kind, i.source_id, s.tier, i.headline, coalesce(i.published_at, i.first_seen_at) AS at,
+    `SELECT si.story_id, i.id, i.kind, i.source_id, s.tier, i.headline, i.excerpt, coalesce(i.published_at, i.first_seen_at) AS at,
             f.exchange, a.event_types, a.tags, a.unresolved, a.numbers, a.shingles, a.rules_version
        FROM story_item si
        JOIN item i ON i.id = si.item_id
@@ -196,6 +197,7 @@ export async function loadStoryItems(db: pg.ClientBase, storyIds: readonly strin
     sourceId: r.source_id,
     tier: r.tier,
     headline: r.headline,
+    excerpt: r.excerpt,
     at: r.at,
     exchange: r.exchange,
     analysis: {

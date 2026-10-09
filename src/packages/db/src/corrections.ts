@@ -3,7 +3,7 @@
 // labelled for evaluation.
 
 import type pg from 'pg';
-import { CLUSTER_WINDOW_MS, lshBands } from '@stockpanic/core';
+import { articleCandidateBands, CLUSTER_WINDOW_MS, lshBands } from '@stockpanic/core';
 import { ALERTS_QUEUE } from './alerts.ts';
 import { CLUSTER_LOCK_KEY, createStory, emitStoryEvent, recomputeStory, saveStoryBands } from './pipeline.ts';
 
@@ -191,7 +191,7 @@ export async function splitStory(db: pg.ClientBase, publicId: string, itemPublic
 
     const moving = (
       await db.query(
-        `SELECT i.id, coalesce(i.published_at, i.first_seen_at) AS at, a.shingles FROM item i LEFT JOIN item_analysis a ON a.item_id = i.id
+        `SELECT i.id, i.kind, i.headline, coalesce(i.published_at, i.first_seen_at) AS at, a.shingles FROM item i LEFT JOIN item_analysis a ON a.item_id = i.id
           WHERE i.public_id = ANY($1::text[]) ORDER BY coalesce(i.published_at, i.first_seen_at), i.id`,
         [unique],
       )
@@ -203,7 +203,7 @@ export async function splitStory(db: pg.ClientBase, publicId: string, itemPublic
     const newStoryId = await createStory(db, String(first.id), first.at);
     for (const m of moving.slice(1)) await db.query('UPDATE story_item SET story_id = $2 WHERE item_id = $1', [m.id, newStoryId]);
     for (const m of moving) {
-      if (m.shingles?.length) await saveStoryBands(db, newStoryId, lshBands(m.shingles), new Date(new Date(m.at).getTime() + CLUSTER_WINDOW_MS));
+      if (m.shingles?.length) await saveStoryBands(db, newStoryId, m.kind==='article'?articleCandidateBands(m.headline):lshBands(m.shingles), new Date(new Date(m.at).getTime() + CLUSTER_WINDOW_MS));
     }
     await recomputeStory(db, storyId);
     await recomputeStory(db, newStoryId);

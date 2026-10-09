@@ -9,7 +9,15 @@ import { LiveProvider } from '../site/live.tsx';
 import { PhoneNotice } from '../site/Phone.tsx';
 import { ScrollReset } from '../site/ScrollReset.tsx';
 import { THEME_BOOT } from '../site/ThemeToggle.tsx';
+import { DENSITY_BOOT } from '../site/DensityToggle.tsx';
 import './globals.css';
+import '../site/stream/stream.css';
+import '../site/story/story.css';
+import '../site/account/account.css';
+import '../site/watchlist/watchlist.css';
+import '../site/admin/console.css';
+import '../site/responsive.css';
+import '../site/readability.css';
 
 // Every page shows live data and the visitor's session: render on request, never at build time.
 export const dynamic = 'force-dynamic';
@@ -45,6 +53,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang="en-IN" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: DENSITY_BOOT }} />
       </head>
       <body>
         <LiveProvider>

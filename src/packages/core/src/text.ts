@@ -45,7 +45,57 @@ export function wordSet(text: string): string[] {
 // Digits attached to letters ("Q2", "FY27", "H1") are labels, not figures, and are ignored.
 export function extractNumbers(text: string): string[] {
   const found = text.match(/(?<![\p{L}\d.,])\d[\d,]*(?:\.\d+)?(?!\p{L})/gu) ?? [];
-  return [...new Set(found.map((n) => n.replace(/,/g, '').replace(/\.0+$/, '')))].sort();
+  return [...new Set(found.map((n) => n.replace(/,/g, '').replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '')))].sort();
+}
+
+// Explicit lexical equivalences broaden retrieval without a model or new provider.
+// Direction, event periods and amounts stay present; they are not stop words.
+const NEWS_EQUIVALENTS: Record<string,string> = {
+  world:'global', markets:'market', forecasts:'forecast', lifts:'raises', raise:'raises',
+  brent:'oil', guv:'governor', pts:'points', drops:'falls', drop:'falls',
+  hikes:'hike', gains:'rise', rises:'rise', grows:'grow', growth:'grow',
+  widens:'widen', dethrones:'dethrone', tightens:'tighten', shares:'share',
+  notices:'notice', issues:'issue', ads:'advertising', claims:'claim', reacts:'reaction',
+  program:'programme', programs:'programme', programmes:'programme', suspending:'suspended',
+  deliveries:'delivery', engines:'engine', stocks:'stock', prices:'price',
+};
+const NEWS_FILLER = new Set(['today','updates','update','live','stock','stocks','share','shares','what','how','why','can','be','could','may','will','said','says','over','up','after','before','new','latest']);
+
+export function newsTerms(headline: string): string[] {
+  const text=headline.replace(/\bshort (?:term|run)\b/gi,'shortterm').replace(/\bsouth korea\b/gi,'korea').replace(/\bwall st\b/gi,'wall street');
+  return [...new Set(wordSet(text).map(w=>NEWS_EQUIVALENTS[w]??w).filter(w=>!NEWS_FILLER.has(w)))].sort();
+}
+
+export function articleCandidateBands(headline: string): bigint[] {
+  // Namespace word-set bands separately from the existing shingle bands.
+  const words=newsTerms(headline).filter(w=>w.length>=4&&!['market','global','price','points','stock','company','companies','today'].includes(w)).slice(0,12);
+  const anchors: bigint[]=[];
+  for (let i=0;i<words.length;i++) for(let j=i+1;j<words.length;j++) {
+    const key=`news-anchor:${words[i]}:${words[j]}`;
+    anchors.push(BigInt.asIntN(64,(BigInt(fnv1a32(key,19))<<32n)|BigInt(fnv1a32(key,23))));
+  }
+  return [...new Set([...lshBands(headlineShingles(headline)),...lshBands(newsTerms(headline).map(w=>`news-word:${w}`)),...anchors])];
+}
+
+export function eventNumbers(headline: string): string[] {
+  // A changing share-price reaction is not a changed corporate-event amount.
+  // Other percentages, currency figures, targets and dates remain veto inputs.
+  const text=headline.replace(/\b(?:gain|gains|rise|rises|fall|falls|drop|drops|jump|jumps|slide|slides)\s+(?:(?:over|up to|more than|nearly|about)\s+)?\d+(?:\.\d+)?\s*%/gi,(match:string,offset:number)=>{
+    const clause=headline.slice(Math.max(0,offset-70),offset).split(/[,;:]/).at(-1)??'';
+    return /\b(?:shares?|stocks?)\b/i.test(headline)&&!/\b(?:profit|revenue|sales|earnings|ebitda|margin|dividend)\b/i.test(clause)?'':match;
+  });
+  return extractNumbers(text);
+}
+
+export function financialFacts(text: string): Map<string,Set<string>> {
+  const facts=new Map<string,Set<string>>();
+  const pattern=/\b(revenue|sales|profit|earnings|ebitda)\b[^\d.;]{0,45}?(\d+(?:\.\d+)?)\s*(%|per cent|crore|lakh|million|billion)(?![a-z])/gi;
+  for (const m of text.matchAll(pattern)) {
+    const role=m[1]!.toLowerCase();
+    const value=`${Number(m[2])}:${m[3]!.toLowerCase()==='per cent'?'%':m[3]!.toLowerCase()}`;
+    const values=facts.get(role)??new Set<string>(); values.add(value);facts.set(role,values);
+  }
+  return facts;
 }
 
 export function jaccard(a: readonly string[], b: readonly string[]): number {

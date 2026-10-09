@@ -9,6 +9,8 @@ export interface Me {
   user_id: string;
   username: string;
   email: string;
+  first_name?: string | null;
+  last_name?: string | null;
   created_at: string;
   email_verified: boolean;
   tier: 'free' | 'paid';
@@ -72,11 +74,13 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
         <dl className="kv">
           <dt>Email</dt>
           <dd>{me.email}</dd>
+          {(me.first_name || me.last_name) && <><dt>Name</dt><dd>{[me.first_name, me.last_name].filter(Boolean).join(' ')}</dd></>}
           <dt>Sign-in methods</dt>
-          <dd>{me.sign_in_methods.map((m) => (m === 'google' ? 'Google' : 'Email code')).join(', ')}</dd>
+          <dd>{me.sign_in_methods.length ? me.sign_in_methods.map((m) => m === 'google' ? 'Google' : 'Email and password').join(', ') : 'Set a password to sign in next time'}</dd>
           <dt>Member since</dt>
           <dd>{day(me.created_at)}</dd>
         </dl>
+        <p><Link href="/sign-in?mode=reset&next=%2Fsettings">{me.sign_in_methods.includes('password') ? 'Reset password' : 'Set a password'}</Link></p>
         <form onSubmit={saveUsername} className="inline-form">
           <label>
             Username

@@ -14,6 +14,11 @@ export interface Settings {
   event_types: Record<string, boolean>;
   email_disabled_after_bounces?: boolean;
 }
+type SettingsPatch = Partial<Pick<Settings, 'daily_budget' | 'event_types'>> & {
+  channels?: Partial<Settings['channels']>;
+  quiet_hours?: Partial<Settings['quiet_hours']>;
+  digest?: Partial<Settings['digest']>;
+};
 
 const b64ToBytes = (b64: string) => {
   const s = atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
@@ -21,13 +26,13 @@ const b64ToBytes = (b64: string) => {
 };
 
 async function put(patch: unknown) {
-  const res = await fetch('/v1/alerts/settings', { method: 'PUT', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) }).catch(() => null);
-  return res?.ok ? ((await res.json()) as Settings) : null;
+  const res = await fetch('/v1/alerts/settings', { method: 'PUT', signal: AbortSignal.timeout(15_000), credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) }).catch(() => null);
+  return res?.ok ? ((await res.json().catch(() => null)) as Settings | null) : null;
 }
 
 // Browser push (US-003.6 AC-1): permission is asked only when the user turns push on.
 async function enablePush(vapidKey: string): Promise<string | null> {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return 'This browser does not support push notifications.';
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return 'This browser does not support push notifications.';
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return 'Notifications are blocked for this site in your browser settings.';
   const reg = await navigator.serviceWorker.register('/sw.js');
@@ -50,20 +55,41 @@ async function disablePush() {
 export function AlertSettings({ initial, eventTypes, vapidKey, tier }: { initial: Settings; eventTypes: EventType[]; vapidKey: string | null; tier: 'free' | 'paid' }) {
   const [s, setS] = useState(initial);
   const [msg, setMsg] = useState<string | null>(null);
-  async function save(patch: Partial<Record<keyof Settings, unknown>>) {
-    setMsg(null);
-    const r = await put(patch);
-    if (r) setS(r);
-    else setMsg('That setting could not be saved.');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  async function save(patch: SettingsPatch) {
+    const previous = s;
+    setS(current => ({ ...current, ...patch,
+      channels: { ...current.channels, ...patch.channels },
+      quiet_hours: { ...current.quiet_hours, ...patch.quiet_hours },
+      digest: { ...current.digest, ...patch.digest },
+      event_types: { ...current.event_types, ...patch.event_types },
+    }));
+    setBusy(true);
+    setError(false);
+    setMsg('Saving…');
+    try {
+      const r = await put(patch);
+      if (!r) throw new Error('save failed');
+      setS(r);
+      setMsg('Saved. Changes apply to new stories.');
+    } catch {
+      setS(previous);
+      setError(true);
+      setMsg('That setting could not be saved. Please try again.');
+    } finally { setBusy(false); }
   }
   return (
-    <div className="settings">
+    <div className="settings mobile-workflow alert-settings">
       <h1>Alert settings</h1>
       <p className="muted">
         Alerts are about companies on your <Link href="/watchlist">watchlist</Link> only, and only for the event types you choose. Changes apply to stories from now on.
       </p>
       {s.email_disabled_after_bounces && <p className="notice notice-warn">Email alerts were turned off because messages to your address kept failing. Check the address in settings, then turn email back on.</p>}
 
+      {msg && <p className={`notice ${error ? 'notice-error' : 'notice-success'}`} role={error ? 'alert' : 'status'}>{msg}</p>}
+      <fieldset className="settings-controls" disabled={busy} aria-busy={busy}>
+      <legend className="sr-only">Alert preferences</legend>
       <section className="panel settings-section" aria-labelledby="ch-h">
         <h2 id="ch-h">Channels</h2>
         <label className="check">
@@ -75,14 +101,23 @@ export function AlertSettings({ initial, eventTypes, vapidKey, tier }: { initial
             checked={s.channels.push}
             disabled={!vapidKey}
             onChange={async (e) => {
-              if (e.target.checked) {
-                const err = await enablePush(vapidKey!);
-                if (err) return setMsg(err);
-              } else await disablePush();
-              await save({ channels: { push: e.target.checked } });
+              const checked = e.target.checked;
+              setBusy(true);
+              setMsg('Updating browser notifications…');
+              setError(false);
+              try {
+                if (checked) {
+                  const err = await enablePush(vapidKey!);
+                  if (err) throw new Error(err);
+                } else await disablePush();
+                await save({ channels: { push: checked } });
+              } catch (err) {
+                setError(true);
+                setMsg(err instanceof Error ? err.message : 'Could not update browser notifications. Please try again.');
+              } finally { setBusy(false); }
             }}
           />{' '}
-          Desktop browser notifications {!vapidKey && <span className="faint">(not available yet)</span>}
+          Browser notifications {!vapidKey && <span className="faint">(not available yet)</span>}
         </label>
       </section>
 
@@ -130,11 +165,7 @@ export function AlertSettings({ initial, eventTypes, vapidKey, tier }: { initial
           ))}
         </div>
       </section>
-      {msg && (
-        <p className="notice notice-error" role="status">
-          {msg}
-        </p>
-      )}
+      </fieldset>
       <p>
         <Link href="/alerts">Alert history</Link>
       </p>

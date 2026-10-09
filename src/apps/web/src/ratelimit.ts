@@ -27,5 +27,7 @@ export class WindowLimiter {
 
 // Sign-in codes: per email (OTP_MAX_PER_HOUR) and per client, so one client can't use us to mail many inboxes.
 export const codeRequestsPerIp = new WindowLimiter(20, 3600_000);
+export const authAttemptsPerIp = new WindowLimiter(30, 15 * 60_000);
+export const passwordAttemptsPerAccount = new WindowLimiter(10, 15 * 60_000);
 // Public grievance form: a flood would bury real complaints that carry legal deadlines.
 export const grievancesPerIp = new WindowLimiter(5, 3600_000);

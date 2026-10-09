@@ -53,11 +53,11 @@ Not research, not foundation. Historical context once their decision is recorded
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `prd-001-live-stream.md` | Stream, filters, unread, keyboard, source health, market session, phone view | CTO | Product Definition v1.0 | Architecture, QA | **Testable requirements for the stream** | Medium (targets `[ASSUMPTION]`) | ✅ v1.0 approved — D-023 |
 | `prd-002-filings-and-tagging.md` | Filings first, story clustering, ISIN tagging, corrections | CTO | Product Definition v1.0, Research §4.1–4.4 | PRD-001, 003, 004, 005; Architecture | **What an item, story and tag are, and how correct they must be** | Medium (targets `[ASSUMPTION]`; no labelled data) | ✅ v1.0 approved — D-023 |
-| `prd-003-watchlist-and-alerts.md` | Watchlist building/import; alert rules, budget, digest, corrections | CTO | Product Definition v1.0, PRD-002, Research §4.6, §5.3 | PRD-004, 007; Architecture | **When a user is alerted, and when they are not** | Medium (targets `[ASSUMPTION]`; broker APIs unresearched) | ✅ v1.0 approved — D-023 |
+| `prd-003-watchlist-and-alerts.md` | Watchlist building/import; alert rules, budget, digest, corrections; phone management amendment | CTO | Product Definition v1.0, PRD-002, Research §4.6, §5.3, D-067 | PRD-004, 007; Architecture | **When a user is alerted, and when they are not** | Medium (targets `[ASSUMPTION]`; broker APIs unresearched) | ✅ v1.0 approved — D-023; mobile amendment D-067 |
 | `prd-004-company-and-story-pages.md` | Event-type taxonomy, story page, company page, AI filing summaries | CTO | Product Definition v1.0, PRD-002, D-014, D-018 | PRD-001, 003; Architecture | **The event taxonomy and the AI-summary safeguards** | Medium (taxonomy untested; targets `[ASSUMPTION]`) | ✅ v1.0 approved — D-023 |
 | `prd-005-voting.md` | Directional and quality votes, display, eligibility, abuse handling, kill switch | CTO | Product Definition v1.0, D-011, D-012, D-018, D-020, `q2.md` §F.3–F.4 | PRD-001, 004; Architecture | **The vote display object and view thresholds** | Medium (thresholds `[ASSUMPTION]`) | ✅ v1.0 approved — D-023 |
 | `prd-006-comments.md` | Comments, reports, grievance handling, takedowns, kill switch | CTO | Product Definition v1.0, D-016, D-017, D-018, PRD-005 | Architecture | **How comments work and the legal-minimum moderation process** | Medium (IT Rules duties `[INFERRED]`, unreviewed) | ✅ v1.0 approved — D-023 |
-| `prd-007-accounts-and-tiers.md` | Sign-up, usernames, privacy (DPDP), operator accounts, free/paid entitlements, pricing, billing | CTO | Product Definition v1.0, D-015, D-016, D-018, D-021 | PRD-001, 003, 004; Architecture | **The entitlements object and tier limits** | Medium (price and split untested; legal duties `[INFERRED]`) | ✅ v1.0 approved — D-023 |
+| `prd-007-accounts-and-tiers.md` | Sign-up, privacy, accounts, tier limits and billing; password/verification extension (§12) and passwordless removal (§13) | CTO | Product Definition v1.0, D-015, D-016, D-018, D-021, D-065/066 | PRD-001, 003, 004; Architecture | **The entitlements object and tier limits; account requirements** | Medium (price and split untested; legal duties `[INFERRED]`) | ✅ v1.0 approved — D-023; founder authentication amendments D-065/066 |
 
 ### 1.2e Architecture — `docs/architecture/`
 
@@ -72,10 +72,11 @@ Not research, not foundation. Historical context once their decision is recorded
 
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path (migrations through 0018) | Architect | Architecture v1.0, PRD-001…007, D-059 | Backend | **Which rules the database guarantees** | High (migrations through 0018 applied locally) | ✅ v1.0 plus forward migration notes |
+| `schema.md` | Conventions, DB-enforced vs app-enforced rules, query patterns → indexes, roles, migration path (through 0019, authentication addendum §10) | Architect | Architecture v1.0, PRD-001…007, D-059, D-065 | Backend | **Which rules the database guarantees** | High (migrations through 0019 applied locally) | ✅ v1.0 plus forward migration notes |
 | `partitioning.md` | Partitioned tables, retention, lifecycle | Architect | schema.md | Ops | **Retention by partition** | Medium (functions verified; jobs not built) | ✅ v1.0 approved — D-028 |
 | `migrations/0001_initial.sql` | Initial DDL | Architect | schema.md | Backend | **The schema itself** | High (applied on PG 17.11) | ✅ v1.0 frozen — D-028 |
 | `migrations/0018_article_relevance.sql` | RSS editorial scope and persistent relevance review queue | CTO | D-059, ingestion.md §4.1 | Worker ingestion | **The relevance-candidate schema change** | High (applied to local PostgreSQL) | ✅ Applied locally |
+| `migrations/0019_password_auth.sql` | Optional password hashes and private names; credential-versioned sessions; isolated signup/recovery/Google challenges | CTO | D-065, PRD-007 extension | Accounts, maintenance | **The credential schema extension** | High (applied locally, migration/integration tests) | ✅ Applied locally; provider configuration pending |
 | `tests/0001_constraints_test.sql` | Constraint tests against real Postgres | Architect | 0001 | CI | **Proof the constraints hold** | High | ✅ 56/56 pass |
 
 ### 1.2g Source — `src/`
@@ -86,11 +87,13 @@ Not research, not foundation. Historical context once their decision is recorded
 | `src/packages/db` | Migration runner; data access for ingestion, relevance candidate persistence/review, pipeline, reads, accounts, alerts, community and moderation; partition maintenance | CTO | `docs/database/` | ✅ B1–B11 plus migration 0018 |
 | `src/apps/web` (pages) | Next.js 16 App Router pages (`app/`): stream, story, company, accounts and billing, watchlist and alerts, comments and grievances, profiles and replies, operator console, status, sitemaps and robots; components and helpers (`site/`); design tokens (WCAG 2.2 AA); phone view; push service worker; component and structural accessibility tests | CTO | API contracts; D-040…D-047 | ✅ F1–F8 — approved (D-048) |
 | `src/apps/web` | API handlers (read: PRD-001–004; accounts: PRD-007; watchlist/alerts: PRD-003; votes, comments, grievances, operator moderation with TOTP 2FA: PRD-005/006), filings push receiver (D-035), billing on Razorpay with webhooks and GST invoices (D-036), operator story corrections and review queue (D-037), Google sign-in verifier, Node server with sessions; frontend additions: saved views, outbound clicks, notices, summary reports, admin settings and court-order intake, source status, sitemap data (D-042…D-047) | CTO | `db`, `mail`; PRD contracts; ADR-007; D-032, D-033 | ✅ B4–B11, F3–F8 |
-| `docs/qa/test-strategy.md` | QA method and results: entity-resolution precision (real RSS corpus, real NSE registry), market-open load profile, defects, traceability, limits; release pilot and frozen-corpus evaluator (§8) | CTO | PRD-002, NFR-001.x, entity-resolution.md, ADR-005, D-064 | ✅ Historical QA exit (D-052); current release tagging target unmet (§8) |
+| `docs/qa/test-strategy.md` | QA method, load profile, defects, traceability and limits; release quality pilot (§8), authentication validation/removal (§9/9.1) | CTO | PRD-002/007, NFR-001.x, entity-resolution.md, ADR-005, D-064/065/066 | ✅ Historical QA exit (D-052); tagging target unmet (§8); auth automated checks passed, real providers pending (§9) |
 | `docs/qa/curated-aliases.csv` | Curated aliases (short names, demerger ambiguity), loaded with the registry | Founder (approved) / operators (upkeep) | entity-resolution.md §2.3 | ✅ Approved (D-051) |
+| `docs/ops/curated-aliases.csv` | Additional exact aliases with expected ISIN guards, reviewed against the frozen NSE registry and supplied news | CTO / operator upkeep | D-068, entity-resolution.md implementation supplement | ✅ 20 aliases applied locally; independent quality certification pending |
+| `docs/ops/filings-source.example.json` | Disabled provider configuration template with documented field mapping and environment credential references | CTO / founder provider selection | D-068, ingestion.md implementation supplement | ◐ Validated; actual provider and access approval required |
 | `docs/security/threat-model.md` | Assets, actors, trust boundaries, STRIDE by component, abuse vectors | CTO | ADR-003, ADR-005, PRD-005/006/007 | ✅ Phase 9 (D-054) |
-| `docs/security/review.md` | Security review record: method, probe results, findings F1–F10, residual risks A1–A8, deployment requirements | CTO / Founder (risk acceptance) | threat-model.md | ✅ Residual risks accepted (D-054) |
-| `docs/ops/release-runbook.md` | Local PostgreSQL/app verification, relevance-review CLI, production release gates, host baseline, billing mail queue behavior, automated CI and strict test reproduction, evidence limits | CTO | WORKFLOW §10, system-overview.md, security/review.md, D-059, D-063 | ◐ Draft; production deployment, hosted CI, and restore unverified |
+| `docs/security/review.md` | Review findings F1–F10, residual risks A1–A8, deployment requirements; password/recovery/Google addendum (§7) | CTO / Founder (risk acceptance) | threat-model.md, D-065 | ✅ Historical risk acceptance (D-054); authentication implementation checked, external/provider review pending |
+| `docs/ops/release-runbook.md` | Local verification, relevance review, release gates, CI reproduction; password, Google OAuth and SMTP setup | CTO | WORKFLOW §10, system-overview.md, security/review.md, D-059/063/065 | ◐ Draft; real auth providers, production deployment, hosted CI, and restore unverified |
 | `src/packages/push` | Pusher interface: web-push (VAPID), memory | CTO | PRD-003 US-003.6 | ✅ B6 — 2 tests |
 | `src/packages/mail` | Mailer interface: smtp (free Gmail / Workspace), log, memory | CTO | ADR-007 | ✅ B5 — 3 tests |
 | `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |
@@ -172,6 +175,18 @@ graph TD
 ```
 
 ---
+
+### Frontend maintenance and regression additions (D-067)
+
+| Location | Owns | Evidence/limits |
+| --- | --- | --- |
+| `src/apps/web/site/stream/useReaderNavigation.ts`, `useSeen.ts` | Reader URL/Back/resizing and unread persistence | Existing Stream/reader tests plus browser navigation |
+| `src/apps/web/site/admin/` — Action, Grievances, Corrections, StoryTools, AbusePanel, SwitchesPanel, types | Operator feature boundaries | Existing audited action and moderation component tests |
+| `src/apps/web/site/{stream,story,account,watchlist,admin}/*.css`, `responsive.css`, `readability.css` | Feature layouts, responsive shell and optional comfortable density | Browser screenshots and scoped accessibility checks |
+| `src/apps/web/site/DensityToggle.tsx`, `api.ts` | Saved reading preference and request-local API reads | Browser persistence, deduplication and identity isolation |
+| `playwright.config.ts`, `tests/browser/` | Disposable fixture server, desktop/mobile browser workflows, timings and teardown | Reproduction: release runbook; results/limits: QA §10 |
+
+The original mobile restrictions are amended only for watchlist/alert management by D-067. Approved historical documents remain historical; the current behavior and verification are recorded in the decision and QA addendum.
 
 ## 4. Confidence Register — What We Are Least Sure Of
 

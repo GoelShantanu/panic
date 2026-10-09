@@ -14,6 +14,8 @@ import { optimistic, sendVote } from '../votes/vote.ts';
 import type { VoteAction } from '../votes/vote.ts';
 import { HomeOverview } from './HomeOverview.tsx';
 import { applyUpdate, belongsToView, markUnread, mergeStories, streamParams, unreadDividerIndex } from './logic.ts';
+import { useReaderNavigation } from './useReaderNavigation.ts';
+import { readLocalSeen, useSeen } from './useSeen.ts';
 import { StoryRow } from './StoryRow.tsx';
 
 export interface StreamProps {
@@ -39,21 +41,8 @@ export interface StreamProps {
   empty?: ReactNode;
 }
 
-// Wide enough for list and reader side by side (D-055); narrower screens hide the reader and open the full page.
-export const PANEL_QUERY = '(min-width: 1100px)';
-const panelState = () => (typeof history !== 'undefined' ? ((history.state as { spStory?: string } | null)?.spStory ?? null) : null);
-
-const SEEN_KEY = (view: string) => `sp-seen:${view}`;
-const VISIBLE_BEFORE_SEEN_MS = 10_000; // US-001.4 AC-3
+export { PANEL_QUERY } from './useReaderNavigation.ts';
 const FLUSH_MS = 1000; // §6: inserts batched at most once per second
-
-function readLocalSeen(view: string): string | null {
-  try {
-    return localStorage.getItem(SEEN_KEY(view));
-  } catch {
-    return null;
-  }
-}
 
 export function Stream({
   initial,
@@ -85,48 +74,7 @@ export function Stream({
   // When an overview is provided (homepage), no story is opened by default until selected.
   // Otherwise, opens on the first story or reader story.
   const defaultStory = overview ? null : (reader?.story.story_id ?? initial.stories[0]?.story_id ?? null);
-  const [shown, setShown] = useState<string | null>(defaultStory);
-  // Read on the first client render (it only changes click handlers, never markup), so a click right
-  // after load already uses the reader.
-  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(PANEL_QUERY).matches === true);
-  const streamUrl = useRef<string | null>(null);
-  useEffect(() => {
-    const mq = window.matchMedia?.(PANEL_QUERY);
-    if (!mq) return;
-    setWide(mq.matches);
-    const on = () => setWide(mq.matches);
-    mq.addEventListener?.('change', on);
-    return () => mq.removeEventListener?.('change', on);
-  }, []);
-  // A chosen story puts its own URL in the address bar, so it can be copied or shared; Back returns.
-  const openPanel = useCallback((id: string) => {
-    setSelected(id);
-    if (panelState() === null) {
-      streamUrl.current = window.location.pathname + window.location.search;
-      history.pushState({ spStory: id }, '', `/s/${id}`);
-    } else if (panelState() !== id) history.replaceState({ spStory: id }, '', `/s/${id}`);
-    setShown(id);
-  }, []);
-  const closePanel = useCallback(() => {
-    setShown(null);
-    setSelected(null);
-    if (panelState() !== null) {
-      history.pushState(null, '', streamUrl.current ?? '/');
-    }
-  }, []);
-  useEffect(() => {
-    const onPop = () => {
-      const id = panelState();
-      setShown(id ?? defaultStory);
-      setSelected(id);
-    };
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, [defaultStory]);
-  // Narrowed while a chosen story is in the address bar: hand over to its full page.
-  useEffect(() => {
-    if (!wide && shown && panelState() && streamUrl.current !== null) window.location.assign(`/s/${shown}`);
-  }, [shown, wide]);
+  const { shown, wide, openPanel, closePanel, resetReader } = useReaderNavigation(defaultStory, setSelected);
   // Follow from any stream row (PRD-003 US-003.1 AC-3).
   const [followed, setFollowed] = useState<Set<string> | null>(watchlistIsins ? new Set(watchlistIsins) : null);
   async function follow(isin: string, on: boolean) {
@@ -155,45 +103,7 @@ export function Stream({
     return box && getComputedStyle(box).overflowY !== 'visible' ? box : null;
   };
 
-  // Anonymous unread marker from browser storage (US-001.4 AC-4); signed-in comes from the server.
-  useEffect(() => {
-    if (signedIn) return;
-    const seen = readLocalSeen(query.view);
-    if (!seen) return;
-    setStories((list) => {
-      const marked = markUnread(list, seen);
-      setUnreadCount(marked.filter((s) => s.is_unread).length);
-      return marked;
-    });
-  }, [signedIn, query.view]);
-
-  // last_seen_at moves on only after ≥ 10 s visible, when the tab hides or closes (US-001.4 AC-3).
-  useEffect(() => {
-    let visibleSince = document.visibilityState === 'visible' ? Date.now() : null;
-    const record = () => {
-      if (visibleSince === null || Date.now() - visibleSince < VISIBLE_BEFORE_SEEN_MS || !newestSeen.current) return;
-      const at = newestSeen.current;
-      if (signedIn) {
-        fetch('/v1/stream/seen', { method: 'POST', keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ view: query.view, last_seen_at: at }) }).catch(() => undefined);
-      } else {
-        try {
-          localStorage.setItem(SEEN_KEY(query.view), at);
-        } catch {}
-      }
-    };
-    const onVis = () => {
-      if (document.visibilityState === 'hidden') {
-        record();
-        visibleSince = null;
-      } else visibleSince = Date.now();
-    };
-    document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('pagehide', record);
-    return () => {
-      document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('pagehide', record);
-    };
-  }, [signedIn, query.view]);
+  useSeen(query.view, signedIn, newestSeen, setStories, setUnreadCount);
 
   const atTop = () => {
     if (typeof window === 'undefined') return true;
@@ -234,8 +144,7 @@ export function Stream({
   });
   useLiveEvent('resync', () => {
     // A refresh renders the URL in the address bar; put the stream's back first if a story is open.
-    if (panelState() && streamUrl.current) history.replaceState({}, '', streamUrl.current);
-    setShown(defaultStory);
+    resetReader();
     router.refresh();
   });
 

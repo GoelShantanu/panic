@@ -17,5 +17,6 @@ export * from './billing.ts';
 export * from './calendar.ts';
 export * from './trending.ts';
 export * from './registry.ts';
+export * from './source-config.ts';
 export * from './security.ts';
 export * from './relevance.ts';

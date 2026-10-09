@@ -1,5 +1,7 @@
 # PRD-003 — Watchlist and Alerts
 
+> **Founder amendment, 2026-10-08 (D-067):** watchlist search/CSV import, selection/removal and alert preferences now work on phones. The earlier desktop-only wording remains historical; this amendment does not enable phone voting/commenting. Behavior and verification: [D-067](../../DECISION_LOG.md#d-067--frontend-improvements-and-limited-mobile-participation), [QA §10](../qa/test-strategy.md#10-frontend-improvements-2026-10-08-d-067).
+
 | | |
 | --- | --- |
 | **Version** | **1.0 — APPROVED** |

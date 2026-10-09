@@ -12,17 +12,15 @@ import {
   SESSION_IDLE_DAYS,
   TRIAL_DAYS,
   entitlementsPayload,
-  hashOtp,
+  hashChallenge,
   hashToken,
   isValidUsername,
   newOtp,
   newToken,
-  normaliseEmail,
 } from '@stockpanic/core';
 import {
   changeUsername,
-  checkEmailCode,
-  createEmailCode,
+  createAuthChallenge,
   createExportRequest,
   createPendingSignup,
   createSession,
@@ -42,7 +40,8 @@ import {
   takePendingSignup,
 } from '@stockpanic/db';
 import type { SessionUser } from '@stockpanic/db';
-import { signInCodeEmail } from '@stockpanic/mail';
+import type { ChallengeData, ChallengePurpose, PendingIdentity } from '@stockpanic/db';
+import { passwordResetEmail, verificationCodeEmail } from '@stockpanic/mail';
 import type { Mailer } from '@stockpanic/mail';
 import type { GoogleVerifier } from './google.ts';
 
@@ -74,61 +73,47 @@ export async function viewerFromToken(db: pg.ClientBase, token: string | null, n
   return token ? sessionUser(db, hashToken(token), now) : null;
 }
 
-async function issueSession(db: pg.ClientBase, userId: string, now: Date, isNew: boolean): Promise<AuthResponse> {
+export async function issueSession(db: pg.ClientBase, userId: string, now: Date, isNew: boolean): Promise<AuthResponse> {
   const token = newToken();
   await createSession(db, hashToken(token), userId, now);
   return { status: 200, body: { session: token, is_new: isNew }, headers: { 'set-cookie': sessionCookie(token) } };
 }
 
-async function issuePending(db: pg.ClientBase, identity: { email: string | null; googleSub: string | null }, now: Date): Promise<AuthResponse> {
+export async function issuePending(db: pg.ClientBase, identity: PendingIdentity, now: Date): Promise<AuthResponse> {
   const token = newToken();
   await createPendingSignup(db, hashToken(token), identity, new Date(now.getTime() + PENDING_SIGNUP_TTL_MS));
   return { status: 200, body: { session: token, is_new: true }, headers: { 'set-cookie': sessionCookie(token) } };
 }
 
-// POST /v1/auth/email/start — always 204, never reveals whether an account exists.
-export async function postEmailStart(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date, ip: string | null = null): Promise<AuthResponse> {
-  const raw = field(body, 'email');
-  const email = typeof raw === 'string' ? normaliseEmail(raw) : null;
-  if (!email) return invalid('email');
-  // Same 204 when throttled: the response never says whether anything was sent.
-  if (ip && !codeRequestsPerIp.allow(ip, now.getTime())) return { status: 204, body: null };
-  if ((await recentCodeCount(db, email, new Date(now.getTime() - 3600_000))) >= OTP_MAX_PER_HOUR) return { status: 204, body: null };
+export async function requestAuthChallenge(db: pg.ClientBase, email: string, purpose: ChallengePurpose, data: ChallengeData, deps: AuthDeps, now: Date, ip: string | null): Promise<void> {
+  if (ip && !codeRequestsPerIp.allow(ip, now.getTime())) return;
+  if (await recentCodeCount(db, email, new Date(now.getTime() - 3600_000)) >= OTP_MAX_PER_HOUR) return;
   const code = newOtp();
-  await createEmailCode(db, email, hashOtp(deps.authSecret, email, code), now, new Date(now.getTime() + OTP_TTL_MS));
-  await deps.mailer.send({ to: email, ...signInCodeEmail(code) });
-  return { status: 204, body: null };
-}
-
-// POST /v1/auth/email/verify
-export async function postEmailVerify(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date): Promise<AuthResponse> {
-  const rawEmail = field(body, 'email');
-  const code = field(body, 'code');
-  const email = typeof rawEmail === 'string' ? normaliseEmail(rawEmail) : null;
-  if (!email) return invalid('email');
-  if (typeof code !== 'string' || !/^\d{6}$/.test(code)) return invalid('code');
-  const check = await checkEmailCode(db, email, hashOtp(deps.authSecret, email, code), now);
-  if (check === 'locked') return { status: 423, body: { error: 'code_locked' } };
-  if (check === 'invalid') return { status: 400, body: { error: 'invalid_code' } };
-  const user = await findUserByEmail(db, email);
-  return user ? issueSession(db, user.id, now, false) : issuePending(db, { email, googleSub: null }, now);
+  await createAuthChallenge(db, email, purpose, hashChallenge(deps.authSecret, email, code, purpose), now, new Date(now.getTime() + OTP_TTL_MS), data);
+  await deps.mailer.send({ to: email, ...(purpose === 'reset' ? passwordResetEmail(code) : verificationCodeEmail(code)) });
 }
 
 // POST /v1/auth/google
-export async function postGoogle(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date): Promise<AuthResponse> {
+export async function postGoogle(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date, ip: string | null = null): Promise<AuthResponse> {
   if (!deps.google) return { status: 503, body: { error: 'google_sign_in_unavailable' } };
   const idToken = field(body, 'id_token');
   if (typeof idToken !== 'string' || idToken.length > 8192) return invalid('id_token');
-  const identity = await deps.google.verify(idToken, now);
+  let identity;
+  try { identity = await deps.google.verify(idToken, now); }
+  catch { return { status: 503, body: { error: 'google_sign_in_unavailable' } }; }
   if (!identity) return { status: 401, body: { error: 'invalid_google_token' } };
   const bySub = await findUserByGoogleSub(db, identity.sub);
   if (bySub) return issueSession(db, bySub.id, now, false);
   const byEmail = await findUserByEmail(db, identity.email);
+  if (!identity.emailAuthoritative) {
+    await requestAuthChallenge(db, identity.email, 'google', { userId: byEmail?.id ?? null, googleSub: identity.sub, firstName: identity.firstName, lastName: identity.lastName }, deps, now, ip);
+    return { status: 202, body: { requires_email_verification: true, email: identity.email } };
+  }
   if (byEmail) {
-    await linkGoogleSub(db, byEmail.id, identity.sub);
+    if (!await linkGoogleSub(db, byEmail.id, identity.sub)) return { status: 409, body: { error: 'google_already_linked' } };
     return issueSession(db, byEmail.id, now, false);
   }
-  return issuePending(db, { email: identity.email, googleSub: identity.sub }, now);
+  return issuePending(db, { email: identity.email, googleSub: identity.sub, firstName: identity.firstName, lastName: identity.lastName }, now);
 }
 
 // POST /v1/auth/signup/complete — the pending token comes from the cookie or bearer header.
@@ -148,7 +133,12 @@ export async function postSignupComplete(db: pg.ClientBase, body: unknown, token
     await db.query('ROLLBACK');
     return authRequired;
   }
-  const created = await createUser(db, { username, email: pending.email, googleSub: pending.googleSub, marketingOptIn: marketing === true, now });
+  // Retired email-code onboarding tokens must not finish passwordless signup.
+  if (!pending.passwordHash && !pending.googleSub) {
+    await db.query('COMMIT');
+    return { ...authRequired, headers: { 'set-cookie': CLEAR_SESSION_COOKIE } };
+  }
+  const created = await createUser(db, { ...pending, username, marketingOptIn: marketing === true, now });
   if (!created.ok) {
     await db.query('ROLLBACK'); // the pending sign-up survives for another attempt
     return created.error === 'username_reserved'
@@ -178,13 +168,15 @@ export async function getMe(db: pg.ClientBase, viewer: SessionUser | null): Prom
       user_id: me.public_id,
       username: me.username,
       email: me.email,
+      first_name: me.first_name,
+      last_name: me.last_name,
       created_at: me.created_at,
       email_verified: me.email_verified,
       tier: me.tier,
       trial: { used: me.trial_ends_at !== null, ends_at: me.trial_ends_at },
       subscription: me.subscription,
       marketing_opt_in: me.marketing_opt_in,
-      sign_in_methods: me.google_linked ? ['email', 'google'] : ['email'],
+      sign_in_methods: [...(me.password_set ? ['password'] : []), ...(me.google_linked ? ['google'] : [])],
       role: viewer.role,
       totp_enabled: viewer.totpEnabled,
       entitlements: entitlementsPayload(me.tier),

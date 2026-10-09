@@ -89,10 +89,13 @@ describe.skipIf(!adminUrl)('filings adapter (PostgreSQL, fake vendor)', () => {
     pages.set('c1', { announcements: [env('P-3'), { exchange: 'BSE' }], next_cursor: 'c2' });
     pages.set('c2', { announcements: [], next_cursor: 'c2' });
     const r = await fetchFilingsOnce(db, await source('src_vendor_poll'), 'open', new Date(), deps);
-    expect(r).toMatchObject({ outcome: 'new_items', inserted: 3, discardedInvalid: 1, error: null });
-    expect(r.nextFetchAt.getTime() - Date.now()).toBeLessThan(6_000); // 5 s cadence in market hours
+    expect(r).toMatchObject({ outcome: 'error', inserted: 3, discardedInvalid: 1 });
+    expect(r.error).toContain('cursor not advanced');
+    expect((await db.query(`SELECT cursor FROM source_fetch_state WHERE source_id = 'src_vendor_poll'`)).rows[0].cursor).toBe('c1');
+    // The corrected page is replayed; already stored rows remain idempotent.
+    pages.set('c1',{announcements:[env('P-3')],next_cursor:'c2'});
+    await fetchFilingsOnce(db,await source('src_vendor_poll'),'open',new Date(),deps);
     expect((await db.query(`SELECT cursor FROM source_fetch_state WHERE source_id = 'src_vendor_poll'`)).rows[0].cursor).toBe('c2');
-    expect(requests.at(-1)).toContain('cursor=c2');
 
     await pipeline();
     const it1 = await itemByAnn('P-1');
@@ -105,7 +108,7 @@ describe.skipIf(!adminUrl)('filings adapter (PostgreSQL, fake vendor)', () => {
 
   it('poll: vendor errors count against source health', async () => {
     const r = await fetchFilingsOnce(db, await source('src_vendor_poll'), 'open', new Date(), { ...deps, env: {} });
-    expect(r).toMatchObject({ outcome: 'error', error: 'HTTP 401' });
+    expect(r).toMatchObject({ outcome: 'error', error: 'missing provider credential environment variable: VENDOR_TOKEN' });
     expect((await db.query(`SELECT consecutive_failures FROM source_health WHERE source_id = 'src_vendor_poll'`)).rows[0].consecutive_failures).toBe(1);
   });
 
@@ -181,5 +184,32 @@ describe.skipIf(!adminUrl)('filings adapter (PostgreSQL, fake vendor)', () => {
     await pipeline();
     expect((await drainAi(db, aiDeps, { workerId: 'test' })).counts).toEqual({ accepted: 1 });
     expect((await db.query('SELECT count(*)::int AS n FROM story_summary WHERE story_id = $1', [s1.story_id])).rows[0].n).toBe(1);
+  });
+
+  it('maps a licensed vendor JSON shape and an explicit IST timestamp end to end',async()=>{
+    const original=(await source('src_vendor_poll')).adapter;
+    const adapter={...original,mapping:{announcements_path:'data.records',cursor_path:'pagination.next',exchange:'BSE',timezone:'Asia/Kolkata',fields:{announcement_id:'id',scrip_code:'code',subject:'title',published_at:'date',url:'link',status:'state'},status_values:{active:'live',removed:'withdrawn'}}};
+    await db.query(`UPDATE source SET adapter=$1 WHERE source_id='src_vendor_poll'`,[adapter]);
+    try {
+      const response={data:{records:[{id:'MAP-1',code:500101,title:'Board approves expansion',date:'2026-10-09 10:00:00',link:'https://exchange.example.in/mapped',state:'active'}]},pagination:{next:null}};
+      const fetchImpl:FetchLike=async()=>new Response(JSON.stringify(response),{status:200});
+      expect(await fetchFilingsOnce(db,await source('src_vendor_poll'),'open',new Date(),{...deps,fetchImpl})).toMatchObject({inserted:1,error:null});
+      const row=(await db.query(`SELECT published_at FROM item WHERE dedup_key='BSE:MAP-1'`)).rows[0];
+      expect(row.published_at.toISOString()).toBe('2026-10-09T04:30:00.000Z');
+      await pipeline();
+      const mapped=await itemByAnn('MAP-1');
+      expect((await db.query('SELECT isin,method FROM story_tag WHERE story_id=$1',[mapped.story_id])).rows).toEqual([{isin:A,method:'exchange_code'}]);
+    } finally {await db.query(`UPDATE source SET adapter=$1 WHERE source_id='src_vendor_poll'`,[original]);}
+  });
+
+  it('rejects invalid or paginated reconciliation without recording optimistic coverage',async()=>{
+    const date='2026-10-09';
+    const count=async()=>(await db.query('SELECT count(*)::int n FROM reconciliation_run')).rows[0].n;
+    const before=await count();
+    for(const body of [{announcements:[{exchange:'BSE'}]}, {announcements:[env('BAD-RECON')],next_cursor:'next-page'}]) {
+      const r=await reconcileFilings(db,await source('src_vendor_poll'),date,new Date(),{...deps,fetchImpl:async()=>new Response(JSON.stringify(body))});
+      expect(r.error).not.toBeNull();expect(r.byExchange).toEqual([]);
+    }
+    expect(await count()).toBe(before);
   });
 });

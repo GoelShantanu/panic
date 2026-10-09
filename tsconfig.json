@@ -16,6 +16,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "vitest.config.ts", "vitest.ci.config.ts"],
+  "include": ["src/**/*.ts", "vitest.config.ts", "vitest.ci.config.ts", "playwright.config.ts", "tests/browser/**/*.ts"],
   "exclude": ["src/apps/web/app", "src/apps/web/site", "src/apps/web/next.config.ts", "src/apps/web/next-env.d.ts", "src/apps/web/.next"]
 }

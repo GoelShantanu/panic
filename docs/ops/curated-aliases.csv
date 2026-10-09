@@ -1,0 +1,23 @@
+# Short names checked against the frozen NSE registry, 2026-10-08. No parent-to-subsidiary aliases.
+# Load explicitly with registry.ts load-aliases; this is not automatic production activation.
+symbol,alias,expected_isin
+BRITANNIA,Britannia,INE216A01030
+BHARTIARTL,Airtel,INE397D01024
+AMBUJACEM,Ambuja Cement,INE079A01024
+UTKARSHBNK,Utkarsh SFB,INE735W01017
+CLEANMAX,Clean Max,INE647U01026
+DEEPAKFERT,Deepak Fertilisers,INE501A01019
+DEEPAKFERT,Deepak Fertilizers,INE501A01019
+CAMS,CAMS,INE596I01020
+ZAGGLE,Zaggle,INE07K301024
+KALYANKJIL,Kalyan Jewellers,INE303R01014
+GODIGIT,Go Digit,INE03JT01014
+DIVISLAB,Divis Labs,INE361B01024
+DIVISLAB,Divi's Labs,INE361B01024
+TATAPOWER,Tata Power,INE245A01021
+LALPATHLAB,Dr Lal PathLabs,INE600L01024
+KPRMILL,KPR Mill,INE930H01031
+HEXT,Hexaware,INE093A01041
+HAVELLS,Havells,INE176B01034
+SKYGOLD,Sky Gold,INE01IU01018
+BERGEPAINT,Berger Paints,INE463A01038

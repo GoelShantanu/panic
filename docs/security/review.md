@@ -79,3 +79,15 @@
 ## 6. Limits
 
 As threat-model.md §6, plus: the probes ran against the development and production builds on one machine, not the deployed topology.
+
+## 7. Authentication extension — 2026-10-08 (D-065)
+
+> **D-066 follow-up:** Optional email-code login and its API handlers are removed. Signup, recovery and Google mailbox proofs remain; [QA §9.1](../qa/test-strategy.md#91-passwordless-login-removal--2026-10-08-d-066) owns verification evidence.
+
+[VERIFIED — implementation] The founder added password authentication to the historical passwordless scope. `0019_password_auth` adds optional salted hashes/private names and purpose-isolated verification/recovery records. Legacy identities remain valid. The password flow validates complete, bounded passphrases with asynchronous scrypt and constant-time hash comparison; missing/passwordless accounts undergo a dummy derivation. Public attempts are limited per IP and canonical account. Recovery requires a mailbox code, changes credentials atomically, invalidates outstanding codes, increments the credential version, and revokes sessions. Login proofs are rechecked under a user lock so a reset cannot race an old password/email-code login into a fresh session. Recovery itself returns no authenticated session.
+
+[VERIFIED — implementation] Google tokens are verified before use. Automatic email linking is limited to authoritative Google email; third-party email requires an independent mailbox challenge. Existing subject links cannot be overwritten. New profile data is private; deletion clears it and credential hashes, and export never contains secrets. Consuming and replacing challenges is transactional, including persistent wrong-attempt counts and single-use checks.
+
+Validation and observed results are owned by [QA §9](../qa/test-strategy.md#9-password-and-identity-verification--2026-10-08-d-065); configuration and cryptographic/provider references by the [release runbook](../ops/release-runbook.md#passwords-email-verification-and-google-setup-2026-10-08-d-065).
+
+**Limits:** [UNVERIFIED] Actual Google/provider email use and independent penetration testing remain pending. Existing per-process throttling and email-canonicalisation limitations A3/A5 still apply. Secrets must stay stable and protected in deployment; local logging is a developer preview and is refused in production. This additive review does not replace the release security gate or claim new founder acceptance of residual risks.

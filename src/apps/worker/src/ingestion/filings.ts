@@ -8,7 +8,7 @@
 // url, attachment_url, status ("live" | "withdrawn").
 
 import type pg from 'pg';
-import { RECONCILIATION_ALERT_COVERAGE, nextFetchDelaySeconds, parseFilingEnvelope } from '@stockpanic/core';
+import { RECONCILIATION_ALERT_COVERAGE, nextFetchDelaySeconds, parseFilingEnvelope, parseProviderPage } from '@stockpanic/core';
 import type { SessionType } from '@stockpanic/core';
 import {
   filingLatency,
@@ -31,6 +31,7 @@ const MAX_PAGES_PER_FETCH = 20;
 function authHeaders(adapter: Record<string, unknown>, env: Record<string, string | undefined>): Record<string, string> {
   const name = adapter['token_env'];
   const token = typeof name === 'string' ? env[name] : undefined;
+  if(typeof name==='string'&&!token) throw new Error(`missing provider credential environment variable: ${name}`);
   return { accept: 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) };
 }
 
@@ -81,11 +82,14 @@ export async function fetchFilingsOnce(db: pg.ClientBase, source: SourceRow, ses
   if (typeof url !== 'string') error = 'adapter has no url';
   else {
     let cursor = await filingsCursor(db, source.sourceId);
+    let headers: Record<string,string>;
+    try {headers=authHeaders(source.adapter,deps.env??process.env);} catch(err) {error=(err as Error).message;headers={};}
     for (let page = 0; page < MAX_PAGES_PER_FETCH; page++) {
+      if(error) break;
       const res = await conditionalGet(withParam(url, 'cursor', cursor), {
         etag: null,
         lastModified: null,
-        headers: authHeaders(source.adapter, deps.env ?? process.env),
+        headers,
         ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
       });
       if (res.status === 'error') {
@@ -94,15 +98,17 @@ export async function fetchFilingsOnce(db: pg.ClientBase, source: SourceRow, ses
         break;
       }
       if (res.status === 'not_modified') break;
-      let body: { announcements?: unknown; next_cursor?: unknown };
+      let next: string | null;
       try {
-        body = JSON.parse(res.body);
+        const body = parseProviderPage(JSON.parse(res.body),source.adapter);
+        const invalidBefore=tally.invalid;
         await ingestEnvelopes(db, source.sourceId, body.announcements, now, tally);
+        if(tally.invalid>invalidBefore) throw new Error('invalid filing envelopes; cursor not advanced');
+        next=body.nextCursor;
       } catch (err) {
         error = `bad response: ${(err as Error).message}`;
         break;
       }
-      const next = typeof body.next_cursor === 'string' && body.next_cursor !== '' ? body.next_cursor : null;
       if (next === null || next === cursor) break;
       cursor = next;
       await setFilingsCursor(db, source.sourceId, cursor);
@@ -164,10 +170,12 @@ export async function reconcileFilings(db: pg.ClientBase, source: SourceRow, ist
   const url = source.adapter['reconcile_url'];
   const empty = { sourceId: source.sourceId, byExchange: [], latency: [] };
   if (typeof url !== 'string') return { ...empty, error: 'adapter has no reconcile_url' };
+  let headers:Record<string,string>;
+  try {headers=authHeaders(source.adapter,deps.env??process.env);} catch(err) {return {...empty,error:(err as Error).message};}
   const res = await conditionalGet(withParam(url, 'date', istDate), {
     etag: null,
     lastModified: null,
-    headers: authHeaders(source.adapter, deps.env ?? process.env),
+    headers,
     maxBytes: 50 * 1024 * 1024,
     timeoutMs: 120_000,
     ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
@@ -175,8 +183,8 @@ export async function reconcileFilings(db: pg.ClientBase, source: SourceRow, ist
   if (res.status !== 'ok') return { ...empty, error: res.status === 'error' ? res.message : 'unexpected 304' };
   let list: unknown[];
   try {
-    const body = JSON.parse(res.body);
-    if (!Array.isArray(body.announcements)) throw new Error('announcements is not an array');
+    const body = parseProviderPage(JSON.parse(res.body),source.adapter,true);
+    if(body.announcements.some(raw=>!parseFilingEnvelope(raw).ok)) throw new Error('invalid reconciliation envelope; coverage not recorded');
     list = body.announcements;
   } catch (err) {
     return { ...empty, error: `bad response: ${(err as Error).message}` };

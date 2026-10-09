@@ -3,7 +3,7 @@
 // a new one; history is never overwritten.
 
 import type pg from 'pg';
-import { normaliseForMatch } from '@stockpanic/core';
+import { isValidDate, normaliseForMatch, parseIsin } from '@stockpanic/core';
 import type { MasterRow } from '@stockpanic/core';
 
 export interface MasterDiff {
@@ -22,12 +22,19 @@ export interface MasterDiff {
 export class MasterListRefused extends Error {}
 
 // A truncated download must not close half the registry.
-const MIN_SHARE_OF_CURRENT = 0.5;
+const MIN_SHARE_OF_CURRENT = 0.95;
 
 const LOCK_KEY = 0x5245_4749; // 'REGI'
 
-export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE', rows: readonly MasterRow[], asOf: string): Promise<MasterDiff> {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) throw new MasterListRefused(`bad date ${asOf}`);
+export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE', rows: readonly MasterRow[], asOf: string, provenance?: { sha256: string; complete: boolean }): Promise<MasterDiff> {
+  if (!isValidDate(asOf)) throw new MasterListRefused(`bad date ${asOf}`);
+  if(provenance&&!/^[a-f0-9]{64}$/.test(provenance.sha256)) throw new MasterListRefused('invalid master fingerprint');
+  if (!rows.length) throw new MasterListRefused('empty equity list');
+  const uniqueIsins=new Set<string>(),uniqueCodes=new Set<string>();
+  for(const r of rows) {
+    if(!parseIsin(r.isin)||!r.name.trim()||!r.code.trim()||(exchange==='BSE'&&!/^\d{6}$/.test(r.code))||uniqueIsins.has(r.isin)||uniqueCodes.has(r.code)||(r.listedOn&&(!isValidDate(r.listedOn)||r.listedOn>asOf))) throw new MasterListRefused('invalid or conflicting master row');
+    uniqueIsins.add(r.isin);uniqueCodes.add(r.code);
+  }
   await db.query('BEGIN');
   try {
     await db.query('SELECT pg_advisory_xact_lock($1)', [LOCK_KEY]);
@@ -45,6 +52,7 @@ export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE'
     const known = new Map((await db.query<{ isin: string; segment: string }>('SELECT isin::text, segment FROM instrument')).rows.map((r) => [r.isin.trim(), r.segment]));
     const codeOf = new Map(codes.rows.map((r) => [r.isin.trim(), r]));
     const nameOf = new Map(names.rows.map((r) => [r.isin.trim(), r]));
+    const onNse=new Set((await db.query<{isin:string}>(`SELECT isin::text FROM instrument_code WHERE exchange='NSE' AND valid @> $1::date`,[asOf])).rows.map(r=>r.isin.trim()));
     const diff: MasterDiff = { exchange, asOf, added: 0, recoded: 0, renamed: 0, resegmented: 0, unchanged: 0, removed: [] };
 
     // Close a validity row at asOf; a row opened today is simply withdrawn (a same-day re-run).
@@ -73,7 +81,7 @@ export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE'
         await db.query('INSERT INTO instrument (isin, segment, listed_on) VALUES ($1, $2, $3)', [r.isin, r.segment, r.listedOn]);
         known.set(r.isin, r.segment);
         diff.added++;
-      } else if (known.get(r.isin) !== r.segment) {
+      } else if (known.get(r.isin) !== r.segment && !(exchange==='BSE'&&onNse.has(r.isin))) {
         await db.query('UPDATE instrument SET segment = $2 WHERE isin = $1', [r.isin, r.segment]);
         diff.resegmented++;
       }
@@ -87,7 +95,8 @@ export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE'
         changed = true;
       }
       const curName = nameOf.get(r.isin);
-      if (!curName || curName.name !== r.name) {
+      // A BSE display-name abbreviation must not rename an NSE-listed issuer.
+      if (!curName || (curName.name !== r.name && !(exchange==='BSE'&&onNse.has(r.isin)))) {
         if (curName) {
           await close('instrument_name', curName.id, curName.lower);
           diff.renamed++;
@@ -100,7 +109,7 @@ export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE'
 
     await db.query(
       `INSERT INTO audit_log (actor_type, action, entity_type, entity_id, after) VALUES ('system', 'registry.master_applied', 'registry', $1, $2)`,
-      [exchange, JSON.stringify({ as_of: asOf, rows: rows.length, added: diff.added, recoded: diff.recoded, renamed: diff.renamed, resegmented: diff.resegmented, removed: diff.removed.length })],
+      [exchange, JSON.stringify({ as_of: asOf, rows: rows.length, added: diff.added, recoded: diff.recoded, renamed: diff.renamed, resegmented: diff.resegmented, removed: diff.removed.length, ...(provenance?{input_sha256:provenance.sha256,complete:provenance.complete}:{}) })],
     );
     await db.query('COMMIT');
     return diff;
@@ -115,15 +124,17 @@ export async function applyMasterList(db: pg.ClientBase, exchange: 'NSE' | 'BSE'
 // whenever it is found, which is how a name shared after a demerger is kept from guessing.
 export async function addCuratedAlias(
   db: pg.ClientBase,
-  a: { code: string; alias: string; ambiguous: boolean; commonWord: boolean; asOf: string; actor: string },
+  a: { code: string; alias: string; ambiguous: boolean; commonWord: boolean; asOf: string; actor: string; expectedIsin?: string },
 ): Promise<{ isin: string } | { error: string }> {
   const { rows } = await db.query<{ isin: string }>(
     `SELECT isin::text FROM instrument WHERE isin = upper($1)
-     UNION SELECT isin::text FROM instrument_code WHERE code = upper($1) AND valid @> $2::date LIMIT 1`,
+     UNION SELECT isin::text FROM instrument_code WHERE code = upper($1) AND valid @> $2::date`,
     [a.code, a.asOf],
   );
   const isin = rows[0]?.isin.trim();
   if (!isin) return { error: `no instrument for ${a.code}` };
+  if (rows.length !== 1) return { error: `ambiguous instrument code ${a.code}; use its ISIN` };
+  if (a.expectedIsin && isin !== a.expectedIsin) return { error: `ISIN mismatch for ${a.code}; registry review required` };
   const norm = normaliseForMatch(a.alias);
   if (!norm) return { error: 'empty alias' };
   await db.query('BEGIN');

@@ -16,7 +16,7 @@ function Keys({ onJ }: { onJ: () => void }) {
 describe('phone view (PRD-001 US-001.8)', () => {
   it('the notice is dismissible and stays dismissed for the browser session', () => {
     const { unmount } = render(<PhoneNotice />);
-    expect(screen.getByRole('status').textContent).toContain('StockPanic works best on desktop.');
+    expect(screen.getByRole('status').textContent).toContain('Manage your watchlist and alerts here.');
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(screen.queryByRole('status')).toBeNull();
     unmount();

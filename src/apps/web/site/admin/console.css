@@ -1,0 +1,23 @@
+/* ---------- operator console ---------- */
+.console { max-width: 980px; }
+.console .tabs { margin-bottom: 12px; }
+.grievance { padding: 10px 14px; margin-bottom: 10px; list-style: none; }
+.grievance-urgent { border-left: 3px solid var(--bear); }
+.grievance-head { margin-bottom: 6px; }
+.grievance-details { white-space: pre-wrap; margin: 6px 0; }
+.grievance-comment { margin: 6px 0; padding: 6px 10px; border-left: 3px solid var(--border); background: var(--surface-2); }
+.tag-urgent { color: var(--error-text); background: var(--error-bg); }
+.overdue { color: var(--error-text); font-weight: 600; }
+.due-soon { color: var(--warn-text); font-weight: 600; }
+.action { display: inline-flex; align-items: center; }
+.action-form { padding: 10px 12px; margin: 6px 0; min-width: 280px; }
+.action-form select, .action-form input { width: 100%; box-sizing: border-box; }
+.user-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.switch-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.totp-secret { font-size: var(--text-lg); letter-spacing: 1px; }
+.summary-report { margin: 6px 0 0; }
+
+
+.wl-table { width: 100%; border-collapse: collapse; }
+.wl-table th, .wl-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+@media (max-width: 767px) { .wl-table { display: block; overflow-x: auto; } }

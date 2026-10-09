@@ -1,5 +1,9 @@
 # PRD-007 — Accounts, Privacy and Free/Paid Tiers
 
+> **Addendum v1.1, 2026-10-08 (D-065):** the founder explicitly added passwords and verified-email signup. The original v1.0 "no passwords" scope below is historical; §12 supersedes that exclusion. Other approved tier and consent requirements remain in force.
+
+> **Addendum v1.2, 2026-10-08 (D-066):** the founder removed email-code login; §13 supersedes the original passwordless login option and its retention in D-065.
+
 | | |
 | --- | --- |
 | **Version** | **1.0 — APPROVED** |
@@ -304,3 +308,24 @@ Resolved by the founder on 2026-10-02. Defaults adopted except OQ-007.4.
 | **OQ-007.5** | Free alert ceiling | **5 per day** (rest to digest). |
 | **OQ-007.6** | Which features are paid | **As in §2.1:** multi-type event filter, stream filings-only toggle, saved views, full history, 200-instrument watchlist, 30 alerts/day, 1-year alert history. |
 | **OQ-007.7** | Minimum age | **18+**, self-declared at sign-up. |
+
+## 12. Password and verified-email signup extension (D-065)
+
+[VERIFIED — founder instruction, 2026-10-08] Add email/password login alongside email codes and Google sign-in/signup. Collect first name, last name, email, and password for email signup; verify the mailbox before activating the account. Existing username, age, Terms, and separate privacy-consent onboarding still applies. Names are private account fields, not public community identities.
+
+- Passwords MUST be stored as salted hashes; never plaintext or browser storage. Password-manager autocomplete and existing persistent sessions SHOULD make returning sign-in convenient.
+- Forgot password MUST send a separate, expiring, single-use recovery code that cannot authenticate a login or verify a signup. Completing recovery MUST revoke old sessions and return to sign-in without issuing a new session.
+- Existing accounts MUST preserve their user IDs and data. Users without passwords MUST establish one through verified recovery; migration MUST NOT assign default or guessed passwords.
+- Google subject IDs MUST persist and map to one account. Linking by an email address Google does not currently control MUST require additional mailbox verification; another subject MUST NOT replace an existing link.
+- Signup verification, Google mailbox confirmation, and recovery MUST have independent code purposes and bounded attempts. Resending MUST invalidate the earlier code.
+- Deletion MUST erase stored names and password hashes; data export MUST exclude all credential material.
+
+Implementation/evidence: [QA §9](../qa/test-strategy.md#9-password-and-identity-verification--2026-10-08-d-065). Provider configuration and remaining external verification: [release runbook](../ops/release-runbook.md#passwords-email-verification-and-google-setup-2026-10-08-d-065).
+
+**Limits:** [UNVERIFIED] Actual SMTP delivery and real Google OAuth login require founder-controlled provider configuration and separate end-to-end checks. This addendum does not claim new privacy/legal review.
+
+## 13. Remove optional passwordless login (D-066)
+
+The founder explicitly requests email/password and Google as the login methods. The public sign-in page MUST NOT offer email-code login, and its retired request/verification endpoints MUST NOT authenticate users or issue new login codes. Settings MUST report only supported methods. Codes remain available for signup verification, password recovery and Google mailbox proof; those purposes retain §12 protections. Existing code-only accounts MUST retain identity/data and establish their first password through verified recovery. Existing authenticated sessions need not be revoked by this option removal.
+
+Validation: [QA §9.1](../qa/test-strategy.md#91-passwordless-login-removal--2026-10-08-d-066). Provider configuration limits remain as recorded above.

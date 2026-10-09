@@ -1,0 +1,23 @@
+/* Compact remains the default. Comfortable is an explicit, persistent reading preference. */
+:root[data-density='comfortable'] {
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 21px;
+  --row-h: 44px;
+}
+[data-density='comfortable'] .row { padding-top: 12px; padding-bottom: 12px; }
+[data-density='comfortable'] .row-headline { font-size: 15px; line-height: 1.5; }
+[data-density='comfortable'] .row-meta { line-height: 1.6; }
+[data-density='comfortable'] .story-content { line-height: 1.7; }
+[data-density='comfortable'] .button, [data-density='comfortable'] .icon-button { min-height: 36px; }
+.density-toggle { font-weight: 700; min-width: 32px; }
+.form .notice, .settings .notice { overflow-wrap: anywhere; }
+.button:disabled, .icon-button:disabled { opacity: .65; cursor: not-allowed; }
+@media (max-width: 767px) {
+  .header .nav-item, .header-tools .icon-button { min-height: 44px; }
+  .auth .button, .auth .auth-text-button, .form button { min-height: 44px; }
+  .form input:not([type='checkbox']):not([type='radio']), .form select { min-height: 44px; font-size: 16px; }
+  .auth-name-row { grid-template-columns: 1fr; }
+}

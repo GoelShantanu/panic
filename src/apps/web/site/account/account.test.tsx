@@ -16,22 +16,88 @@ beforeEach(() => (push.mockReset(), refresh.mockReset()));
 afterEach(() => (cleanup(), vi.unstubAllGlobals()));
 
 describe('sign in (PRD-007 US-007.1)', () => {
-  it('email → code → new account goes to the username step; wrong and locked codes explained', async () => {
+  it('uses password sign-in and password-manager autocomplete for returning users', async () => {
+    const f = vi.fn().mockResolvedValue(json(200, { is_new: false })); vi.stubGlobal('fetch', f);
+    render(<SignIn next="/watchlist" googleClientId={null} />);
+    expect(screen.getByLabelText('Email').getAttribute('autocomplete')).toBe('username');
+    expect(screen.getByLabelText('Password').getAttribute('autocomplete')).toBe('current-password');
+    expect(screen.queryByRole('button', { name: 'Sign in with an email code' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'A browser test passphrase' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Sign in' })));
+    expect(f).toHaveBeenCalledWith('/v1/auth/password/sign-in', expect.objectContaining({ body: JSON.stringify({ email: 'ada@example.invalid', password: 'A browser test passphrase' }) }));
+    expect(push).toHaveBeenCalledWith('/watchlist');
+  });
+
+  it('signup sends names and password, clears the password, then verifies before onboarding', async () => {
+    const f = vi.fn().mockResolvedValueOnce(json(204)).mockResolvedValueOnce(json(200, { is_new: true })); vi.stubGlobal('fetch', f);
+    render(<SignIn next="/" googleClientId={null} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'A browser test passphrase' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send verification code' })));
+    expect(JSON.parse(f.mock.calls[0]![1].body)).toMatchObject({ first_name: 'Ada', last_name: 'Lovelace' });
+    expect(push).not.toHaveBeenCalled(); expect(screen.queryByLabelText('Password')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Code'), { target: { value: '123456' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify email' })));
+    expect(f).toHaveBeenLastCalledWith('/v1/auth/password/signup/verify', expect.objectContaining({ body: JSON.stringify({ email: 'ada@example.invalid', code: '123456' }) }));
+    expect(push).toHaveBeenCalledWith('/welcome?next=%2F');
+  });
+
+  it('forgot password validates confirmation and returns to sign-in without logging in', async () => {
+    const f = vi.fn().mockResolvedValue(json(204)); vi.stubGlobal('fetch', f);
+    render(<SignIn next="/" googleClientId={null} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send password reset code' })));
+    fireEvent.change(screen.getByLabelText('Code'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'A browser test passphrase' } });
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'A different passphrase' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Save new password' })));
+    expect(screen.getByRole('alert').textContent).toContain('do not match'); expect(f).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'A browser test passphrase' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Save new password' })));
+    expect(f.mock.calls[1]![0]).toBe('/v1/auth/password/reset/complete');
+    expect(screen.getByRole('status').textContent).toContain('Password saved'); expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+  });
+
+  it('Google callback supports mailbox confirmation before linking and signing in', async () => {
+    let callback!: (r: { credential: string }) => void;
+    window.google = { accounts: { id: { initialize: opts => { callback = opts.callback; }, renderButton: vi.fn() } } };
+    const f = vi.fn().mockResolvedValueOnce(json(202, { email: 'ada@example.invalid' })).mockResolvedValueOnce(json(200, { is_new: false })); vi.stubGlobal('fetch', f);
+    render(<SignIn next="/watchlist" googleClientId="test.apps.googleusercontent.com" />);
+    fireEvent.load(document.querySelector('script[src="https://accounts.google.com/gsi/client"]')!);
+    await act(async () => { await callback({ credential: 'signed-test-token' }); });
+    expect(f.mock.calls[0]![0]).toBe('/v1/auth/google'); expect(push).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Code'), { target: { value: '123456' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify email' })));
+    expect(f.mock.calls[1]![0]).toBe('/v1/auth/google/verify'); expect(push).toHaveBeenCalledWith('/watchlist');
+    delete window.google;
+  });
+
+  it('signup verification explains wrong and locked codes before the username step', async () => {
     const f = vi.fn().mockResolvedValueOnce(json(204)).mockResolvedValueOnce(json(400, { error: 'invalid_code' })).mockResolvedValueOnce(json(423, { error: 'code_locked' })).mockResolvedValueOnce(json(200, { session: 'x', is_new: true }));
     vi.stubGlobal('fetch', f);
     render(<SignIn next="/" googleClientId={null} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'A browser test passphrase' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.invalid' } });
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Email me a sign-in code' })));
-    expect(screen.getByText(/We sent a 6-digit code/)).toBeTruthy();
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send verification code' })));
+    expect(screen.getByText(/Check your inbox for a 6-digit code/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Code'), { target: { value: '12a3456' } });
     expect((screen.getByLabelText('Code') as HTMLInputElement).value).toBe('123456');
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Continue' })));
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify email' })));
     expect(screen.getByRole('alert').textContent).toContain('not right');
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Continue' })));
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify email' })));
     expect(screen.getByRole('alert').textContent).toContain('Too many wrong attempts');
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Continue' })));
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify email' })));
     expect(push).toHaveBeenCalledWith('/welcome?next=%2F');
-    expect(screen.queryByText('or')).toBeNull(); // no Google button without a client ID
+    expect((screen.getByRole('button', { name: 'Continue with Google' }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
 
@@ -58,7 +124,7 @@ describe('welcome (US-007.1 AC-2, US-007.4 AC-2)', () => {
 const me: Me = {
   user_id: 'us_1', username: 'asha', email: 'asha@example.invalid', created_at: '2026-09-01T00:00:00Z', email_verified: true, tier: 'paid',
   trial: { used: true, ends_at: null }, subscription: { plan: 'monthly', status: 'active', renews_at: '2026-11-01T00:00:00Z', cancel_at_period_end: false },
-  marketing_opt_in: false, sign_in_methods: ['email', 'google'], entitlements: {},
+  marketing_opt_in: false, sign_in_methods: ['password', 'google'], entitlements: {},
 };
 const billing = { subscription: { plan: 'monthly', status: 'active', cancel_at_period_end: false, renews_at: '2026-11-01T00:00:00Z', access_until: '2026-11-01T00:00:00Z', pending_plan: null, payment_retrying: false } };
 

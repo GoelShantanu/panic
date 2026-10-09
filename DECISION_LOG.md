@@ -2214,6 +2214,48 @@ Migration 0018 is applied to the local PostgreSQL database. Typecheck passed and
 
 ---
 
+## D-065 — Password accounts, verification and recovery (2026-10-08)
+
+**Decision:** The founder explicitly extends PRD-007 with email/password login, first/last-name signup with email verification, password recovery that cannot sign in, persistent Google signup/login, and preservation of existing accounts. The earlier passwordless scope remains historical; [PRD-007 §12](docs/prd/prd-007-accounts-and-tiers.md#12-password-and-verified-email-signup-extension-d-065) records the extension.
+
+**Outcome:** [VERIFIED] Migration 0019 adds optional private names/password hashes, credential-versioned sessions and separate challenges. Passwords use salted asynchronous scrypt; recovery revokes existing sessions and login proofs without issuing a session. Existing code-only users can set their first password without changing account identity. Google subjects persist, existing links cannot be overwritten, and non-authoritative Google email requires mailbox proof. Original email-code login remains available; resending invalidates older codes. Verification and limits are owned by [QA §9](docs/qa/test-strategy.md#9-authentication-extension-verification--2026-10-08-d-065).
+
+**Configuration boundary:** The founder confirmed that no Google OAuth client or SMTP provider exists yet and requested implementation plus instructions. [VERIFIED] The local UI shows Google unavailable and the development mailer logs codes. [UNVERIFIED] Real Google login and email delivery require configuration and provider tests in the [release runbook](docs/ops/release-runbook.md#passwords-email-verification-and-google-setup-2026-10-08-d-065). This change does not resolve the independent data-quality or external review gates.
+
+---
+
+## D-066 — Remove passwordless email-code login (2026-10-08)
+
+**Decision:** Per the founder's explicit request, remove optional email-code login. Returning users sign in with email/password or Google; email codes remain purpose-bound proofs for signup, password recovery and Google mailbox ownership.
+
+**Outcome:** [VERIFIED] Removed the UI mode and backend login handlers/routes. Old `/v1/auth/email/start` and `/v1/auth/email/verify` requests return 404 and cannot issue codes or sessions. Settings report only available password/Google methods; existing users without either can establish their first password through recovery. No accounts or news-worker processes are deleted. Historical code storage remains for expiry/deletion handling; no destructive schema migration is required. Validation is recorded in [QA §9.1](docs/qa/test-strategy.md#91-passwordless-login-removal--2026-10-08-d-066).
+
+**Limits:** Google/SMTP setup remains pending as recorded in D-065; this change does not enable either provider.
+
+---
+
+## D-067 — Frontend improvements and limited mobile participation
+
+**Date:** 2026-10-08. **Authority:** Founder requested the previously recommended frontend improvements and chose “Apply the full list sequentially now.”
+
+1. Enable watchlist search/import/selection/removal and alert preferences on phones. This is a narrow amendment to D-013/D-016 read-only mobile scope; voting/commenting remain desktop features. Use one semantic company list that becomes a grid on desktop and cards on phones, with 44 px workflow targets.
+2. Extract Stream reader/history and unread tracking into hooks; split operator actions, grievances, corrections, story tools, abuse and switches into components; separate feature and responsive CSS from global tokens/shared rules.
+3. Add reproducible desktop/mobile Chromium browser regressions and a CI browser job. Fixtures use isolated databases, memory email and fake payments; no test accounts or invented news enter the running app database.
+4. Deduplicate server API reads with React's request-scoped cache. Keep dynamic pages and private data `no-store` across requests; retain the existing two-second anonymous API cache rather than introducing stale page caching. Capture page navigation timing without asserting a machine-independent performance budget.
+5. Preserve compact default density, add a persistent comfortable option, enlarge touch controls, and make save/search/failure feedback explicit. Alert preferences update immediately, roll back on failure, and prevent overlapping saves. Partial watchlist removal keeps unsuccessful entries selected for retry.
+
+Verification and limits are owned by [QA §10](docs/qa/test-strategy.md#10-frontend-improvements-2026-10-08-d-067). Real providers, hosted CI and real-device/iOS validation remain pending.
+
+## D-068 — Sequenced release quality and filings preparation (2026-10-09)
+
+**Authority:** Founder requested the first three P0 items in order, validation, Git publication and a running local application. This authorises implementation amendments to D-026 and reviewed local data reanalysis; it does not supply vendor access, publisher licences or independent quality adjudication.
+
+1. **Company tagging:** suppress analyst affiliations/recommendations, exchange venues, unlisted parent-brand guesses and input-tax-credit acronyms; supplement explicit stock roundups from provided excerpts. Use the registry valid at publication time. Add 20 exact reviewed aliases with expected ISIN checks; refuse ambiguous code mappings. Retire the hardcoded stock-tag rewrite script. Reanalysis offers a read-only preview, per-story locked transactions, audit history, preserved operator overrides and correction notices without replaying new-news alerts.
+2. **Duplicate matching:** extend candidate retrieval with namespaced word/anchor bands and explicit lexical equivalences. Keep the existing merge threshold and conservative abstention. Corroborate paraphrases using bounded time windows, headline overlap, exact issuers, matching financial periods, amounts or supplied excerpts. Veto conflicting figures, periods, metric directions, companies and recurring price templates; a conflicting member vetoes the whole story. Existing historical clusters are not automatically merged or split.
+3. **Filings preparation:** support the standard BSE security master, BSE-only equities and dual listings without overwriting NSE legal names. Refuse malformed/truncated master imports; record fingerprints and explicit completeness assertions. Map documented provider JSON to the canonical filing envelope, enforce timestamps, retain cursors on malformed pages and refuse partial reconciliation. Add validated source registration and a production audit that exposes missing access approvals, an enabled authorised provider and verified BSE coverage.
+
+Verification and remaining release gates are owned by [QA §11](docs/qa/test-strategy.md#11-first-three-p0-implementation--2026-10-09-d-068). Provider selection/credentials, complete official BSE data and recorded publisher approval remain external dependencies. The quality samples are provisional model labels, not an independent human release certification.
+
 ## Pending Decisions — Not Yet Made
 
 These are **open**, not decided. Recommendations are the CTO's; the decision is the founder's. Full text: `docs/research/phase-01-product-research.md` §13. Status: PROJECT_STATE B-1.

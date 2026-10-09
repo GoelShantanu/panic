@@ -1,5 +1,7 @@
 # StockPanic India — Product Definition
 
+> **Founder amendment, 2026-10-08:** [D-067](../../DECISION_LOG.md#d-067--frontend-improvements-and-limited-mobile-participation) enables phone watchlist/alert management and optional comfortable reading density. Earlier approved mobile restrictions remain historical; voting/commenting stay desktop features. Verification: [QA §10](../qa/test-strategy.md#10-frontend-improvements-2026-10-08-d-067).
+
 | | |
 | --- | --- |
 | **Version** | **1.0 — APPROVED** |

@@ -35,8 +35,6 @@ import {
   getPlans,
   patchMe,
   postDelete,
-  postEmailStart,
-  postEmailVerify,
   postExport,
   postGoogle,
   postSignout,
@@ -45,6 +43,8 @@ import {
   viewerFromToken,
 } from './auth.ts';
 import type { AuthDeps } from './auth.ts';
+import { postChallengeVerify, postPasswordResetStart, postPasswordSignIn, postPasswordSignupStart } from './credential-auth.ts';
+import { authAttemptsPerIp } from './ratelimit.ts';
 import { decodeCursor, encodeCursor } from './cursor.ts';
 import {
   deletePushSubscriptionApi,
@@ -320,9 +320,14 @@ export async function route(
 
   if (method === 'POST' && resource === 'auth') {
     if (!deps) return { status: 503, body: { error: 'auth_unavailable' } };
-    if (path === 'auth/email/start') return postEmailStart(db, req.body, deps, now, req.ip ?? null);
-    if (path === 'auth/email/verify') return postEmailVerify(db, req.body, deps, now);
-    if (path === 'auth/google') return postGoogle(db, req.body, deps, now);
+    if ((path.includes('verify') || path === 'auth/google' || path.startsWith('auth/password/')) && req.ip && !authAttemptsPerIp.allow(req.ip, now.getTime())) return { status: 429, body: { error: 'too_many_attempts' } };
+    if (path === 'auth/password/sign-in') return postPasswordSignIn(db, req.body, now);
+    if (path === 'auth/password/signup/start') return postPasswordSignupStart(db, req.body, deps, now, req.ip ?? null);
+    if (path === 'auth/password/signup/verify') return postChallengeVerify(db, req.body, 'signup', deps, now);
+    if (path === 'auth/password/reset/start') return postPasswordResetStart(db, req.body, deps, now, req.ip ?? null);
+    if (path === 'auth/password/reset/complete') return postChallengeVerify(db, req.body, 'reset', deps, now);
+    if (path === 'auth/google/verify') return postChallengeVerify(db, req.body, 'google', deps, now);
+    if (path === 'auth/google') return postGoogle(db, req.body, deps, now, req.ip ?? null);
     if (path === 'auth/signup/complete') return postSignupComplete(db, req.body, req.sessionToken, now);
     if (path === 'auth/signout') return postSignout(db, req.body, req.sessionToken, user, now);
     if (path === 'auth/mfa') return community.postMfaVerify(db, req.body, user, deps.authSecret, now);

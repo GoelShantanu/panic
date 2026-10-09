@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { isinCheckDigit, newPublicId } from '@stockpanic/core';
 import { PIPELINE_QUEUE, migrate, storeCandidates } from '@stockpanic/db';
 import { buildPipelineContext, drainPipeline } from './runner.ts';
+import { reanalyseStories } from './reprocess.ts';
 
 // All companies, headlines and ISINs are fictional.
 const adminUrl = process.env['TEST_DATABASE_URL'];
@@ -191,6 +192,14 @@ describe.skipIf(!adminUrl)('pipeline end-to-end (PostgreSQL)', () => {
     expect((await storyOf('meridian-412')).id).not.toBe((await storyOf('meridian-500')).id);
   });
 
+  it('retrieves and joins paraphrases through the stored word/anchor bands', async () => {
+    await article('src_desk_a','paraphrase-a','Aurora replaces Borealis atop global markets as clean energy trade widens',72);
+    await article('src_desk_b','paraphrase-b','Aurora replaces Borealis atop world markets as clean energy trade widens',73);
+    await drain();
+    expect((await storyOf('paraphrase-a')).id).toBe((await storyOf('paraphrase-b')).id);
+    expect((await storyOf('paraphrase-a')).source_count).toBe(2);
+  });
+
   it('every story change was broadcast, and every job completed', async () => {
     const ev = await db.query(`SELECT type, count(*)::int AS n FROM live_event WHERE type LIKE 'story.%' GROUP BY type ORDER BY type`);
     const stories = (await db.query('SELECT count(*)::int AS n FROM story')).rows[0].n;
@@ -211,5 +220,36 @@ describe.skipIf(!adminUrl)('pipeline end-to-end (PostgreSQL)', () => {
     expect(r).toMatchObject({ failed: 1, skipped: 1 });
     const failed = await db.query(`SELECT last_error FROM job WHERE failed_at IS NOT NULL`);
     expect(failed.rows[0].last_error).toBe('item 999999 not found');
+  });
+
+  it('uses aliases valid at publication, including a reused short name', async () => {
+    const today = new Date(Date.now()+5.5*3600_000).toISOString().slice(0,10);
+    await db.query(`INSERT INTO instrument_alias (isin,alias,alias_norm,kind,valid) VALUES
+      ($1,'LegacyDesk','legacydesk','curated',daterange('2020-01-01',$3::date)),
+      ($2,'LegacyDesk','legacydesk','curated',daterange($3::date,NULL))`,[A,K,today]);
+    await storeCandidates(db,{sourceId:'src_desk_a',kind:'article',excerptAllowed:false},[
+      {kind:'article',dedupKey:'historical-alias',headline:'LegacyDesk announces expansion',url:'https://news.example.in/history',publishedAt:new Date(Date.now()-2*86400_000),excerpt:null}
+    ]);
+    await drain();
+    expect((await storyOf('historical-alias')).tags).toEqual([`${A}:rule`]);
+  });
+
+  it('previews reanalysis without writes, corrects stale tags, preserves operator tags and is idempotent', async () => {
+    await article('src_desk_a','reprocess-case','Asterion Industries opens research centre',80);
+    await drain();
+    const s=await storyOf('reprocess-case');
+    const id=(await db.query('SELECT id FROM item WHERE dedup_key=$1',['reprocess-case'])).rows[0].id;
+    await db.query(`UPDATE item_analysis SET tags=$2,rules_version='old-rules' WHERE item_id=$1`,[id,JSON.stringify([{isin:K,method:'rule'}])]);
+    await db.query('DELETE FROM story_tag WHERE story_id=$1',[s.id]);
+    await db.query(`INSERT INTO story_tag (story_id,isin,method,confidence) VALUES ($1,$2,'rule',1),($1,$3,'operator',1)`,[s.id,K,M]);
+    const opts={since:new Date(Date.now()-3600_000),limit:1000,apply:false};
+    const preview=await reanalyseStories(db,opts);
+    expect(preview.changes.find(c=>c.itemId===id)).toMatchObject({before:[K],after:[A]});
+    expect((await storyOf('reprocess-case')).tags).toEqual([`${K}:rule`,`${M}:operator`].sort());
+    await reanalyseStories(db,{...opts,apply:true});
+    expect((await storyOf('reprocess-case')).tags).toEqual([`${A}:rule`,`${M}:operator`].sort());
+    expect((await db.query(`SELECT count(*)::int n FROM job WHERE payload->>'story_id'=$1 AND payload->>'correction_removed_isin'=$2`,[s.id,K])).rows[0].n).toBe(1);
+    expect((await reanalyseStories(db,{...opts,apply:true})).updated).toBe(0);
+    expect((await db.query(`SELECT count(*)::int n FROM audit_log WHERE action='story.reanalysed' AND entity_id=$1`,[s.id])).rows[0].n).toBe(1);
   });
 });

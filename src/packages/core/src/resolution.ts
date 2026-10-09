@@ -21,9 +21,13 @@ export interface Resolution {
 // Shared by the pipeline and quality evaluation, including the excerpt fallback.
 export function resolveArticle(index: AliasIndex, headline: string, excerpt: string | null = null): Resolution {
   const primary = index.resolve(headline);
-  if (primary.isins.length || primary.unresolved.length || !excerpt) return primary;
+  if (primary.unresolved.length || !excerpt) return primary;
+  // Feed excerpts can complete an explicit stock/company roundup, but cannot silently
+  // introduce incidental issuers into an ordinary single-company headline.
+  const roundup = /\b(?:stocks? (?:to watch|to buy|in news|picks)|among \d+ (?:stocks?|companies)|(?:other (?:\w+ )?|fintech )stocks|companies to report|market wrap)\b/i.test(headline);
+  if (primary.isins.length && !roundup) return primary;
   const fallback = index.resolve(excerpt);
-  return { isins: fallback.isins, unresolved: primary.unresolved.length ? primary.unresolved : fallback.unresolved };
+  return { isins: [...new Set([...primary.isins, ...fallback.isins])].sort(), unresolved: fallback.unresolved };
 }
 
 interface Entry {
@@ -41,7 +45,7 @@ interface Token {
 const trimMention = (s: string) => s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
 
 // Words that show a common-word alias is being used as a company (entity-resolution.md §4 R2).
-const COMPANY_CONTEXT = new Set(['shares', 'share', 'stock', 'stocks', 'ltd', 'limited', 'q1', 'q2', 'q3', 'q4', 'results', 'board', 'ipo', 'dividend', 'profit', 'revenue', 'order', 'target']);
+const COMPANY_CONTEXT = new Set(['shares', 'share', 'stock', 'stocks', 'ltd', 'limited', 'q1', 'q2', 'q3', 'q4', 'results', 'board', 'ipo', 'dividend', 'profit', 'revenue', 'order', 'target', 'ban']);
 const CONTEXT_WINDOW = 3;
 
 // "BSE" beside "NSE" names the exchanges, not BSE Limited's shares ("Are NSE, BSE closed today?").
@@ -49,6 +53,24 @@ const EXCHANGE_PAIR: Record<string, string> = { bse: 'nse' };
 const EXCHANGE_WINDOW = 3;
 const FUND_HOUSE_NAMES = new Set(['sbi', 'motilal oswal', 'icici', 'hdfc', 'kotak', 'axis']);
 const UNLISTED_MENTIONS = new Set(['jio', 'jio platforms', 'l and t realty']);
+
+function isAttribution(tokens: readonly Token[], i: number, n: number): boolean {
+  const before = tokens.slice(Math.max(0, i - 8), i).map(t => t.norm).join(' ');
+  const after = tokens.slice(i + n, i + n + 8).map(t => t.norm).join(' ');
+  const issuerSubject = /^(?:s )?(?:shares?|stocks?|profit|revenue|board|dividend|results|earnings)\b/.test(after);
+  if (issuerSubject) return false;
+  if (/\b(?:says?|said|according to|estimates? by|forecast by|report by)$/.test(before)) return true;
+  if (/^(?:s )?(?:(?:retains?|maintains?|reiterates?) (?:a )?(?:buy|sell|hold|add|overweight|underweight)|remains? (?:bullish|bearish)|recommends?|upgrades?|downgrades?|sees? upside|raises? (?:its )?target|cuts? (?:its )?target)\b/.test(after)) return true;
+  if (/^(?:believes?|expects?|sees?|forecasts?|projects?)\b/.test(after)
+    && /\b(?:markets?|inflation|sentiment|investors?|nifty|sensex|sectors?|rates?)\b/.test(tokens.slice(i+n).map(t => t.norm).join(' '))) return true;
+  if (/\b(?:cio|economist|analyst|strategist|fund manager|head of research)\b/.test(before)
+    && /^(?:discusses?|says?|explains?|believes?|expects?|sees?)\b/.test(after)) return true;
+  // Interview headlines end with a named speaker and affiliation after a colon.
+  const colon = tokens.findLastIndex((t, k) => k < i && /[:：]/.test(t.orig));
+  const tail = i + n === tokens.length;
+  const roundup = /\b(?:stocks|companies|picks|watch)\b/.test(tokens.slice(0, i).map(t => t.norm).join(' '));
+  return tail && colon >= 0 && !roundup && i > colon + 1 && /[,，]$/.test(tokens[i - 1]?.orig ?? '');
+}
 
 export class AliasIndex {
   private readonly entries = new Map<string, Entry>();
@@ -97,7 +119,7 @@ export class AliasIndex {
         if (entry.commonWord && !span.every((t) => /[A-Z]/.test(t.orig) && t.orig === t.orig.toUpperCase())) continue;
         if (entry.commonWord && !tokens.slice(Math.max(0, i - CONTEXT_WINDOW), i + n + CONTEXT_WINDOW).some((t) => COMPANY_CONTEXT.has(t.norm))) continue;
         // Headlines capitalise company names; a lower-case run is ordinary words ("to take over").
-        if (!/^[\p{Lu}\p{N}]/u.test(span[0]!.orig)) continue;
+        if (!/^[\p{Lu}\p{N}]/u.test(trimMention(span[0]!.orig))) continue;
         // Plural acronyms in prose (e.g. MPs) are not a company named MPS.
         if (n === 1 && /^[A-Z]{2,}s$/.test(trimMention(span[0]!.orig))) continue;
         // An institution, analyst subsidiary, ownership qualifier or trading venue is
@@ -106,6 +128,11 @@ export class AliasIndex {
         const previousWord = tokens[i - 1]?.norm;
         const venuePreposition = previousWord === 'the' ? tokens[i - 2]?.norm : previousWord;
         const analystSubsidiary = nextWord === 'securities' || nextWord === 'mf' || (nextWord === 'mutual' && tokens[i + n + 1]?.norm === 'fund');
+        // ITC in tax reporting means input tax credit. Preserve issuer subjects even
+        // when their genuine corporate news concerns GST or taxation.
+        const taxCredit = key === 'itc' && !COMPANY_CONTEXT.has(nextWord ?? '')
+          && (/\b(?:claim|claims|claiming|avail|availing|eligible|eligibility|entitled|entitlement)\b/.test(tokens.slice(Math.max(0,i-4),i).map(t=>t.norm).join(' '))
+            || /input tax credit/i.test(headline));
         const centralBank = key === 'bank of india' && previousWord === 'reserve';
         const ownership = nextWord === 'backed';
         const indexName = key === 'bse' && (nextWord === 'sensex' || /^\d+$/.test(nextWord ?? ''));
@@ -118,8 +145,9 @@ export class AliasIndex {
         const venue = ['bse', 'nse', 'mcx', 'multi commodity exchange'].includes(key)
           && ['on', 'at', 'via', 'through'].includes(venuePreposition ?? '')
           && !COMPANY_CONTEXT.has(nextWord ?? '');
-        if (analystSubsidiary || centralBank || ownership || venue || indexName || unlisted || fundHouse || trailingAttribution) {
-          if (unlisted || fundHouse || trailingAttribution) unresolved.add(trimMention([...new Set(span.map(t=>t.orig))].join(' ')));
+        const attribution = isAttribution(tokens, i, n);
+        if (taxCredit || analystSubsidiary || centralBank || ownership || venue || indexName || unlisted || fundHouse || trailingAttribution || attribution) {
+          if (unlisted || fundHouse || trailingAttribution || attribution) unresolved.add(trimMention([...new Set(span.map(t=>t.orig))].join(' ')));
           matched = n;
           break;
         }
@@ -132,7 +160,11 @@ export class AliasIndex {
         // The start of a longer listed name ("NTPC Green" for NTPC Green Energy) is not the shorter
         // company: shown unresolved rather than guessed.
         const next = tokens[i + n];
-        const truncated = next !== undefined && this.prefixes.has(`${key} ${next.norm}`) && !this.entries.has(`${key} ${next.norm}`);
+        const continuation = `${key} ${next?.norm}`;
+        const conjunctionList = next?.norm === 'and' && tokens[i+n+1] !== undefined
+          && !this.prefixes.has(`${continuation} ${tokens[i+n+1]!.norm}`)
+          && !this.entries.has(`${continuation} ${tokens[i+n+1]!.norm}`);
+        const truncated = next !== undefined && !conjunctionList && this.prefixes.has(continuation) && !this.entries.has(continuation);
         if (entry.ambiguous || entry.isins.size > 1 || truncated) unresolved.add(trimMention(truncated ? `${text} ${next!.orig}` : text));
         else isins.add([...entry.isins][0]!);
         matched = n;

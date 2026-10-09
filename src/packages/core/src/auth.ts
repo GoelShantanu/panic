@@ -1,7 +1,7 @@
 // Account and session rules (PRD-007 §1, §2.2). Codes and session tokens are stored only as
 // hashes: a database leak exposes no usable code or session.
 
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt, scrypt, timingSafeEqual } from 'node:crypto';
 
 export const OTP_TTL_MS = 10 * 60_000; // PRD-007 US-007.1 AC-3
 export const OTP_MAX_ATTEMPTS = 5; // PRD-007 US-007.1 AC-3
@@ -56,3 +56,31 @@ export function isValidUsername(u: string): boolean {
 }
 
 export const daysFrom = (d: Date, days: number) => new Date(d.getTime() + days * 86_400_000);
+
+export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MAX_LENGTH = 128;
+export function isValidPassword(value: unknown): value is string {
+  return typeof value === 'string' && [...value].length >= PASSWORD_MIN_LENGTH && [...value].length <= PASSWORD_MAX_LENGTH;
+}
+
+// OWASP's scrypt alternative: N=2^15, r=8, p=3. Async, salted, and bounded in memory.
+const SCRYPT_OPTIONS = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 };
+const derivePassword = (password: string, salt: string) => new Promise<Buffer>((resolve, reject) => {
+  scrypt(password, Buffer.from(salt, 'hex'), 64, SCRYPT_OPTIONS, (err, key) => err ? reject(err) : resolve(key));
+});
+export const DUMMY_PASSWORD_HASH = `scrypt$32768$8$3$${'0'.repeat(32)}$${'0'.repeat(128)}`;
+export async function hashPassword(password: string): Promise<string> {
+  if (!isValidPassword(password)) throw new Error('Password must be 15–128 characters');
+  const salt = randomBytes(16).toString('hex');
+  return `scrypt$32768$8$3$${salt}$${(await derivePassword(password, salt)).toString('hex')}`;
+}
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  if (!/^scrypt\$32768\$8\$3\$[0-9a-f]{32}\$[0-9a-f]{128}$/.test(stored)) return false;
+  const parts = stored.split('$');
+  const actual = await derivePassword(password, parts[4]!);
+  return timingSafeEqual(actual, Buffer.from(parts[5]!, 'hex'));
+}
+
+export function hashChallenge(secret: string, email: string, code: string, purpose: 'signup' | 'reset' | 'google'): string {
+  return createHmac('sha256', secret).update(`${purpose}\n${email}\n${code}`).digest('hex');
+}

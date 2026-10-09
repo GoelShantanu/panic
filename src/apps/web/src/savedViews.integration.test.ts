@@ -70,7 +70,7 @@ describe.skipIf(!adminUrl)('saved views and account preferences (PostgreSQL)', (
   });
 
   it('marketing email is a separate opt-in that can be changed; /v1/me reports it and sign-in methods', async () => {
-    expect(b(await call('GET', '/v1/me'))).toMatchObject({ marketing_opt_in: false, sign_in_methods: ['email'] });
+    expect(b(await call('GET', '/v1/me'))).toMatchObject({ marketing_opt_in: false, sign_in_methods: [] });
     expect(b(await call('PATCH', '/v1/me', { marketing_opt_in: true }))).toMatchObject({ marketing_opt_in: true, username: 'viewer1' });
     expect((await call('PATCH', '/v1/me', { marketing_opt_in: 'yes' })).status).toBe(400);
   });

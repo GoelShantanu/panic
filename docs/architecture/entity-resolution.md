@@ -129,8 +129,18 @@ Recomputed whenever an item joins, a merge/split happens, or an operator retags.
 
 ## 9. Limits
 
+> Historical v1.0 limits below are supplemented by the D-068 implementation notes at the end of this document.
+
 | Limit | Detail |
 | --- | --- |
 | **Master-list source unconfirmed** | Depends on what the feed vendor or exchanges provide. |
 | **Curated aliases start empty** | Seeding the first few hundred is founder work before launch. |
 | **Headline-only context** | Short text gives the resolver little to disambiguate with; expect many "Unresolved" at launch, by design. |
+
+## 10. Implementation supplement — 2026-10-09 (D-068)
+
+The rule-only pipeline uses names/aliases valid at the article's publication date (first-seen date if absent), with a bounded historical-index cache. It distinguishes issuer subjects from analyst attributions, subsidiaries, exchange venues, fund houses, ownership qualifiers and tax-credit acronyms. Exact quoted names and conjunction-separated roundups remain supported. Provided RSS excerpts may complete explicit stock roundups, but cannot add incidental companies to an ordinary resolved issuer headline or override unresolved ambiguity.
+
+The explicit alias import checks the expected ISIN and refuses codes that resolve to multiple issuers. New aliases are in `docs/ops/curated-aliases.csv`; no bare ambiguous group name is guessed. The standard BSE loader checks EQ security flags, six-digit codes, ISIN checksums and groups, refuses malformed/partial files and preserves canonical NSE legal names for dual-listed instruments. Complete actual BSE coverage remains pending. Import completeness is an operator assertion, not proof of licensing or file authenticity.
+
+The `reprocess` CLI previews before applying audited item analysis under the cluster lock. Application preserves story identities, comments, votes, filing analyses and operator tag overrides; removed tags enqueue correction work without re-alerting added tags as new news. Reports are exclusive-create outputs. A preview is a review aid, not a frozen transaction plan; each story is recalculated against current state when applied. Back up the database first. QA results and residual ambiguity are in [QA §11](../qa/test-strategy.md#11-first-three-p0-implementation--2026-10-09-d-068).

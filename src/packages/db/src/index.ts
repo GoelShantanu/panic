@@ -3,6 +3,7 @@ export * from './ingestion.ts';
 export * from './pipeline.ts';
 export * from './read.ts';
 export * from './accounts.ts';
+export * from './credentials.ts';
 export * from './alerts.ts';
 export * from './community.ts';
 export * from './maintenance.ts';

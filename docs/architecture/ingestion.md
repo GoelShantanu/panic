@@ -173,3 +173,11 @@ One transaction per item. The insert and the job enqueue commit together, so an 
 | **Vendor unknown** | Delivery model, rate limits, payload shape and revision semantics depend on OQ-6. |
 | **Feed list unknown** | No RSS feed has been selected or terms-checked yet. |
 | **Poll intervals guessed** | 5 s / 60 s are starting points; tighten or relax against measured latency and vendor limits. |
+
+## 11. Filings provider implementation supplement — 2026-10-09 (D-068)
+
+The poll/reconciliation adapter supports explicitly configured JSON paths, canonical field mapping, default exchange, documented status values and optional Asia/Kolkata timestamp interpretation. Canonical timestamps require an explicit offset. Numeric announcement IDs/scrip codes are accepted only as safe integers; string codes preserve leading zeroes. Paths cannot traverse prototype properties. Push ingestion retains its canonical signed-envelope contract; a raw vendor push payload requires a provider-specific normalisation boundary.
+
+Missing configured credentials fail the poll. Malformed page entries mark source failure and retain the cursor for replay; successfully stored entries remain idempotent. Reconciliation refuses malformed rows or a non-empty next cursor instead of claiming full coverage. Provider URLs must use HTTPS, without embedded credentials; source registration requires explicit access approval before enabling. Credentials stay in environment variables. The example configuration is disabled and cannot be enabled with its placeholder hostname.
+
+`sources audit --production` reports unrecorded publisher approvals, no enabled authorised filings source and missing complete/fingerprinted/current BSE import evidence. Demo registry codes cannot satisfy that coverage check. This is a narrow source-readiness audit, not a complete deployment, legal or product release gate. No actual provider has been selected or enabled. Setup is in the [release runbook](../ops/release-runbook.md#first-three-p0-operations-2026-10-09-d-068).

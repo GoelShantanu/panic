@@ -446,8 +446,10 @@ export async function isFollowed(db: pg.ClientBase, userId: string, isin: string
 // Health of every enabled source. Error text stays internal; readers see the state and since when.
 export async function sourceStatus(db: pg.ClientBase) {
   const { rows } = await db.query(
-    `SELECT s.source_id, s.name, s.kind, s.tier, h.state AS health, h.changed_at AS since, h.last_success_at
+    `SELECT s.source_id, s.name, s.kind, s.tier, h.state AS health, h.changed_at AS since, h.last_success_at,
+            f.latest_published_at
        FROM source s JOIN source_health h USING (source_id)
+       LEFT JOIN source_fetch_state f USING (source_id)
       WHERE s.enabled AND s.kind = 'article'
       ORDER BY s.tier, s.name`,
   );

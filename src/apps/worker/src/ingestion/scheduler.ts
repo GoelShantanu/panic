@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { evaluateHealth } from '@stockpanic/core';
+import { evaluateHealth, RSS_MAX_PUBLICATION_AGE_SECONDS } from '@stockpanic/core';
 import type { HealthState, SessionType } from '@stockpanic/core';
 import { currentSession, emitSessionIfChanged, listEnabledSources, setHealthState } from '@stockpanic/db';
 import { fetchSourceOnce } from './run-source.ts';
@@ -35,6 +35,8 @@ export async function tick(db: pg.ClientBase, now: Date, deps: FetchDeps = {}): 
       maxQuietSeconds: source.cadence.maxQuietSeconds,
       lastSuccessAt: source.health.lastSuccessAt,
       lastNewItemAt: source.fetch.lastNewItemAt,
+      latestPublishedAt: source.fetch.latestPublishedAt,
+      maxPublicationAgeSeconds: RSS_MAX_PUBLICATION_AGE_SECONDS,
       trackingSince: source.health.trackingSince,
       previous: source.health.state,
     });

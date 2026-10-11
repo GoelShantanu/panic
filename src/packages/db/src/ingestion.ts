@@ -22,6 +22,8 @@ export interface SourceRow {
     lastModified: string | null;
     nextFetchAt: Date | null;
     lastNewItemAt: Date | null;
+    latestPublishedAt: Date | null;
+    publicationObservedAt: Date | null;
   };
 }
 
@@ -37,7 +39,8 @@ export async function listEnabledSources(db: pg.ClientBase): Promise<SourceRow[]
   const { rows } = await db.query(
     `SELECT s.source_id, s.name, s.kind, s.tier, s.excerpt_allowed, s.article_scope, s.adapter, s.cadence,
             h.state, h.last_success_at, h.consecutive_failures, h.tracking_since,
-            f.etag, f.last_modified, f.next_fetch_at, f.last_new_item_at
+            f.etag, f.last_modified, f.next_fetch_at, f.last_new_item_at,
+            f.latest_published_at, f.publication_observed_at
        FROM source s
        JOIN source_health h USING (source_id)
        JOIN source_fetch_state f USING (source_id)
@@ -64,6 +67,8 @@ export async function listEnabledSources(db: pg.ClientBase): Promise<SourceRow[]
       lastModified: r.last_modified,
       nextFetchAt: r.next_fetch_at,
       lastNewItemAt: r.last_new_item_at,
+      latestPublishedAt: r.latest_published_at,
+      publicationObservedAt: r.publication_observed_at,
     },
   }));
 }
@@ -287,6 +292,8 @@ export interface FetchRecord {
   lastModified: string | null;
   newItems: number;
   nextFetchAt: Date;
+  // Omitted for 304/failures; null means a parsed response had no usable dates.
+  latestPublishedAt?: Date | null;
 }
 
 export async function recordFetch(db: pg.ClientBase, sourceId: string, at: Date, rec: FetchRecord): Promise<number> {
@@ -306,9 +313,12 @@ export async function recordFetch(db: pg.ClientBase, sourceId: string, at: Date,
             last_modified = CASE WHEN $2 THEN coalesce($4, last_modified) ELSE last_modified END,
             last_new_item_at = CASE WHEN $5 > 0 THEN $6 ELSE last_new_item_at END,
             next_fetch_at = $7,
+            latest_published_at = CASE WHEN $2 AND $8 THEN $9 ELSE latest_published_at END,
+            publication_observed_at = CASE WHEN $2 AND $8 THEN $6 ELSE publication_observed_at END,
             updated_at = now()
       WHERE source_id = $1`,
-    [sourceId, rec.ok, rec.etag, rec.lastModified, rec.newItems, at, rec.nextFetchAt],
+    [sourceId, rec.ok, rec.etag, rec.lastModified, rec.newItems, at, rec.nextFetchAt,
+      rec.latestPublishedAt !== undefined, rec.latestPublishedAt ?? null],
   );
   return rows[0]?.consecutive_failures ?? 0;
 }

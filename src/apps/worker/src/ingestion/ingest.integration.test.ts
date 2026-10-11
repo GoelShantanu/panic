@@ -39,6 +39,7 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
 
   const t0 = new Date(Math.floor(Date.now() / 1000) * 1000);
   const at = (s: number) => new Date(t0.getTime() + s * 1000);
+  const freshFeed = (xml: string) => xml.replace(/<pubDate>[^<]+<\/pubDate>/g, `<pubDate>${at(-3600).toUTCString()}</pubDate>`);
   const deps = { jitter: () => 1 };
   const health = async (id: string) =>
     (await db.query('SELECT state, consecutive_failures FROM source_health WHERE source_id = $1', [id])).rows[0];
@@ -46,6 +47,7 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
 
 
   beforeAll(async () => {
+    feed.body = freshFeed(RSS_TWO_ITEMS);
     admin = new pg.Client({ connectionString: adminUrl });
     await admin.connect();
     await admin.query(`CREATE DATABASE ${dbName}`);
@@ -106,7 +108,7 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
   });
 
   it('stores only the new item when the feed changes', async () => {
-    feed = { body: RSS_THREE_ITEMS, etag: '"v2"', status: 200 };
+    feed = { body: freshFeed(RSS_THREE_ITEMS), etag: '"v2"', status: 200 };
     const r = await tick(db, at(122), deps);
     expect(r.fetched[0]).toMatchObject({ outcome: 'new_items', inserted: 1, duplicates: 2 });
     expect((await db.query('SELECT count(*)::int AS n FROM item')).rows[0].n).toBe(3);
@@ -135,7 +137,7 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
   });
 
   it('recovers to healthy on the next successful fetch', async () => {
-    feed = { body: RSS_THREE_ITEMS, etag: '"v5"', status: 200 };
+    feed = { body: freshFeed(RSS_THREE_ITEMS), etag: '"v5"', status: 200 };
     const r = await tick(db, at(366), deps);
     expect(r.fetched[0]).toMatchObject({ outcome: 'no_new_items', duplicates: 3 });
     expect(r.healthChanges).toEqual([{ sourceId: 'src_test_desk', from: 'stale', to: 'healthy' }]);
@@ -173,5 +175,40 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
     expect(result.fetched.some(s => s.sourceId === 'src_retired_exchange')).toBe(false);
     expect(result.healthChanges.some(s => s.sourceId === 'src_retired_exchange')).toBe(false);
     expect(await health('src_retired_exchange')).toEqual(before);
+  });
+
+  it('inspects content despite pre-upgrade validators, marks old 200 feeds stale and preserves publication on 304', async () => {
+    const oldDate = new Date('2024-04-23T09:00:00Z');
+    feed = { body: RSS_THREE_ITEMS.replace(/<pubDate>[^<]+<\/pubDate>/g, `<pubDate>${oldDate.toUTCString()}</pubDate>`), etag: '"old-feed"', status: 200 };
+    await db.query(`UPDATE source_fetch_state SET etag = '"old-feed"', next_fetch_at = NULL,
+      latest_published_at = NULL, publication_observed_at = NULL WHERE source_id = 'src_test_desk'`);
+    const r = await tick(db, at(8000), deps);
+    expect(r.fetched[0]).toMatchObject({ outcome: 'no_new_items', duplicates: 3 });
+    expect(await health('src_test_desk')).toEqual({ state: 'stale', consecutive_failures: 0 });
+    const snapshot = (await db.query(`SELECT latest_published_at, publication_observed_at FROM source_fetch_state WHERE source_id = 'src_test_desk'`)).rows[0];
+    expect(snapshot).toEqual({ latest_published_at: oldDate, publication_observed_at: at(8000) });
+    const unchanged = await tick(db, at(8301), deps);
+    expect(unchanged.fetched[0]).toMatchObject({ outcome: 'not_modified' });
+    expect((await db.query(`SELECT latest_published_at, publication_observed_at FROM source_fetch_state WHERE source_id = 'src_test_desk'`)).rows[0]).toEqual(snapshot);
+    expect(await health('src_test_desk')).toEqual({ state: 'stale', consecutive_failures: 0 });
+  });
+
+  it('a fresh off-topic entry restores content health without inserting a news story', async () => {
+    const published = at(8500);
+    feed = { body: `<rss version="2.0"><channel><item><title>Cricket match highlights</title><link>https://news.example.in/sport</link><pubDate>${published.toUTCString()}</pubDate></item></channel></rss>`, etag: '"current-feed"', status: 200 };
+    const r = await tick(db, at(8602), deps);
+    expect(r.fetched[0]).toMatchObject({ outcome: 'no_new_items', inserted: 0, discardedIrrelevant: 1 });
+    expect(await health('src_test_desk')).toEqual({ state: 'healthy', consecutive_failures: 0 });
+    expect((await db.query(`SELECT latest_published_at FROM source_fetch_state WHERE source_id = 'src_test_desk'`)).rows[0].latest_published_at).toEqual(published);
+  });
+
+  it('failures preserve observed publication, while a newly parsed undated feed reports unknown', async () => {
+    feed = { body: '', etag: '"failed-feed"', status: 403 };
+    await tick(db, at(8903), deps);
+    expect((await db.query(`SELECT latest_published_at FROM source_fetch_state WHERE source_id = 'src_test_desk'`)).rows[0].latest_published_at).toEqual(at(8500));
+    feed = { body: RSS_MIXED_QUALITY, etag: '"undated-feed"', status: 200 };
+    await tick(db, at(9204), deps);
+    expect((await db.query(`SELECT latest_published_at, publication_observed_at FROM source_fetch_state WHERE source_id = 'src_test_desk'`)).rows[0]).toEqual({ latest_published_at: null, publication_observed_at: at(9204) });
+    expect((await tick(db, at(9505), deps)).fetched[0]).toMatchObject({ outcome: 'not_modified' });
   });
 });

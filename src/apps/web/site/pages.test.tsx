@@ -5,15 +5,45 @@ import { FollowButton } from './FollowButton.tsx';
 import { Search } from './Search.tsx';
 import { StoryVotes } from './story/StoryVotes.tsx';
 import { CommunityOpinion } from './votes/VoteControls.tsx';
+import StatusPage from '../app/status/page.tsx';
+import { api } from './api.ts';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
+vi.mock('./api.ts', () => ({ api: vi.fn() }));
 
 beforeEach(() => push.mockReset());
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+});
+
+describe('source status', () => {
+  it('separates fetch time from content publication and does not promise new articles', async () => {
+    vi.mocked(api).mockResolvedValue({ status: 200, body: { sources: [{ source_id: 'src_fixture', name: 'Example Desk', kind: 'article', tier: 3, health: 'healthy', since: '2026-10-12T01:00:00Z', last_success_at: '2026-10-12T01:00:00Z', latest_published_at: null }] } });
+    render(await StatusPage());
+    expect(screen.getByRole('columnheader', { name: 'Last successful fetch' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Newest feed publication' })).toBeTruthy();
+    expect(screen.getByText('Unknown')).toBeTruthy();
+    expect(screen.getByText('Reachable')).toBeTruthy();
+    expect(screen.getByText(/A successful fetch does not necessarily contain new articles/)).toBeTruthy();
+  });
+
+  it('shows the year of stale feed publications independently of a current successful fetch', async () => {
+    vi.mocked(api).mockResolvedValue({ status: 200, body: { sources: [{ source_id: 'src_fixture', name: 'Example Desk', kind: 'article', tier: 3, health: 'stale', since: '2026-10-12T01:00:00Z', last_success_at: '2026-10-12T01:00:00Z', latest_published_at: '2024-04-23T17:06:32Z' }] } });
+    render(await StatusPage());
+    expect(screen.getByText('23 Apr 2024, 22:36 IST')).toBeTruthy();
+    expect(screen.getByText('12 Oct, 06:30 IST')).toBeTruthy();
+    expect(screen.getByText('Delayed')).toBeTruthy();
+  });
+
+  it('does not report success when the status API is unavailable', async () => {
+    vi.mocked(api).mockResolvedValue({ status: 503, body: null });
+    render(await StatusPage());
+    expect(screen.getByText('Source status is temporarily unavailable.')).toBeTruthy();
+    expect(screen.queryByText(/All enabled sources/)).toBeNull();
+  });
 });
 
 describe('community opinion display (PRD-005 US-005.3)', () => {

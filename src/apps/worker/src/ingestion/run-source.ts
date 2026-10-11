@@ -5,7 +5,7 @@ import { recordFetch, storeCandidates } from '@stockpanic/db';
 import type { SourceRow } from '@stockpanic/db';
 import { conditionalGet } from './http.ts';
 import type { FetchLike } from './http.ts';
-import { FeedParseError, parseFeed, toCandidates } from './rss.ts';
+import { FeedParseError, latestFeedPublication, parseFeed, toCandidates } from './rss.ts';
 
 export interface FetchDeps {
   fetchImpl?: FetchLike;
@@ -40,7 +40,7 @@ export async function fetchSourceOnce(
 
   const finish = async (
     partial: Omit<FetchSummary, 'sourceId' | 'nextFetchAt'>,
-    extras: { etag?: string | null; lastModified?: string | null; retryAfterSeconds?: number | null } = {},
+    extras: { etag?: string | null; lastModified?: string | null; retryAfterSeconds?: number | null; latestPublishedAt?: Date | null } = {},
   ): Promise<FetchSummary> => {
     const ok = partial.outcome !== 'error';
     const failures = ok ? 0 : source.health.consecutiveFailures + 1;
@@ -53,6 +53,7 @@ export async function fetchSourceOnce(
       lastModified: extras.lastModified ?? null,
       newItems: partial.inserted,
       nextFetchAt,
+      ...(extras.latestPublishedAt !== undefined ? { latestPublishedAt: extras.latestPublishedAt } : {}),
     });
     return { sourceId: source.sourceId, nextFetchAt, ...partial };
   };
@@ -64,8 +65,9 @@ export async function fetchSourceOnce(
   }
 
   const res = await conditionalGet(url, {
-    etag: source.fetch.etag,
-    lastModified: source.fetch.lastModified,
+    // Pre-upgrade validators cannot establish the age of content we have not inspected.
+    etag: source.fetch.publicationObservedAt ? source.fetch.etag : null,
+    lastModified: source.fetch.publicationObservedAt ? source.fetch.lastModified : null,
     ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
   });
   if (res.status === 'not_modified') return finish({ outcome: 'not_modified', error: null, ...empty });
@@ -80,10 +82,11 @@ export async function fetchSourceOnce(
     if (err instanceof FeedParseError) return finish({ outcome: 'error', error: err.message, ...empty });
     throw err;
   }
+  const latestPublishedAt = latestFeedPublication(entries, now);
   const { candidates, discardedNonEnglish, discardedInvalid } = toCandidates(entries, source.articleScope);
   const { inserted, duplicates, heldForReview, discardedIrrelevant } = await storeCandidates(db, source, candidates);
   return finish(
     { outcome: inserted > 0 ? 'new_items' : 'no_new_items', error: null, inserted, duplicates, discardedNonEnglish, discardedInvalid, heldForReview, discardedIrrelevant },
-    { etag: res.etag, lastModified: res.lastModified },
+    { etag: res.etag, lastModified: res.lastModified, latestPublishedAt },
   );
 }

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | **1.0 — APPROVED** |
+| **Version** | **1.1 — D-085 additive RSS freshness amendment; approved v1.0 retained below** |
 | **Status** | ✅ **Approved 2026-10-02 — [D-026](../../DECISION_LOG.md).** Changes require a new decision. |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect / CTO |
@@ -181,3 +181,11 @@ The poll/reconciliation adapter supports explicitly configured JSON paths, canon
 Missing configured credentials fail the poll. Malformed page entries mark source failure and retain the cursor for replay; successfully stored entries remain idempotent. Reconciliation refuses malformed rows or a non-empty next cursor instead of claiming full coverage. Provider URLs must use HTTPS, without embedded credentials; source registration requires explicit access approval before enabling. Credentials stay in environment variables. The example configuration is disabled and cannot be enabled with its placeholder hostname.
 
 `sources audit --production` reports unrecorded publisher approvals, no enabled authorised filings source and missing complete/fingerprinted/current BSE import evidence. Demo registry codes cannot satisfy that coverage check. This is a narrow source-readiness audit, not a complete deployment, legal or product release gate. No actual provider has been selected or enabled. Setup is in the [release runbook](../ops/release-runbook.md#first-three-p0-operations-2026-10-09-d-068).
+
+## 12. RSS publication freshness amendment — 2026-10-12 (D-085)
+
+Fetch success and content freshness are independent. After a successfully parsed RSS/Atom response, observe the newest usable publication date from all entries before language/relevance filtering. Ignore invalid dates and dates after the fetch clock; a response without usable dates records unknown. A new200 replaces the observation, while304/error preserves it. A source without an observation bypasses existing conditional validators once so old cached bodies cannot remain uninspected after upgrade.
+
+For article RSS sources, an observed publication older than seven days produces `stale`, including off-market periods. Existing expected-session HTTP failure thresholds retain precedence and a previously down source is not silently healed during an excluded publishing session. A few hours of quiet and ordinary weekends do not satisfy this content-age threshold. Missing publication metadata is exposed as unknown, not proof of fresh coverage. This is a conservative frozen-feed safeguard, not a latency SLA or proof that all publisher articles appear in the app.
+
+The public status page labels HTTP success as last successful fetch and displays newest feed publication separately. Persistence belongs to [schema §11](../database/schema.md#11-rss-publication-observation--2026-10-12-d-085); validation belongs to [QA §25](../qa/test-strategy.md#25-supported-ndtv-feed-and-rss-content-freshness--2026-10-12-d-085).

@@ -49,6 +49,7 @@ export const DOWN_MULTIPLE = 10;
 export const BREAKER_THRESHOLD = 5;
 export const BREAKER_MAX_DELAY_SECONDS = 15 * 60;
 export const RETRY_AFTER_CAP_SECONDS = 60 * 60;
+export const RSS_MAX_PUBLICATION_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 export interface HealthInput {
   readonly now: Date;
@@ -58,13 +59,18 @@ export interface HealthInput {
   readonly lastNewItemAt: Date | null;
   readonly trackingSince: Date; // when health tracking began for this source
   readonly previous: HealthState;
+  readonly latestPublishedAt?: Date | null;
+  readonly maxPublicationAgeSeconds?: number;
 }
 
 export function evaluateHealth(input: HealthInput): HealthState {
-  if (!input.session.expectUpdates) return input.previous;
+  const publicationAge = input.latestPublishedAt ? (input.now.getTime() - input.latestPublishedAt.getTime()) / 1000 : null;
+  const oldContent = publicationAge !== null && input.maxPublicationAgeSeconds !== undefined && publicationAge > input.maxPublicationAgeSeconds;
+  if (!input.session.expectUpdates) return input.previous === 'down' ? 'down' : oldContent ? 'stale' : input.previous;
   const sinceSuccess = (input.now.getTime() - (input.lastSuccessAt ?? input.trackingSince).getTime()) / 1000;
   if (sinceSuccess > DOWN_MULTIPLE * input.session.pollSeconds) return 'down';
   if (sinceSuccess > STALE_MULTIPLE * input.session.pollSeconds) return 'stale';
+  if (oldContent) return 'stale';
   if (input.maxQuietSeconds !== null) {
     const quiet = (input.now.getTime() - (input.lastNewItemAt ?? input.trackingSince).getTime()) / 1000;
     if (quiet > input.maxQuietSeconds) return 'stale';

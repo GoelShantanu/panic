@@ -2409,3 +2409,21 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Publication:** Include the previously authorised Razorpay concurrency fix, news-quality corrections and Oracle deployment files. Exclude ignored credentials, database dumps, screenshots and scratch tooling. Publish to the existing `main` branch and remote after validation. QA owns validation evidence; PROJECT_STATE owns deployment/publication status.
 
 **Limits:** Naming does not establish a trademark, domain purchase, merchant legal-name change or live-payment activation. Existing authenticator entries retain the label saved at enrolment. SMTP and broader production gates remain separate work.
+
+## D-084 — Restore restricted Oracle SSH access and diagnose the overnight news gap (2026-10-12)
+
+**Authority:** Founder requested checking whether news workers were running, reconnected the logged-in Oracle console and explicitly approved a temporary Cloud Shell serial-console connection and brief recovery reboot if needed, with cleanup afterwards and no paid resources or account-password changes.
+
+**Decision:** Update the existing OCI and host SSH allowlists to the same computer's changed public IP, retaining TCP22 limited to one `/32`. Use a temporary console key and one-time recovery boot only to repair the saved host rule; preserve normal SSH keys, authentication settings, application configuration and database. Verify a subsequent normal boot and revoke temporary console access afterwards. No application-code change or further Git publication is included.
+
+**Outcome and limits:** Recovery and queue/source diagnosis are recorded in QA §24; continuing operations belong to the runbook. Source HTTP success is not proof of fresh content. NDTV's Oracle403 and three frozen Moneycontrol feeds remain coverage defects; do not bypass publisher access controls or label this as complete source-health acceptance. Email/live-payment/quality/operations gates remain separate work.
+
+## D-085 — Restore supported NDTV RSS and distinguish fetch success from content freshness (2026-10-12)
+
+**Authority:** Founder requested fixing NDTV Profit and Moneycontrol after the worker diagnosis. This authorises the supported feed configuration repair, meaningful freshness checks and deployment to the existing testing host.
+
+**Decision:** Point the existing NDTV source to the FeedBurner feed linked by [NDTV's official RSS directory](https://www.ndtv.com/rss?pfrom=home-footer2015). Preserve its source identity, editorial scope, excerpt settings and historical data. Keep the three Moneycontrol sources visible for recovery, while exposing their old content as delayed; no current publisher-linked English replacement was verified. Do not silently substitute Hindi feeds, scraped content or access-control workarounds.
+
+**Freshness:** Add nullable publication metadata through forward migration0020. Observe all parsed feed entries before editorial filtering; invalid/future dates cannot prove freshness. Preserve observations across304/failure and inspect content once despite pre-upgrade validators. An observed newest publication older than seven days makes an RSS source stale, independent of overnight quiet, while existing fetch-failure precedence remains. Show successful fetch and newest publication separately. The seven-day threshold is a conservative operational safeguard, not a news-latency guarantee.
+
+**Ownership and limits:** Ingestion design/schema notes own the observation contract; QA §25 owns tests and live evidence; the runbook owns current release/feed operations; PROJECT_STATE owns completion and remaining work. Moneycontrol coverage still requires a publisher-supported current English feed/API. No paid resource, live-payment activation or Git publication is included.

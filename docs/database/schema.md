@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | **1.0 — APPROVED** |
+| **Version** | **1.1 — D-085 additive publication metadata; approved v1.0 retained below** |
 | **Date** | 2026-10-02 |
 | **Owner** | Architect (WORKFLOW §5) |
 | **Status** | ✅ **Approved 2026-10-02 — [D-028](../../DECISION_LOG.md).** Verified on PostgreSQL 17.11 (schema.md §8). Changes require a new migration and decision. |
@@ -233,3 +233,7 @@ WORKFLOW DoD item 9 ("verified, not asserted") is met for the schema. Query plan
 [VERIFIED] Forward migration [0019_password_auth.sql](migrations/0019_password_auth.sql) preserves existing users while adding nullable private first/last names and a constrained scrypt hash to `app_user`, and the same optional identity material to `pending_signup`. Deleted users must have names/hashes cleared. `auth_version` on users and sessions invalidates sessions after password changes.
 
 [VERIFIED] `auth_challenge` separates signup, recovery and Google mailbox proofs from legacy login codes. Purpose-specific constraints restrict stored identity material; codes carry expiry, attempts and consumption time. Lookup/expiry indexes support verification and maintenance, and the app role receives table access. Application deletion erases proofs and pending identities across canonical email aliases; exports omit hashes. Maintenance purges expired challenges after the one-hour rate-limit window. Account locking, single-use verification, password hashing and email delivery remain application responsibilities. Implementation evidence and provider limits: [QA §9](../qa/test-strategy.md#9-authentication-extension-verification--2026-10-08-d-065).
+
+## 11. RSS publication observation — 2026-10-12 (D-085)
+
+Forward migration [0020_feed_publication_freshness.sql](migrations/0020_feed_publication_freshness.sql) adds nullable `latest_published_at` and `publication_observed_at` to `source_fetch_state`. The first is the newest usable date from the most recently parsed response; the second distinguishes an inspected undated response from a source not yet inspected after upgrade. Existing HTTP validators, fetch success and last inserted item remain separate observations. Existing code can run after the additive migration; deploy new readers/workers only after it is applied. No historical article/story data is rewritten. Semantics belong to [ingestion §12](../architecture/ingestion.md#12-rss-publication-freshness-amendment--2026-10-12-d-085); validation belongs to QA §25.

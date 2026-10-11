@@ -130,10 +130,11 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
 
   describe('source status and sitemaps (PRD-001 US-001.6 AC-4, PRD-004 US-004.3 AC-8)', () => {
     it('every enabled source with its state; error text stays internal', async () => {
-      await db.query(`UPDATE source_health SET state = 'stale', last_error = 'HTTP 503 from upstream', changed_at = now() WHERE source_id = 'src_desk'`);
+      await db.query(`UPDATE source_health SET state = 'stale', last_error = 'HTTP 503 from upstream', changed_at = now(), last_success_at = $1 WHERE source_id = 'src_desk'`, [now]);
+      await db.query(`INSERT INTO source_fetch_state (source_id, latest_published_at, publication_observed_at) VALUES ('src_desk', $1, $2)`, [ago(24), now]);
       const s = body(await get('/v1/sources/status')).sources;
       expect(s.map((x: any) => x.source_id)).toEqual(['src_desk']); // retired exchange sources are not advertised
-      expect(s[0]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale' });
+      expect(s[0]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale', last_success_at: now, latest_published_at: ago(24) });
       expect(JSON.stringify(s)).not.toContain('503');
       await db.query(`UPDATE source_health SET state = 'healthy', last_error = NULL WHERE source_id = 'src_desk'`);
     });

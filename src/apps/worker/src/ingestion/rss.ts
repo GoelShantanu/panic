@@ -13,6 +13,17 @@ export interface FeedEntry {
   description: string | null;
 }
 
+// Read publication dates before language/relevance filtering: rejected stories still prove
+// that a publisher is updating its feed. Future dates cannot certify current coverage.
+export function latestFeedPublication(entries: readonly FeedEntry[], now: Date): Date | null {
+  let latest: number | null = null;
+  for (const entry of entries) {
+    const at = entry.published ? Date.parse(entry.published) : Number.NaN;
+    if (Number.isFinite(at) && at <= now.getTime() && (latest === null || at > latest)) latest = at;
+  }
+  return latest === null ? null : new Date(latest);
+}
+
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',

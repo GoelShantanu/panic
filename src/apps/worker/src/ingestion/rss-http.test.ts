@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ATOM_ONE_ENTRY, MALFORMED, RSS_MIXED_QUALITY, RSS_TWO_ITEMS } from './fixtures.ts';
 import { conditionalGet, parseRetryAfter, USER_AGENT } from './http.ts';
 import type { FetchLike } from './http.ts';
-import { FeedParseError, parseFeed, toCandidates } from './rss.ts';
+import { FeedParseError, latestFeedPublication, parseFeed, toCandidates } from './rss.ts';
 
 describe('parseFeed', () => {
   it('reads RSS 2.0 items, decoding CDATA and entities', () => {
@@ -34,6 +34,26 @@ describe('parseFeed', () => {
     const entries = parseFeed(xml);
     expect(entries).toHaveLength(1);
     expect(entries[0]?.title).toBe('M&M and L&T quarterly earnings');
+  });
+});
+
+describe('feed publication observation', () => {
+  const now = new Date('2026-10-12T04:00:00Z');
+  it('uses all entries regardless of relevance and ignores invalid or future dates', () => {
+    const base = { title: 'Cricket match highlights', link: null, guid: null, description: null };
+    expect(latestFeedPublication([
+      { ...base, published: '2024-04-23T09:00:00Z' },
+      { ...base, published: '2026-10-12T03:00:00Z' },
+      { ...base, published: 'not a date' },
+      { ...base, published: '2030-01-01T00:00:00Z' },
+    ], now)).toEqual(new Date('2026-10-12T03:00:00Z'));
+  });
+
+  it('does not turn undated, empty or future-only content into a current publication', () => {
+    expect(latestFeedPublication([], now)).toBeNull();
+    expect(latestFeedPublication(parseFeed(RSS_MIXED_QUALITY), now)).toBeNull();
+    expect(latestFeedPublication(parseFeed(RSS_TWO_ITEMS.replaceAll('2026', '2030')), now)).toBeNull();
+    expect(latestFeedPublication(parseFeed(ATOM_ONE_ENTRY), now)).toEqual(new Date('2026-10-05T06:30:00Z'));
   });
 });
 

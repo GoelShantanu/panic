@@ -11,6 +11,7 @@ import {
   stripTags,
   EXCERPT_MAX_CHARS,
   parseCadence,
+  RSS_MAX_PUBLICATION_AGE_SECONDS,
 } from './index.ts';
 import type { HealthInput } from './index.ts';
 
@@ -75,6 +76,25 @@ describe('source health (ingestion.md §5)', () => {
   it('quiet rule is off by default and applies only when configured', () => {
     expect(evaluateHealth({ ...base, lastSuccessAt: at(9_000), now: at(9_000) })).toBe('healthy');
     expect(evaluateHealth({ ...base, maxQuietSeconds: 3_600, lastSuccessAt: at(9_000), now: at(9_000) })).toBe('stale');
+  });
+
+  it('old publication dates are delayed despite successful HTTP fetches; overnight silence is healthy', () => {
+    const publication = { maxPublicationAgeSeconds: RSS_MAX_PUBLICATION_AGE_SECONDS };
+    expect(evaluateHealth({ ...base, ...publication, latestPublishedAt: at(-5 * 3600) })).toBe('healthy');
+    expect(evaluateHealth({ ...base, ...publication, latestPublishedAt: at(-RSS_MAX_PUBLICATION_AGE_SECONDS) })).toBe('healthy');
+    expect(evaluateHealth({ ...base, ...publication, latestPublishedAt: at(-RSS_MAX_PUBLICATION_AGE_SECONDS - 1) })).toBe('stale');
+    expect(evaluateHealth({ ...base, ...publication, latestPublishedAt: null })).toBe('healthy');
+  });
+
+  it('HTTP failure severity takes precedence over old publication dates', () => {
+    expect(evaluateHealth({ ...base, now: at(601), latestPublishedAt: at(-RSS_MAX_PUBLICATION_AGE_SECONDS - 1), maxPublicationAgeSeconds: RSS_MAX_PUBLICATION_AGE_SECONDS })).toBe('down');
+  });
+
+  it('old content is delayed even offmarket, without treating a quiet weekend as an outage', () => {
+    const offmarket = { ...base, session: { pollSeconds: 300, expectUpdates: false }, maxPublicationAgeSeconds: RSS_MAX_PUBLICATION_AGE_SECONDS };
+    expect(evaluateHealth({ ...offmarket, latestPublishedAt: at(-8 * 24 * 3600) })).toBe('stale');
+    expect(evaluateHealth({ ...offmarket, latestPublishedAt: at(-2 * 24 * 3600) })).toBe('healthy');
+    expect(evaluateHealth({ ...offmarket, latestPublishedAt: at(-8 * 24 * 3600), previous: 'down' })).toBe('down');
   });
 });
 

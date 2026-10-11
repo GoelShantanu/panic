@@ -1,5 +1,59 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Bazaar Updates rename and Git publication — 2026-10-11 (D-083)
+
+[VERIFIED — founder direction] The application name is **Bazaar Updates**; the current work is authorised for commit/push to the existing `main` branch. Visible name changes are implemented across the app and new messages; existing tests have matching expectations, authenticator labels use URL encoding, and desktop sidebar text can wrap. Internal repository/package/service/database identifiers remain stable. Strict TypeScript and all571 tests across56 suites passed against an isolated PostgreSQL17 service, with no skips. Staged credential exclusion passed. Oracle production build/deployment and remote publication are in progress; this entry will be updated with their observed results. Naming authority belongs to D-083 and validation to QA §23.
+
+**Next action:** Finish validation, deploy the renamed app, then verify Git publication. Existing email/live-payment/quality/operations gates remain open. Earlier entries describing D-079…D-082 as uncommitted are historical once this publication is verified.
+
+## Oracle public testing deployment — 2026-10-11 (D-081/D-082)
+
+[VERIFIED] Founder completed Oracle signup in Mumbai and explicitly approved the complete ₹0 testing deployment, including SSH access, public web ports and transfer of the local database and Razorpay Test Mode configuration. Oracle VM, private PostgreSQL, web/API, live SSE and news workers are running at [https://bazaarnews.duckdns.org/](https://bazaarnews.duckdns.org/). DuckDNS resolves to the VM; HTTPS, existing password login and billing reads pass. The earlier preview redirects to this hostname. The existing Razorpay Test Mode webhook now targets Oracle with its original secret/nine events. A new provider cancellation event reached the private Oracle database and passed signature validation; the isolated unpaid probe correctly received `unknown_subscription` without changing account access. The old local relay/tunnel are stopped. Infrastructure inventory and operating commands belong to the [runbook](docs/ops/release-runbook.md#oracle-public-testing-deployment-2026-10-11-d-081); validation belongs to QA §22. Local services and the local database remain available independently, but future provider webhooks go to Oracle.
+
+**Waiting for founder input:** A sending email address/provider and protected SMTP credentials. Google sign-in and SMTP are unconfigured. Account/email and alert workers are intentionally stopped, so their queued workflows are pending. A fresh successful checkout through the cloud site remains unverified; local monthly/yearly acceptance is recorded below. Health checks write to the server journal; attended notifications and automatic off-host backup delivery are not configured. Updated encrypted database/configuration backups have been downloaded to this computer; the earlier database restore drill passed.
+
+**Scope:** Public testing preview, not production release acceptance. Existing quality/security/live-payment/physical-device gates remain open. Changes remain uncommitted. This supersedes D-078's deployment deferral and the older hosting status below.
+
+## Requested news-quality review completed — 2026-10-10 (D-080)
+
+[VERIFIED] Reviewed all11 held tag cases, hospital-name misses, five held duplicate pairs and two older semantic challenges; applied supported local corrections with backups and audits. Ten legitimate held tag sets are preserved, Jio's incidental/parent mapping is corrected, hospital tags are restored, and two confirmed historical duplicates are merged. A separate blind model reviewer froze40 article labels and50 event-pair judgments before scoring. Fresh review exposed three false tags and a personal-profile relevance error; these are corrected, with two oil-company aliases and corporate-calendar excerpt completion added. The [dated QA report](docs/qa/quality-review-2026-10-10.md) owns exact counts, hashes, sources and validation.
+
+**Current operation:** Existing database and web/live/payment services retained. News ingestion/pipeline restarted with corrected rules; homepage, stream and SSE are healthy. Changes are local and uncommitted. Hosting remains deferred under D-078.
+
+**Still open:** Independent human quality adjudication and representative99.5% precision evidence; full-article versus RSS-excerpt coverage; eight fresh duplicate misses retained under current scores/financial vetoes; complete historical issuer-name validity. The requested review is done, but a release-quality certification is not established. This entry supersedes older pending held-case statements below.
+
+## News updates restored locally — 2026-10-10
+
+[VERIFIED] On the founder's start-app request, web (3002), live (3003) and the existing PostgreSQL database were already healthy, but ingestion/pipeline workers were absent. Started both with the existing ignored `.env.local`, without restarting healthy services or resetting data. The first ingestion pass imported 51 articles; the pipeline processed 51, created 42 stories and joined nine, with zero retries/failures. The stream API returns 200, freshly created 10 October stories and no stale sources. Runtime evidence: ignored `scratch/local-server/ingest-recovery.*.log`, `pipeline-recovery.*.log` and `news-workers-current.json`.
+
+**Limits:** These are local background processes, not an installed startup/service manager. This recovery does not establish automatic restart after a reboot or cloud deployment. D-079 configuration remains in place.
+
+## Razorpay Test Mode configured and verified — 2026-10-10 (D-079)
+
+[VERIFIED] The existing webapp now uses real Razorpay test credentials, monthly/yearly plans and an enabled signed HTTPS webhook. Monthly and yearly test purchases succeeded through the application, paid access activated, invoices rendered, and both invoice jobs processed through the local log mailer. Both synthetic test renewals were cancelled through Settings with access retained to period end. QA §20 owns identifiers, screenshots and acceptance evidence; release runbook owns configuration instructions. Secrets are only in ignored local files.
+
+[VERIFIED] Real simultaneous webhooks revealed an initial-subscription race. Fixed it with per-user billing transaction locking; the subsequent yearly deliveries all returned 200. Strict TypeScript and 17 focused tests pass, including a new concurrent-event regression. Public tunnel rejects other routes and unsigned webhooks; duplicate charge replays create no extra invoice.
+
+**Local operation:** Docker's existing database was restarted without reset. Web on port 3002, live on 3003, account worker, loopback webhook relay on 3099 and the founder-approved Cloudflare quick tunnel are running. The tunnel URL changes on restart and requires updating Razorpay. Existing ingestion/pipeline processes were not restarted for this payment task. Source/docs changes are local and uncommitted.
+
+**Remaining before live payments:** Merchant KYC/website approval, actual seller/GST details, SMTP invoice receipt, stable deployed HTTPS webhook, live keys/plans and live-provider acceptance. Oracle hosting remains deferred. Test Mode moves no real money; domestic-card automatic plan changes are provider-restricted and the app displays the cancellation/resubscription fallback. This entry supersedes the unfinished Razorpay setup note below.
+
+## Razorpay test configuration started — 2026-10-10
+
+[VERIFIED — browser dashboard] Created StockPanic Test Monthly (INR 299 every month) and StockPanic Test Yearly (INR 2,999 every year) in Razorpay Test Mode; both appear in the plan catalogue with zero linked subscriptions. Saved their plan IDs in the existing ignored `.env.local`, preserving other settings. Screenshot evidence is in ignored `scratch/razorpay/test-plans.png`.
+
+**Remaining:** Test API-key generation requires action-time confirmation under the computer-use policy. API credentials, seller/invoice details, publicly reachable HTTPS webhook registration and real provider acceptance are not yet configured or verified. No live payment or customer subscription was created. No server restart or payment test was performed.
+
+## Testing host selected; deployment deferred — 2026-10-10 (D-078)
+
+[VERIFIED — founder direction] Oracle remains the selected testing host; AWS exploration is deferred. Hosting selection and the temporary hostname are owned by D-078. No cloud deployment was performed in this session.
+
+[VERIFIED — repository inspection] Local HEAD is `c1b69d7` (D-077); the working tree was clean before this session's memory update. D-077 is committed locally. Its hosted CI result and current branch protection have not been checked in this session. The latest D-076 quality follow-ups and provider/operational validation remain open; older entries about unimported aliases, missing publisher approvals as a release gate, and exchange procurement are superseded by D-071/D-075/D-076.
+
+**Next useful work while hosting is deferred:** remaining attribution/alias and duplicate-case review, then fresh-date independent human quality validation. Real verification/recovery email delivery is needed before public account testing; Google sign-in, billing, push and optional AI require separate provider configuration and acceptance.
+
+**Limits:** This session reviewed repository records, not current database contents, running processes, provider credentials, cloud capacity or hosted checks. Historical local test results below were not rerun.
+
 ## Account news-history limits active — 2026-10-09 (D-077)
 
 [VERIFIED] Free/signed-out feeds now have 3 days of history, active trials 10 days, and unexpired paid subscriptions 30 days. The backend enforces these rolling windows on chronological streams, company timelines, pagination and unread counts. Paid subscription access takes precedence over a simultaneous trial. End-of-feed messages appear after every available eligible story has been shown; free/trial messages explain longer-history options. Plans copy is updated. Migration 0019 is applied locally and web/live/ingestion/pipeline are running at http://localhost:3002.

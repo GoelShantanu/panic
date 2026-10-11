@@ -1,0 +1,82 @@
+name: bazaarnews
+
+x-app: &app
+  image: bazaarnews-app:${RELEASE_TAG:-current}
+  restart: unless-stopped
+  env_file: /etc/stockpanic/app.env
+  init: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stockpanic
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets: [pg_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d stockpanic"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  web:
+    <<: *app
+    build:
+      context: ../../..
+      dockerfile: docs/ops/oracle/Dockerfile
+    command: [node, src/apps/web/src/cli/serve.ts]
+    ports: ["127.0.0.1:3002:3002"]
+    environment:
+      PORT: "3002"
+      LIVE_ORIGIN: http://live:3003
+      TRUST_PROXY: "1"
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3002/v1/session').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+  live:
+    <<: *app
+    command: [node, src/apps/live/src/cli/serve.ts]
+    ports: ["127.0.0.1:3003:3003"]
+    environment:
+      PORT: "3003"
+      HOST: "0.0.0.0"
+  ingest:
+    <<: *app
+    command: [node, src/apps/worker/src/cli/ingest.ts]
+  pipeline:
+    <<: *app
+    command: [node, src/apps/worker/src/cli/pipeline.ts]
+  account:
+    <<: *app
+    command: [node, src/apps/worker/src/cli/account.ts]
+  alerts:
+    <<: *app
+    command: [node, src/apps/worker/src/cli/alerts.ts]
+
+secrets:
+  pg_password:
+    file: /etc/stockpanic/pg-password
+
+volumes:
+  pgdata:

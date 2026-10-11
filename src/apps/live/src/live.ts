@@ -11,6 +11,7 @@ import type { LiveEventRow } from '@stockpanic/db';
 export interface LiveServerOptions {
   pool: pg.Pool;
   listenConnectionString: string;
+  host?: string;
   heartbeatMs?: number;
   replayLimit?: number;
   coalesceMs?: number;
@@ -190,7 +191,7 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
   }, opts.heartbeatMs ?? HEARTBEAT_MS);
 
   await connectListener();
-  await new Promise<void>((r) => server.listen(port, '127.0.0.1', r));
+  await new Promise<void>((r) => server.listen(port, opts.host ?? '127.0.0.1', r));
   const address = server.address();
 
   return {

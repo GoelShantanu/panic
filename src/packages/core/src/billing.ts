@@ -75,7 +75,7 @@ export function renderInvoice(i: InvoiceText): string {
     '',
     `Billed to: ${i.buyerEmail}`,
     '',
-    `StockPanic paid plan (${i.plan})${i.periodEnd ? `, access until ${i.periodEnd.toISOString().slice(0, 10)}` : ''}`,
+    `Bazaar Updates paid plan (${i.plan})${i.periodEnd ? `, access until ${i.periodEnd.toISOString().slice(0, 10)}` : ''}`,
     ...(i.seller.sac ? [`SAC: ${i.seller.sac}`] : []),
     ...(registered ? [`Taxable value: ${inr(g.taxable)}`, `CGST 9%: ${inr(g.cgst)}`, `SGST 9%: ${inr(g.sgst)}`, `Total (inclusive of GST): ${inr(i.amountInr)}`] : [`Total: ${inr(i.amountInr)}`]),
   ].join('\n');

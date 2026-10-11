@@ -117,7 +117,7 @@ export function verifyTotp(secretB32: string, code: string, now: Date): boolean 
 }
 
 export function totpUri(secretB32: string, account: string): string {
-  return `otpauth://totp/StockPanic:${encodeURIComponent(account)}?secret=${secretB32}&issuer=StockPanic&algorithm=SHA1&digits=6&period=30`;
+  return `otpauth://totp/Bazaar%20Updates:${encodeURIComponent(account)}?secret=${secretB32}&issuer=Bazaar%20Updates&algorithm=SHA1&digits=6&period=30`;
 }
 
 // AES-256-GCM with a key derived from the server secret; stored as base64(iv | tag | ciphertext).

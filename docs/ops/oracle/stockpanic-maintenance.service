@@ -1,0 +1,9 @@
+[Unit]
+Description=BazaarNews daily database maintenance
+After=docker.service stockpanic-backup.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/stockpanic/current/docs/ops/oracle/maintenance.sh
+UMask=0077

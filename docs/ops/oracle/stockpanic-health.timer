@@ -1,0 +1,9 @@
+[Unit]
+Description=Check BazaarNews services every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,7 @@
+[Unit]
+Description=BazaarNews local service health check
+After=docker.service caddy.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/stockpanic/current/docs/ops/oracle/health-check.sh

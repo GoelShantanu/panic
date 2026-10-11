@@ -39,7 +39,7 @@ describe('comment section states (PRD-006 §8)', () => {
     render(<Comments storyId="st_1" initial={page([c()], { enabled: true })} me={null} />);
     expect(screen.getByText('First thought')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Sign in to comment.' }).getAttribute('href')).toBe('/sign-in?next=%2Fs%2Fst_1');
-    expect(screen.getByText('Comments are posted by users and are not reviewed by StockPanic.')).toBeTruthy();
+    expect(screen.getByText('Comments are posted by users and are not reviewed by Bazaar Updates.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Report' })).toBeNull();
   });

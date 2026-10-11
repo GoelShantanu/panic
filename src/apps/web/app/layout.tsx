@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   // Absolute canonical and Open Graph URLs (PRD-004 AC-8 indexability). PUBLIC_BASE_URL in production.
   metadataBase: new URL(process.env['PUBLIC_BASE_URL'] ?? 'http://localhost:3000'),
-  title: { default: 'StockPanic — Indian market news, deduplicated', template: '%s · StockPanic' },
+  title: { default: 'Bazaar Updates — Indian market news, deduplicated', template: '%s · Bazaar Updates' },
   description: 'Indian financial news, one row per event, tagged to the right company.',
 };
 
@@ -69,7 +69,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               {children}
             </main>
             <footer className="footer">
-              <p>Stories link to their original sources. Vote counts and comments are user opinion, not StockPanic&apos;s assessment, and not investment advice.</p>
+              <p>Stories link to their original sources. Vote counts and comments are user opinion, not Bazaar Updates&apos;s assessment, and not investment advice.</p>
               <nav className="footer-links" aria-label="Footer">
                 <Link href="/plans">Plans</Link>
                 <Link href="/terms">Terms</Link>

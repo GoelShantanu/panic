@@ -40,7 +40,7 @@ export function CommunityOpinion({ votes, compact = false, emptyText = 'Be the f
     );
   }
   return (
-    <span className="opinion" title="Community opinion: what users voted, not StockPanic's assessment">
+    <span className="opinion" title="Community opinion: what users voted, not Bazaar Updates's assessment">
       <span className="opinion-label">{d.label}:</span> <span className="bull">Bullish {d.bullish}</span> · <span className="bear">Bearish {d.bearish}</span> · <span className="neu">Neutral {d.neutral}</span>
     </span>
   );

@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+node_modules
+scratch
+coverage
+test-results
+playwright-report
+ui-snapshot
+**/.next
+**/.next-*
+**/*.tsbuildinfo
+*.pem
+*.key
+*.log

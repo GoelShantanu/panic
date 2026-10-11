@@ -254,7 +254,10 @@ describe.skipIf(!adminUrl)('pipeline end-to-end (PostgreSQL)', () => {
     expect((await db.query(`SELECT count(*)::int n FROM job WHERE payload->>'story_id'=$1 AND payload->>'correction_removed_isin'=$2`,[s.id,K])).rows[0].n).toBe(1);
     expect((await reanalyseStories(db,{...opts,apply:true})).updated).toBe(0);
     expect((await db.query(`SELECT count(*)::int n FROM audit_log WHERE action='story.reanalysed' AND entity_id=$1`,[s.id])).rows[0].n).toBe(1);
-  });
+  // This exercises several complete historical passes on a real PostgreSQL
+  // fixture. Allow Windows/loaded-host database latency without leaking a
+  // timed-out transaction into the next shared-fixture case.
+  }, 15_000);
   it('retrieves unlisted IPO events from stored bands, preserving different bands and stages', async () => {
     await article('src_desk_a','ipo-event-a','Jio said to set IPO price band at Rs 1,100-1,200',90);
     await article('src_desk_b','ipo-event-b','Jio Platforms IPO price band likely to be revealed',95);

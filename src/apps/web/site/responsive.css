@@ -47,6 +47,7 @@
     min-height: 0; padding: 12px 6px 10px; border-bottom: 0; border-right: 1px solid var(--border); overflow-y: auto;
   }
   .brand { flex-direction: column; gap: 6px; padding: 2px 0 14px; font-size: 11px; letter-spacing: 0.01em; }
+  .brand-name { white-space: normal; text-align: center; }
   .brand-mark { width: 32px; height: 32px; }
   .nav { flex-direction: column; gap: 2px; }
   .nav-item {

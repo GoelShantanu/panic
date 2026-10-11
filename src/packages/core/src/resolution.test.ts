@@ -29,6 +29,16 @@ describe('article resolution attribution safeguards', () => {
     expect(index.resolve('Orion Textiles Q2 results: Motilal Oswal remains bullish').isins).toEqual(['CHILD']);
     expect(index.resolve('Motilal Oswal reiterates buy on Orion Textiles').isins).toEqual(['CHILD']);
     expect(index.resolve('Motilal Oswal profit rises after Q2 results').isins).toEqual(['MO']);
+    expect(index.resolve('Orion Textiles: Motilal Oswal names 40 stocks to buy').isins).toEqual(['CHILD']);
+    expect(index.resolve('Motilal Oswal selects stocks to buy').isins).toEqual([]);
+    expect(resolveArticle(index,'Unlisted company seeks IPO investors',
+      'The asset management arms of Goldman Sachs, SBI and other investors consider the anchor book.').isins).toEqual([]);
+    expect(index.resolve('SBI shares rise as asset management arms of funds invest').isins).toEqual(['SBI']);
+  });
+  it('distinguishes a sports competition from the same-name listed issuer', () => {
+    const competition=new AliasIndex([{isin:'P',text:'Premier Limited',source:'name',ambiguous:false,commonWord:false}]);
+    expect(competition.resolve('Watch Premier League match in India').isins).toEqual([]);
+    expect(competition.resolve('Premier shares rise after revenue growth').isins).toEqual(['P']);
   });
   it('does not tag institutions or analyst subsidiaries from excerpts', () => {
     expect(resolveArticle(index, 'Policy outlook', 'The Reserve Bank of India raised rates. SBI Securities forecasts another hike.').isins).toEqual([]);
@@ -69,6 +79,34 @@ describe('article resolution attribution safeguards', () => {
     const futureRegistry=new AliasIndex([{isin:'NEW',text:'Jio Platforms Limited',source:'name',ambiguous:false,commonWord:false}]);
     expect(futureRegistry.resolve('Jio Platforms reports quarterly revenue').isins).toEqual(['NEW']);
   });
+  it('blocks incidental excerpt issuers before a parent alias existed', () => {
+    const historical = new AliasIndex([
+      {isin:'COMPETITOR',text:'Orion Motors Limited',source:'name',ambiguous:false,commonWord:false},
+    ]);
+    expect(resolveArticle(historical, 'Jio Platforms plans a large IPO',
+      'The offer may exceed Orion Motors in size.')).toEqual({isins:[],unresolved:['Jio Platforms']});
+    expect(resolveArticle(historical, 'Airtel Money makes overseas debut',
+      'Orion Motors listed previously.')).toEqual({isins:[],unresolved:['Airtel Money']});
+    expect(resolveArticle(historical, 'Company IPO update',
+      'Orion Motors plans an IPO.').isins).toEqual(['COMPETITOR']);
+    const listedChild = new AliasIndex([
+      {isin:'CHILD',text:'Jio Platforms Limited',source:'name',ambiguous:false,commonWord:false},
+    ]);
+    expect(resolveArticle(listedChild, 'Jio Platforms reports growth',
+      'Orion Motors was mentioned.').isins).toEqual(['CHILD']);
+    const listedSibling = new AliasIndex([
+      {isin:'LISTED',text:'Jio Financial Services Limited',source:'name',ambiguous:false,commonWord:false},
+    ]);
+    expect(listedSibling.resolve('Jio Financial Services reports profit')).toEqual({isins:['LISTED'],unresolved:[]});
+    const futureName = new AliasIndex([
+      {isin:'CHILD',text:'Airtel Money Tanzania Limited',source:'name',ambiguous:false,commonWord:false},
+    ]);
+    expect(futureName.resolve('Airtel Money Tanzania reports profit').isins).toEqual(['CHILD']);
+    expect(resolveArticle(historical, 'This penny stock wins a Jio contract',
+      'Orion Motors won the order.').isins).toEqual(['COMPETITOR']);
+    expect(resolveArticle(historical, 'Stocks in news: Jio-backed Orion Motors',
+      'Orion Motors reports revenue.').isins).toEqual(['COMPETITOR']);
+  });
   it('accepts ticker-cased contract counterparties while ignoring ordinary words', () => {
     expect(index.resolve('Orion Textiles wins SAIL deal').isins).toEqual(['CHILD','SAIL']);
     expect(index.resolve('Orion Textiles ships set sail after deal').isins).toEqual(['CHILD']);
@@ -94,6 +132,33 @@ const issuerIndex = new AliasIndex([
 ].map(([isin, text, source]) => ({ isin: isin!, text: text!, source: source as 'name' | 'alias', ambiguous: false, commonWord: false })));
 
 describe('issuer subjects and analyst attribution', () => {
+  it('resolves ambiguous hospital shorthands only in an explicit stock list', () => {
+    const hospitals = new AliasIndex([
+      {isin:'HOSPITAL',text:'Apollo',source:'alias',ambiguous:true,commonWord:false},
+      {isin:'HEALTH',text:'Max',source:'alias',ambiguous:true,commonWord:false},
+      {isin:'CARE',text:'Fortis',source:'alias',ambiguous:true,commonWord:false},
+      {isin:'APOLLO_TYRES',text:'Apollo Tyres Limited',source:'name',ambiguous:false,commonWord:false},
+      {isin:'MAX_FIN',text:'Max Financial Services Limited',source:'name',ambiguous:false,commonWord:false},
+    ]);
+    expect(hospitals.resolve('Hospital stocks: Apollo, Max shares rise').isins).toEqual(['HEALTH','HOSPITAL']);
+    expect(hospitals.resolve('Apollo shares rise').isins).toEqual([]);
+    expect(hospitals.resolve('Apollo, Max stocks rise').isins).toEqual([]);
+    expect(hospitals.resolve('Apollo Tyres, Max Financial Services shares rise').isins).toEqual(['APOLLO_TYRES','MAX_FIN']);
+    expect(hospitals.resolve('Hospital outlook: Apollo chief discusses policy').isins).toEqual([]);
+    expect(hospitals.resolve('Healthcare stocks rise, Apollo reports a tyre plant expansion').isins).toEqual([]);
+    expect(hospitals.resolve('Hospital stocks rally, Max reports its insurance growth').isins).toEqual([]);
+    expect(hospitals.resolve('Healthcare stocks: APL Apollo, Max shares rise').isins).toEqual(['HEALTH']);
+    expect(hospitals.resolve('Hospital stocks: Apollo and Max rise').isins).toEqual(['HEALTH','HOSPITAL']);
+    expect(hospitals.resolve('Hospital stocks: Analyst favours Fortis, Apollo and Max.').isins).toEqual(['CARE','HEALTH','HOSPITAL']);
+    expect(hospitals.resolve('Hospital stocks: Why have Fortis, Apollo and Max rallied?').isins).toEqual(['CARE','HEALTH','HOSPITAL']);
+    expect(hospitals.resolve('Hospital stocks rally, Apollo shares rise on tyre demand').isins).toEqual([]);
+    expect(hospitals.resolve('Hospital stocks rally, Max shares gain on insurance growth').isins).toEqual([]);
+    const collision = new AliasIndex([
+      {isin:'HOSPITAL',text:'Apollo',source:'alias',ambiguous:true,commonWord:false},
+      {isin:'OTHER',text:'Apollo',source:'alias',ambiguous:true,commonWord:false},
+    ]);
+    expect(collision.resolve('Hospital stocks: Apollo, Max shares rise').isins).toEqual([]);
+  });
   it.each([
     'Q2 earnings may grow 20%, says Asterion',
     'Kestrel shares gain after tariff hike, Asterion retains buy',
@@ -152,6 +217,12 @@ describe('issuer subjects and analyst attribution', () => {
   });
   it('completes an explicit roundup from its excerpt', () => {
     expect(resolveArticle(issuerIndex, 'Asterion among 3 stocks in focus', 'Asterion, Kestrel and Orion Ports shares gained.').isins).toEqual(['A', 'K', 'P']);
+  });
+  it('completes an explicit corporate-action calendar with named issuers', () => {
+    expect(resolveArticle(issuerIndex, 'Upcoming dividend next week: Asterion, Kestrel and more',
+      'Asterion, Kestrel and Orion Ports have dividend record dates.').isins).toEqual(['A','K','P']);
+    expect(resolveArticle(issuerIndex, 'Asterion and Kestrel announce a dividend',
+      'Orion Ports has another record date.').isins).toEqual(['A','K']);
   });
   it('completes a named multi-company cohort without adding incidental competitors', () => {
     expect(resolveArticle(issuerIndex, 'Asterion, Kestrel among companies awarded contracts',

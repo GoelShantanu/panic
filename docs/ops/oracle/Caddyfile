@@ -1,0 +1,18 @@
+bazaarnews.duckdns.org {
+    handle /v1/live* {
+        reverse_proxy 127.0.0.1:3003 {
+            flush_interval -1
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle {
+        reverse_proxy 127.0.0.1:3002 {
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+}
+
+# Keep the initial testing link useful after the DuckDNS cutover.
+bazaarnews.130-210-56-102.sslip.io {
+    redir https://bazaarnews.duckdns.org{uri} permanent
+}

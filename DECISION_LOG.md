@@ -2351,3 +2351,61 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Decision:** Supersede D-023's free 30-day / unlimited paid news history. Apply rolling 24-hour-day windows to the existing story first-seen timestamp in stream and company timeline queries, pagination and unread counts. Signed-out visitors receive the free window. An unexpired paid subscription takes precedence over a trial; otherwise an active trial receives 10 days and expired access falls back to free. Trials retain existing paid feature access, separately from their history allowance. Existing relevance and view filters still apply. Trending remains its existing single ranked page rather than a chronological history list. Direct story links and alert-history retention are outside this feed-history change.
 
 **Implemented:** Migration 0019 updates stored free/paid history entitlements. Authenticated API responses expose the effective history days, access and cutoff. Every chronological page enforces the cutoff, including user-supplied cursors. Feed and company pages show plan-specific end messages only after pagination ends, including empty eligible ranges; free/trial messages explain longer-history options. The message says all *available* stories were shown, without suggesting that older news necessarily exists. Plan comparison and trial copy match the new allowances. Live story creation replay outside the current allowance is ignored by the stream client. QA §19 owns validation and local application evidence.
+
+## D-078 — Oracle testing host and free hostname; deployment deferred (2026-10-10)
+
+**Authority:** Founder selected Oracle Cloud for testing, explored AWS during Oracle signup maintenance, then directed: "lets do it later with oracle only". Oracle deployment is deferred; do not provision AWS from this discussion.
+
+**Temporary address:** [VERIFIED — founder screenshot] DuckDNS hostname `bazaarnews.duckdns.org` was created. Its displayed IP was not established as a cloud server address. Point it to the selected Oracle server only after provisioning and verifying that server's public IP; no DNS mutation was performed by this agent.
+
+**Limits:** No Oracle account completion, server provisioning, public deployment or HTTPS verification is established. Hosting cost/eligibility must be checked against the account's actual limits at provisioning time. PROJECT_STATE owns the remaining project work.
+
+## D-079 — Configure Razorpay Test Mode and verify local checkout (2026-10-10)
+
+**Authority:** Founder requested full Razorpay configuration and end-to-end verification, then explicitly approved the webhook-only Cloudflare tunnel and signing-secret registration in Test Mode. Live payment activation is outside this testing work.
+
+**Decision:** Configure the existing billing integration with real Razorpay test keys and plans in ignored `.env.local`; retain fictional TEST ONLY invoice seller details until real business information is available. Keep merchant/dashboard settings in Test Mode. Forward only signed POST `/v1/billing/webhook` through the temporary HTTPS tunnel. Oracle deployment remains deferred under D-078.
+
+**Implementation:** Provider acceptance exposed a concurrent initial-webhook insert race; serialize webhook state changes with the existing per-user billing transaction lock and reread state after acquiring it. Add a meaningful concurrent-event PostgreSQL regression and document billing variables in `.env.example`. QA §20 owns plan/payment/event IDs and acceptance results; the release runbook owns setup/restart/deployment instructions.
+
+**Limits:** Local test integration is verified. Live KYC/website approval, real seller/tax details, SMTP delivery, stable deployed HTTPS webhook and live acceptance remain separate work. Test subscription renewals were cancelled at cycle end; future cancellation events were not accelerated. Changes are local and uncommitted.
+
+## D-080 — Review held news-quality cases and apply supported corrections (2026-10-10)
+
+**Authority:** Founder explicitly requested remaining tagging/duplicate cases and independent news review. This authorises reversible local maintenance and regression fixes; it does not create human acceptance evidence.
+
+**Decision:** Use separate read-only article reviewers for historical cases and an isolated blind model reviewer for a frozen fresh corpus. Preserve immutable labels, distinguish independent baseline evaluation from post-unblinding regression, back up the existing database and apply only reviewed story/alias allowlists with audit provenance. Repair bounded historical aliases and conservative entity context without guessing parent/subsidiary identity. Retain duplicate thresholds and all-member vetoes; do not force unresolved financial discrepancies into a merge. Record an additive erratum for the old Friday-close/weekly-outlook label.
+
+**Applied:** Historical and fresh tag/relevance corrections, guarded hospital aliases, two supported historical merges and meaningful regressions are owned by [the dated QA report](docs/qa/quality-review-2026-10-10.md). Updated the long real-database reanalysis test's timeout after observing a timeout followed by fixture interference, preserving its assertions. Running local news workers load the corrected rules. Existing payment configuration and unrelated changes are preserved.
+
+**Limits:** Model article review is not human certification or independent factual corroboration. Full-article recall, eight fresh duplicate misses, representative99.5% precision evidence and complete issuer-name history remain open. No deployment, commit or push is included.
+
+## D-081 — Deploy an Oracle Always Free public testing preview (2026-10-11)
+
+**Authority:** Founder confirmed signup/login in India West (Mumbai), then approved the complete ₹0 testing deployment: existing SSH public key, public web ports, SSH limited to the current computer, and transfer of the local database (including test-account email/password hashes and test billing records) and Razorpay Test Mode configuration to a private Oracle database. This supersedes D-078's deferral. No paid account upgrade or live payment activation is authorised.
+
+**Decision:** Use the account's Always Free compute allocation, Docker services and Caddy HTTPS. Keep PostgreSQL unexposed and publish application ports only on host loopback. Preserve the existing authentication secret; keep credentials in root-readable server files outside the checkout. Use a temporary IP-based HTTPS hostname while the founder's DuckDNS account is signed out. Keep email/alert workers stopped until real SMTP configuration is supplied; never use the log mailer on the public deployment.
+
+**Deployment repairs:** Make the live service's listen host configurable with its existing loopback default, using the container interface only behind a loopback host publication. Add transactional catch-up for live-event partitions before daily maintenance, preserving IDs/timestamps/payloads when the default partition contains current events. The existing retention policy remains unchanged. Daily database/configuration backups are encrypted to the existing SSH public key; a downloaded encrypted database was successfully restored locally.
+
+**Limits:** DuckDNS mutation and the Razorpay dashboard webhook move still require founder sign-in. SMTP receipt, Google login, attended monitoring, automatic off-host delivery, full rollback acceptance, live merchant activation and broader production gates remain pending. Inventory/operations belong to the runbook, validation to QA §22 and live status to PROJECT_STATE. No Git commit or push is included.
+
+## D-082 — Activate DuckDNS HTTPS and move the Test Mode webhook to Oracle (2026-10-11)
+
+**Authority:** Founder reported DuckDNS and Razorpay logged in, continuing the approved complete ₹0 testing deployment and Razorpay integration.
+
+**Decision:** Point the existing `bazaarnews.duckdns.org` record to the verified VM IP and use it as the canonical HTTPS application URL. Retain the initial preview as a permanent redirect. Edit the existing enabled Razorpay Test Mode webhook rather than adding another; preserve its signing secret and nine subscribed events. Provider events now target the Oracle database, independently of the local copy.
+
+**Verification:** Public DNS, valid HTTPS, six public routes, live SSE, existing fixture password login/billing reads, unsigned webhook rejection and signed duplicate replay passed. Created and immediately cancelled one isolated Test Mode subscription with no customer and zero payments to trigger a fresh provider event. Oracle retained its correctly signed cancellation with the expected `unknown_subscription` outcome; no account entitlement or invoice changed. Stopped the owned obsolete local relay/tunnel. Ran backup/health jobs and downloaded updated encrypted database/configuration copies. Runbook owns operating instructions and QA §22 owns evidence.
+
+**Limits:** This delivery probe does not establish a fresh successful cloud checkout. SMTP receipt, Google login, live merchant activation and broader production gates remain pending. No paid resource, live payment, Git commit or push is included.
+
+## D-083 — Rename the application to Bazaar Updates and publish current work (2026-10-11)
+
+**Authority:** Founder requested pushing the current uncommitted changes to Git and changing the application name from StockPanic to **Bazaar Updates**. This also authorises updating the existing public testing deployment.
+
+**Decision:** Use Bazaar Updates in application navigation, metadata, footer, account/privacy/terms copy, Razorpay checkout display, new notification/invoice text and new authenticator enrolment labels. Percent-encode the authenticator issuer/label; preserve the underlying secrets and verification algorithm. Allow the longer name to wrap in the desktop sidebar. Keep existing internal package/database/service identifiers, invoice numbering and the current testing hostname; changing infrastructure identifiers would add migration risk without changing the displayed product name. Preserve approved historical documents with an additive product-name amendment rather than rewriting them.
+
+**Publication:** Include the previously authorised Razorpay concurrency fix, news-quality corrections and Oracle deployment files. Exclude ignored credentials, database dumps, screenshots and scratch tooling. Publish to the existing `main` branch and remote after validation. QA owns validation evidence; PROJECT_STATE owns deployment/publication status.
+
+**Limits:** Naming does not establish a trademark, domain purchase, merchant legal-name change or live-payment activation. Existing authenticator entries retain the label saved at enrolment. SMTP and broader production gates remain separate work.

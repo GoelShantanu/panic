@@ -32,7 +32,7 @@ export function HomeOverview({ trending, comments, onSelectStory }: HomeOverview
       <div className="home-pro-card">
         <div className="home-pro-badge">
           <Icon name="crown" size={13} />
-          <span>STOCKPANIC PRO</span>
+          <span>BAZAAR UPDATES PRO</span>
         </div>
         <h3 className="home-pro-title">Sub-minute Indian Market Intelligence</h3>
         <p className="home-pro-desc">
@@ -159,7 +159,7 @@ export function HomeOverview({ trending, comments, onSelectStory }: HomeOverview
         <div className="home-footer-links">
           <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/grievance">Grievance</Link> · <Link href="/plans">Plans</Link>
         </div>
-        <div className="home-footer-copy">© 2026 StockPanic · Financial news intelligence</div>
+        <div className="home-footer-copy">© 2026 Bazaar Updates · Financial news intelligence</div>
       </footer>
     </div>
   );

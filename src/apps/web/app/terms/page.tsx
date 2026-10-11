@@ -10,8 +10,8 @@ export default function TermsPage() {
     <article className="legal">
       <h1>Terms of Use</h1>
       <p className="faint">Last updated {UPDATED}</p>
-      <h2>What StockPanic is</h2>
-      <p>StockPanic collects financial news about Indian listed companies, groups duplicates into one story, and links to the original sources. It is an information service, not investment advice. Vote counts and comments are what users think, not StockPanic&apos;s assessment. Decide for yourself, and read the original sources.</p>
+      <h2>What Bazaar Updates is</h2>
+      <p>Bazaar Updates collects financial news about Indian listed companies, groups duplicates into one story, and links to the original sources. It is an information service, not investment advice. Vote counts and comments are what users think, not Bazaar Updates&apos;s assessment. Decide for yourself, and read the original sources.</p>
       <h2>Your account</h2>
       <ul>
         <li>You must be 18 or older to create an account.</li>
@@ -40,7 +40,7 @@ export default function TermsPage() {
         <li>If a renewal payment fails, it is retried for 7 days and paid features stay on; after that the account returns to Free. Nothing you saved is deleted.</li>
       </ul>
       <h2>Our responsibility</h2>
-      <p>We work hard to tag every story to the right company and to keep the feed complete, but sources can be late, wrong or incomplete. StockPanic is provided as it is, and we are not liable for decisions made using it.</p>
+      <p>We work hard to tag every story to the right company and to keep the feed complete, but sources can be late, wrong or incomplete. Bazaar Updates is provided as it is, and we are not liable for decisions made using it.</p>
       <h2>Changes</h2>
       <p>We will tell you before any material change to these terms takes effect. These terms are governed by the laws of India.</p>
       <GrievanceOfficer />

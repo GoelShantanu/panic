@@ -21,7 +21,7 @@ export interface Resolution {
 // Shared by the pipeline and quality evaluation, including the excerpt fallback.
 export function resolveArticle(index: AliasIndex, headline: string, excerpt: string | null = null): Resolution {
   const primary = index.resolve(headline);
-  if (primary.unresolved.length || !excerpt) return primary;
+  if (!excerpt) return primary;
   // Feed excerpts can complete an explicit stock/company roundup, but cannot silently
   // introduce incidental issuers into an ordinary single-company headline.
   const roundup = /\b(?:stocks? (?:to watch|to buy|in news|picks)|among \d+ (?:stocks?|companies)|(?:other (?:\w+ )?|fintech )stocks|companies to report|market wrap)\b/i.test(headline);
@@ -30,9 +30,17 @@ export function resolveArticle(index: AliasIndex, headline: string, excerpt: str
   // A counterparty can resolve while the headline refers to its main issuer only
   // as "this stock". The supplied excerpt may name that explicitly omitted subject.
   const omittedSubject = /\bthis (?:penny )?stock\b/i.test(headline);
-  if (primary.isins.length && !roundup && !namedCohort && !omittedSubject) return primary;
+  const corporateCalendar = primary.isins.length >= 2 && /\band more\b/i.test(headline)
+    && /\b(?:upcoming|next week)\b/i.test(headline)
+    && /\b(?:dividend|stock split|bonus share|rights? issue|corporate actions?)\b/i.test(headline);
+  // A known unlisted counterparty is not an ambiguous listed issuer. It must
+  // not prevent an explicit roundup or omitted stock subject being completed.
+  const unlistedOnly = primary.unresolved.every(mention =>
+    UNLISTED_SUBJECTS.some(subject => subject.key === normaliseForMatch(mention)));
+  if (primary.unresolved.length && (!(roundup || namedCohort || omittedSubject || corporateCalendar) || !unlistedOnly)) return primary;
+  if (primary.isins.length && !roundup && !namedCohort && !omittedSubject && !corporateCalendar) return primary;
   const fallback = index.resolve(excerpt);
-  return { isins: [...new Set([...primary.isins, ...fallback.isins])].sort(), unresolved: fallback.unresolved };
+  return { isins: [...new Set([...primary.isins, ...fallback.isins])].sort(), unresolved: [...new Set([...primary.unresolved, ...fallback.unresolved])] };
 }
 
 interface Entry {
@@ -60,6 +68,22 @@ const EXCHANGE_WINDOW = 3;
 const FUND_HOUSE_NAMES = new Set(['sbi', 'motilal oswal', 'icici', 'hdfc', 'kotak', 'axis']);
 const UNLISTED_MENTIONS = new Set(['jio', 'jio platforms', 'l and t realty']);
 const UNLISTED_CONTINUATIONS: Record<string, string> = { airtel: 'money', axis: 'amc', 'l and t': 'realty' };
+// These subjects remain unlisted even before an incidental parent alias was
+// imported. A complete listed legal name is checked before blocking a subject.
+const UNLISTED_SUBJECTS = [...new Set([
+  ...UNLISTED_MENTIONS,
+  ...Object.entries(UNLISTED_CONTINUATIONS).map(([parent, child]) => `${parent} ${child}`),
+])].sort((a, b) => b.length - a.length).map(key => ({ key, words: key.split(' ') }));
+
+function hospitalListContext(tokens: readonly Token[], i: number): boolean {
+  const start = tokens.findLastIndex((t, pos) => pos < i && /[.!?;]$/.test(t.orig));
+  const end = tokens.findIndex((t, pos) => pos >= i && /[.!?;]$/.test(t.orig));
+  const sentence = [...new Set(tokens.slice(start + 1, end < 0 ? tokens.length : end + 1).map(t => t.orig))].join(' ');
+  // Require a list heading, its explicit sector suffix, or a complete hospital
+  // issuer in this sentence. A separate sector clause cannot qualify a name.
+  return /\b(?:hospitals?|healthcare) stocks\s*:|\bother hospital stocks\b|\b(?:Apollo Hospitals?|Max Healthcare|Fortis Healthcare|Manipal Hospitals?|Yatharth Hospital)\b/i.test(sentence)
+    && !/\b(?:tyres?|tires?|tubes?|insurance|financial|payments?|identity|micro systems)\b/i.test(sentence);
+}
 
 function isAttribution(tokens: readonly Token[], i: number, n: number): boolean {
   const before = tokens.slice(Math.max(0, i - 8), i).map(t => t.norm).join(' ');
@@ -69,6 +93,10 @@ function isAttribution(tokens: readonly Token[], i: number, n: number): boolean 
   if (/\b(?:previously|formerly) (?:worked|served) (?:at|with|for)\b/.test(before)) return true;
   if (/\b(?:says?|said|according to|estimates? by|forecast by|report by)$/.test(before)) return true;
   if (/^(?:s )?(?:(?:retains?|maintains?|reiterates?) (?:a )?(?:buy|sell|hold|add|overweight|underweight)|remains? (?:bullish|bearish)|recommends?|upgrades?|downgrades?|sees? upside|raises? (?:its )?target|cuts? (?:its )?target)\b/.test(after)) return true;
+  if (/^(?:names?|picks?|selects?) (?:\d+ )?stocks? to buy\b/.test(after)) return true;
+  // A shared qualifier can precede a coordinated list of fund-house parents.
+  if (/\basset management arms? of\b/.test(tokens.slice(0,i).map(t=>t.norm).join(' '))
+    && /^[\s\S]*\b(?:investors?|anchor book|funds?)\b/.test(tokens.slice(i+n).map(t=>t.norm).join(' '))) return true;
   if (/^(?:believes?|expects?|sees?|forecasts?|projects?)\b/.test(after)
     && /\b(?:markets?|inflation|sentiment|investors?|nifty|sensex|sectors?|rates?)\b/.test(tokens.slice(i+n).map(t => t.norm).join(' '))) return true;
   if (/\b(?:cio|economist|analyst|strategist|fund manager|head of research)\b/.test(before)
@@ -121,6 +149,22 @@ export class AliasIndex {
     const unresolved = new Set<string>();
     let i = 0;
     while (i < tokens.length) {
+      const subject = UNLISTED_SUBJECTS.find(({ words }) =>
+        words.every((word, offset) => tokens[i + offset]?.norm === word));
+      let listedName = false;
+      if (subject) {
+        for (let n = 1; n <= Math.min(this.maxWords, tokens.length - i); n++) {
+          if (this.legalNames.has(tokens.slice(i, i + n).map(t => t.norm).join(' '))) { listedName = true; break; }
+        }
+      }
+      if (subject && !listedName
+        && /^[\p{Lu}\p{N}]/u.test(trimMention(tokens[i]!.orig))) {
+        if (tokens[i + subject.words.length]?.norm !== 'backed') {
+          unresolved.add(trimMention([...new Set(tokens.slice(i, i + subject.words.length).map(t => t.orig))].join(' ')));
+        }
+        i += subject.words.length;
+        continue;
+      }
       let matched = 0;
       for (let n = Math.min(this.maxWords, tokens.length - i); n >= 1; n--) {
         const span = tokens.slice(i, i + n);
@@ -143,6 +187,19 @@ export class AliasIndex {
           && /\b(?:hdfc bank|icici bank|canara bank|sbi)\b/i.test(headline)
           && /\b(?:banks?|banking)\b/i.test(headline) && /,/.test(headline)
           && /\b(?:shares?|stocks?|up|down|rise|rally|gain)\b/i.test(headline);
+        // Hospital shorthands remain ambiguous unless an explicit hospital
+        // stock list supplies their sector. Conflicting registry ISINs still win.
+        const hospitalShorthand = ['apollo', 'max', 'manipal', 'fortis', 'yatharth'].includes(key)
+          && entry.ambiguous && entry.isins.size === 1
+          && /\b(?:hospitals?|healthcare)\b/i.test(headline)
+          && /\b(?:shares?|stocks?|rall(?:y|ied)|rise|rose|gainers?|favours?)\b/i.test(headline)
+          && /[,，]|\band\b/i.test(headline)
+          && hospitalListContext(tokens, i)
+          && (i === 0 || ['and','favours','include','included'].includes(tokens[i-1]?.norm ?? '')
+            || (tokens[i-1]?.norm === 'have' && tokens[i-2]?.norm === 'why')
+            || /[,，:：]$/.test(tokens[i-1]?.orig ?? ''))
+          && (i+n === tokens.length || /[,，.!?;]$/.test(span.at(-1)!.orig) || tokens[i+n]?.norm === 'and'
+            || /^(?:shares?|stocks?|rally|rallied|rise|rose|gain|gained)$/.test(tokens[i+n]?.norm ?? ''));
         if (entry.commonWord && !bankShorthand && !span.every((t) => /[A-Z]/.test(t.orig) && t.orig === t.orig.toUpperCase())) continue;
         if (entry.commonWord && !bankShorthand && !tokens.slice(Math.max(0, i - CONTEXT_WINDOW), i + n + CONTEXT_WINDOW).some((t) => COMPANY_CONTEXT.has(t.norm))) continue;
         // Headlines capitalise company names; a lower-case run is ordinary words ("to take over").
@@ -163,6 +220,7 @@ export class AliasIndex {
           && (/\b(?:claim|claims|claiming|avail|availing|eligible|eligibility|entitled|entitlement)\b/.test(tokens.slice(Math.max(0,i-4),i).map(t=>t.norm).join(' '))
             || /input tax credit/i.test(headline));
         const centralBank = key === 'bank of india' && previousWord === 'reserve';
+        const sportsLeague = key === 'premier' && nextWord === 'league';
         const ownership = nextWord === 'backed';
         const indexName = key === 'bse' && (nextWord === 'sensex' || /^\d+$/.test(nextWord ?? ''));
         const child = UNLISTED_CONTINUATIONS[key];
@@ -176,7 +234,7 @@ export class AliasIndex {
           && ['on', 'at', 'via', 'through'].includes(venuePreposition ?? '')
           && !COMPANY_CONTEXT.has(nextWord ?? '');
         const attribution = isAttribution(tokens, i, n);
-        if (taxCredit || analystSubsidiary || centralBank || ownership || venue || indexName || unlisted || fundHouse || trailingAttribution || attribution) {
+        if (taxCredit || sportsLeague || analystSubsidiary || centralBank || ownership || venue || indexName || unlisted || fundHouse || trailingAttribution || attribution) {
           if (unlisted || fundHouse || trailingAttribution || attribution) unresolved.add(trimMention([...new Set(span.map(t=>t.orig))].join(' ')));
           matched = n;
           break;
@@ -195,7 +253,7 @@ export class AliasIndex {
           && !this.prefixes.has(`${continuation} ${tokens[i+n+1]!.norm}`)
           && !this.entries.has(`${continuation} ${tokens[i+n+1]!.norm}`);
         const truncated = next !== undefined && !conjunctionList && this.prefixes.has(continuation) && !this.entries.has(continuation);
-        if (entry.ambiguous || entry.isins.size > 1 || truncated) unresolved.add(trimMention(truncated ? `${text} ${next!.orig}` : text));
+        if ((entry.ambiguous && !hospitalShorthand) || entry.isins.size > 1 || truncated) unresolved.add(trimMention(truncated ? `${text} ${next!.orig}` : text));
         else isins.add([...entry.isins][0]!);
         matched = n;
         break;

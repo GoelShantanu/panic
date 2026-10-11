@@ -15,6 +15,7 @@ const NON_MARKET_CONTEXT = /\b(?:office commute|commuting|traffic congestion|fil
 const FINANCIAL_TOPIC = /\b(?:bonds?|yields?|treasur(?:y|ies)|aum|credit growth|private credit|bank[- ]supervision|repo|rate[- ]hike|gold|silver|brent|oil prices?|pre[- ]market|global markets?|world markets?|market pressure|q[1-4] (?:update|growth|miss)|tariff hike)\b/i;
 const ISSUER_EVENT = /\b(?:stocks?|shares?|ipo|earnings|revenue|net profit|dividend|buyback|acquisition|takeover|merger|credit rating)\b/i;
 const PERSONAL_INCOME = /\b(?:he|she|this (?:\w+ ){0,2}(?:engineer|farmer|student))\b.{0,160}\b(?:earns?|income)\b/i;
+const PERSONAL_PROFILE = /\bhere['’]s (?:her|his|their) story\b/i;
 
 /**
  * High-recall first-pass gate for article headlines. Only strong off-topic signals are discarded;
@@ -30,8 +31,8 @@ export function classifyMarketRelevance(headline: string, scope: ArticleScope = 
   }
   // Personal success stories do not become market news just because they quote
   // a monthly salary/side-business income. Hold them rather than guessing relevance.
-  if(PERSONAL_INCOME.test(headline)&&!ISSUER_EVENT.test(headline)&&!corporate) {
-    return {decision:'review',confidence:0.5,reason:'personal-income story needs market-relevance review',rulesVersion:'market-v2'};
+  if((PERSONAL_INCOME.test(headline)||PERSONAL_PROFILE.test(headline))&&!ISSUER_EVENT.test(headline)&&!corporate) {
+    return {decision:'review',confidence:0.5,reason:'personal-income/profile story needs market-relevance review',rulesVersion:'market-v2'};
   }
   if (market) return { decision: 'keep', confidence: 0.94, reason: 'explicit market, policy, or financial signal', rulesVersion: 'market-v2' };
   if (corporate && scope !== 'general') return { decision: 'keep', confidence: 0.82, reason: 'corporate event in a curated business or markets feed', rulesVersion: 'market-v2' };

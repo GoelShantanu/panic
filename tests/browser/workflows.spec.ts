@@ -178,7 +178,7 @@ test('signup requires mailbox verification and explicit onboarding before activa
   // Consents belong to this disposable fictional fixture account, never a real user.
   await page.getByLabel('I am 18 or older.').check();
   await page.getByLabel('I accept the Terms of Use.').check();
-  await page.getByLabel('I agree to StockPanic processing my data', { exact: false }).check();
+  await page.getByLabel('I agree to Bazaar Updates processing my data', { exact: false }).check();
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
   await expect(page).toHaveURL(/\/watchlist\?welcome=1$/);
   expect((await browserRead(page, '/v1/me')).body).toMatchObject({ username: name, first_name: 'Fictional', email_verified: true });

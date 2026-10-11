@@ -9,7 +9,7 @@ if (!url) {
 const port = Number(process.env['PORT'] ?? 3001);
 
 const pool = new pg.Pool({ connectionString: url, max: 5 });
-const live = await startLiveServer({ pool, listenConnectionString: url }, port);
+const live = await startLiveServer({ pool, listenConnectionString: url, host: process.env['HOST'] ?? '127.0.0.1' }, port);
 console.log(`live channel listening on :${live.port}/v1/live`);
 
 const shutdown = async () => {

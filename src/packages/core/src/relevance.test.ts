@@ -40,4 +40,8 @@ describe('market relevance gate', () => {
   it('keeps an explicit issuer result even when discussing an individual',()=>{
     expect(classifyMarketRelevance('She reports company revenue growth to Rs 300 crore','markets').decision).toBe('keep');
   });
+  it('holds a personal profile despite a past startup valuation, preserving a new funding event',()=>{
+    expect(classifyMarketRelevance('At 17, she founded a startup valued at Rs 200 crore. Here’s her story','markets').decision).toBe('review');
+    expect(classifyMarketRelevance('She raises funds for her company. Here’s her story','business').decision).toBe('keep');
+  });
 });

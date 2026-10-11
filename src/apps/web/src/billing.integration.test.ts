@@ -120,7 +120,7 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
     expect(detail.text).toContain('TAX INVOICE');
     expect(detail).toMatchObject({ cgst_inr: 22.8, sgst_inr: 22.81 });
     const queuedMail = await db.query(`SELECT payload->>'subject' AS subject FROM job WHERE queue = 'account' AND payload->>'kind' = 'email'`);
-    expect(queuedMail.rows.map((r) => r.subject)).toContain(`StockPanic invoice ${inv[0].invoice_id}`);
+    expect(queuedMail.rows.map((r) => r.subject)).toContain(`Bazaar Updates invoice ${inv[0].invoice_id}`);
     expect((await call('other', 'GET', `/v1/billing/invoices/${encodeURIComponent(inv[0].invoice_id)}`)).status).toBe(404);
 
     expect(b(await hook('subscription.charged', 'sub_TEST1', { payment: { id: 'pay_1', amount: 29900 }, eventId: 'evt_charge_1' }))).toEqual({ duplicate: true });
@@ -188,6 +188,43 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
     const live = (await db.query(`SELECT provider_ref FROM subscription WHERE user_id = $1 AND status = 'active'`, [ids['payer']])).rows[0].provider_ref;
     expect((await call('payer', 'POST', '/v1/me/delete', { comments: 'delete' })).status).toBe(202);
     expect(provider.cancelled).toContain(live);
+  });
+
+  it('concurrent first activation and charge wait for the user lock and create one invoice', async () => {
+    const u = await db.query(`INSERT INTO app_user (public_id, username, email, email_verified_at, age_confirmed_at, terms_accepted_at, privacy_consent_at)
+      VALUES ($1, 'concurrent_payer', 'concurrent@example.invalid', now(), now(), now(), now()) RETURNING id`, [newPublicId('us')]);
+    const userId = String(u.rows[0].id);
+    await db.query(`INSERT INTO billing_checkout (provider_ref, short_url, user_id, plan) VALUES ('sub_CONCURRENT', 'https://example.invalid/test', $1, 'monthly')`, [userId]);
+    // Use the migrated disposable database, never the application database.
+    const testUrl = new URL(adminUrl!); testUrl.pathname = `/${dbName}`;
+    const connections = [0, 1].map(() => new pg.Client({ connectionString: testUrl.toString() }));
+    await Promise.all(connections.map(c => c.connect()));
+    let pending: Promise<Awaited<ReturnType<typeof handleWebhook>>[]> | undefined;
+    try {
+      await db.query('BEGIN');
+      await db.query(`SELECT pg_advisory_xact_lock(hashtextextended('stockpanic-checkout:' || $1::text, 0))`, [userId]);
+      const createdAt = ++clock;
+      pending = Promise.all(connections.map((c, i) => {
+        const body = JSON.stringify({ event: i ? 'subscription.charged' : 'subscription.activated', created_at: createdAt,
+          payload: { subscription: { entity: { id: 'sub_CONCURRENT', plan_id: PLAN_IDS.monthly, current_end: createdAt + 30 * 86400 } },
+            ...(i ? { payment: { entity: { id: 'pay_CONCURRENT', amount: 29900 } } } : {}) } });
+        return handleWebhook(c, body, razorpaySignature(WEBHOOK_SECRET, body), `evt_concurrent_${i}`, billing, new Date());
+      }));
+      let waiting = 0;
+      for (let n = 0; n < 100 && waiting < 2; n++) {
+        waiting = (await db.query(`SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event = 'advisory'`)).rows[0].n;
+        if (waiting < 2) await new Promise(r => setTimeout(r, 10));
+      }
+      expect(waiting).toBe(2);
+      await db.query('COMMIT');
+      expect((await pending).map(r => r.status)).toEqual([200, 200]);
+      expect((await db.query(`SELECT count(*)::int AS n FROM subscription WHERE provider_ref = 'sub_CONCURRENT'`)).rows[0].n).toBe(1);
+      expect((await db.query(`SELECT count(*)::int AS n FROM invoice WHERE provider_ref = 'pay_CONCURRENT'`)).rows[0].n).toBe(1);
+    } finally {
+      await db.query('ROLLBACK');
+      await pending?.catch(() => undefined);
+      await Promise.all(connections.map(c => c.end()));
+    }
   });
 
   it('invoice numbers run without gaps', async () => {

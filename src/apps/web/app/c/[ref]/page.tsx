@@ -151,7 +151,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pr
             </span>{' '}
             <CommunityOpinion votes={{ directional: c.community_opinion.display, important_count: 0 }} emptyText="No votes on recent stories yet." />
           </p>
-          <p className="faint opinion-note">What users voted on these stories. Not StockPanic&apos;s assessment, and not advice.</p>
+          <p className="faint opinion-note">What users voted on these stories. Not Bazaar Updates&apos;s assessment, and not advice.</p>
         </section>
       )}
       {newsHeader}

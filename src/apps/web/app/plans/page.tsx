@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { api } from '../../site/api.ts';
 import { Plans } from '../../site/account/Plans.tsx';
 
-export const metadata: Metadata = { title: 'Plans', description: 'StockPanic is free. Paid adds more alerts, longer history and advanced filters.' };
+export const metadata: Metadata = { title: 'Plans', description: 'Bazaar Updates is free. Paid adds more alerts, longer history and advanced filters.' };
 
 export default async function PlansPage() {
   const [plans, me, billing] = await Promise.all([

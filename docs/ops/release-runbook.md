@@ -323,3 +323,59 @@ Set `MAILER=smtp`, `MAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, and the provider's `SM
 ## Correct relevance after publication (2026-10-09, D-074)
 
 Use `node --env-file=.env.local src/apps/worker/src/cli/admin.ts relevance-correct <item_public_id> discard <reviewer> <reason...>` for an explicit off-topic correction. Use `keep` to reverse a decision. The command requires an existing published article relevance candidate, writes an append-only before/after audit and retains the item and story. A discarded primary article excludes its story from feed pagination/unread counts, trending, card/live delivery and detail routes. Existing browser rows require refresh; no live removal event is emitted. This does not replace a discarded primary with another member of a mixed-source story. Review those cases separately. Validation: QA §16.
+
+## Razorpay local Test Mode setup (2026-10-10, D-079)
+
+This supplements the earlier provider-pending checklist. Test configuration and acceptance evidence are owned by QA §20; production gates still apply.
+
+Copy the billing fields in `.env.example` into ignored `.env.local`. Configure `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, both `RAZORPAY_PLAN_*` values, `RAZORPAY_WEBHOOK_SECRET`, `SELLER_NAME` and `SELLER_ADDRESS`. Test and live keys/plans are separate; keep all secrets out of Git, screenshots and browser client code. Blank GSTIN denotes an unregistered supplier; do not fabricate a tax identifier. Local seller details explicitly say TEST ONLY and must be replaced before live billing.
+
+Register an HTTPS webhook ending in `/v1/billing/webhook`, using the same webhook secret and these subscription events: authenticated, activated, charged, resumed, updated, pending, halted, cancelled and completed. Restart web with `npm run web:dev` after environment changes. Run `node --env-file=.env.local src/apps/worker/src/cli/account.ts` for invoice/payment email jobs. `MAILER=log` proves local rendering and queue processing only; SMTP receipt needs separate acceptance.
+
+For the founder-approved local test, Cloudflare's official `cloudflared` binary forwards to a loopback relay on port 3099. The relay accepts only signed POST `/v1/billing/webhook` and forwards unchanged bodies to web port 3002; all other routes return 404. Temporary tools, process IDs, logs and screenshots are in ignored `scratch/razorpay`. The quick-tunnel URL changes after restarting cloudflared, so update the dashboard URL before further tests. These temporary processes stop with the computer and are not a deployed service. For Oracle deployment, replace the temporary webhook with the deployed application's stable HTTPS route and retest; do not expose this development server generally.
+
+Razorpay's [official subscription test guide](https://razorpay.com/docs/payments/subscriptions/test/) describes provider test cards and dashboard charge simulations. [Cloudflare quick tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) are temporary testing endpoints. Current Test Mode acceptance does not establish live merchant activation, KYC/website approval, real settlements or real invoice email receipt.
+
+## Oracle public testing deployment (2026-10-11, D-081)
+
+### Inventory and spending scope
+
+[VERIFIED — console/SSH] Account remains Free Tier/Free Trial without a paid upgrade. Instance `bazaarnews-test` in `ap-mumbai-1`, AD `JuUz:AP-MUMBAI-1-AD-1`, uses `VM.Standard.A1.Flex`, **2 OCPUs / 12 GB RAM**, Ubuntu 24.04 Minimal ARM64 and a **50 GB / 10 VPU** boot volume. These fit Oracle's [current Always Free allocation](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm); older 4-OCPU/24-GB limits are not the current allocation. ₹0 is the authorised spending scope; no paid resources/account upgrade or independently audited hard billing cap is established. Oracle can reclaim idle compute under its documented policy; no Render-style inactivity sleep is configured.
+
+Instance OCID: `ocid1.instance.oc1.ap-mumbai-1.anrg6ljro2xrzwacgxqqazwo7gwlfd2dy3uxqf4plzkqkz2nm5rb4zhn7upa`. Public IP **130.210.56.102**, private IP `10.0.0.249`, VCN `bazaarnews-test-vcn`, public subnet `bazaarnews-public-subnet` (`10.0.0.0/24`). Internet gateway/default route exist. OCI ingress and host iptables allow public TCP 80/443 and TCP 22 only from the deployment computer's recorded `/32`. Existing Ed25519 SSH access works; password/root login is disabled. If the computer's IP changes, update both restrictions through authorised console access.
+
+Testing URL: **https://bazaarnews.duckdns.org/**. On October 11 (D-082), the owner logged in and the existing DuckDNS record was updated to **130.210.56.102**. Public DNS and valid HTTPS passed; no DuckDNS token was transferred. Tracked/installed Caddy configuration serves this hostname, while the initial `https://bazaarnews.130-210-56-102.sslip.io/` link permanently redirects to it. Protected `PUBLIC_BASE_URL` matches DuckDNS; running web/live/news services were recreated. If the VM's public IP changes, update the DuckDNS record before checking HTTPS. Automatic DNS updates are not configured.
+
+### Services and protected configuration
+
+Checkout `/opt/stockpanic/releases/20261011`, symlink `/opt/stockpanic/current`. Docker builds from the lockfile on ARM; Windows dependencies and populated environment files are excluded. `.gitattributes` preserves LF for deployment files. Protected `/etc/stockpanic/app.env`, `pg-password`, `owner.env` and `backup-recipient` are mode 600. Never print credentials, pass them as command-line literals or commit them. Runtime login `stockpanic_runtime` inherits `stockpanic_app`; owner credentials are separate for maintenance/migrations. Preserve the existing `AUTH_SECRET` when recovering identities.
+
+PostgreSQL uses a persistent volume and **no host port**. Web/live publish **127.0.0.1:3002/3003** only. The live container uses `HOST=0.0.0.0`; ordinary local startup retains its loopback default. Caddy overwrites forwarded client IP and disables SSE buffering. Docker/Caddy start on boot, containers restart unless stopped, and JSON logs are bounded.
+
+```bash
+sudo docker compose -f /opt/stockpanic/current/docs/ops/oracle/compose.yaml ps
+sudo docker compose -f /opt/stockpanic/current/docs/ops/oracle/compose.yaml logs --tail=50 web live ingest pipeline
+sudo docker compose -f /opt/stockpanic/current/docs/ops/oracle/compose.yaml up -d web live ingest pipeline
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+sudo systemctl list-timers 'stockpanic-*'
+sudo journalctl -u stockpanic-health.service -u stockpanic-backup.service -u stockpanic-maintenance.service
+```
+
+Account/alerts services are defined but **not started** without SMTP. Public web uses SMTP transport with a sender identifier but no authentication; email-dependent signup/recovery cannot complete, and receipt is unverified. Verification codes are not logged. Configure the founder-selected sender and credentials privately in `app.env`, verify receipt in a controlled mailbox, review cloned queued jobs before enabling workers, then recreate web/account/alerts. Google and VAPID configuration are also absent. A page returning 200 does not establish these workflows.
+
+### Backup, restoration and maintenance
+
+Daily `stockpanic-backup.timer` encrypts a PostgreSQL custom dump and protected configuration archive to the existing SSH public key using age, retaining about seven days in `/var/backups/stockpanic`. The private key is required for decryption and was **never uploaded to Oracle**. Daily VM backups are not automatically off-host. Encrypted dump/configuration copies were downloaded into protected, ignored `scratch/oracle/` on this computer; repeat transfers or configure a continuing external destination for disaster recovery.
+
+For a **new disposable database**, decrypt on a trusted computer with `age -d -i <private-key> -o <dump-file> <encrypted-dump>`, then use `pg_restore --no-owner --no-acl --exit-on-error` into that empty database. Check identities/data before a cutover. Real recovery must also recreate `stockpanic_app`, a least-privileged runtime login and appropriate grants, plus recover protected configuration. Global roles are not in `pg_dump`. Initial provisioning created the group role before restore, retained ACLs and generated distinct owner/runtime passwords. Do not restore over an active database without a separate reviewed cutover.
+
+Daily `stockpanic-maintenance.timer` runs `repair-live-partitions.sql` first. A parent-table lock and one transaction temporarily move current/future fallback events aside, create missing daily partitions, and reinsert identical IDs/timestamps/payloads. Errors roll back all movement; lock/statement timeouts bound the operation. This repairs the observed constraint error after missed maintenance without disabling audit protections. Existing retention then runs under the owner role: catch-up preserves events, while retention intentionally expires old ones.
+
+`stockpanic-health.timer` checks local web, SSE, PostgreSQL and disk every five minutes. Failures appear in systemd/journal; no attended notification channel or external uptime monitor is configured.
+
+### Razorpay routing and future releases
+
+[VERIFIED — D-082] Existing **Test Mode** webhook `Tm86X8qeuzXqXi` is enabled at `https://bazaarnews.duckdns.org/v1/billing/webhook`, retaining its signing secret and nine subscription events. The temporary local relay/tunnel were stopped after a new provider cancellation event was retained by Oracle. The isolated probe had no customer, zero payments and was immediately cancelled; `unknown_subscription` is the expected outcome, proving signed provider receipt without granting access. This is distinct from a successful paid checkout through the cloud site, which remains pending. Local and Oracle billing databases are now independent; provider events target Oracle. Keep all payment settings in Test Mode until live activation is separately authorised. Updated encrypted backups include the new hostname configuration.
+
+Image `bazaarnews-app:20261011-verified` retains the working deployment. Future updates should use another release directory/image, retain the old directory/tag, back up before migrations, validate the candidate, then change the symlink/image and recreate services. Compose selects retained images through `RELEASE_TAG=<tag>`. Reverting an image cannot reverse a forward-only database migration; restoration/schema compatibility need review. Full rollback/cutover acceptance remains pending.

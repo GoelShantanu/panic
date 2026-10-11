@@ -217,7 +217,7 @@ describe.skipIf(!adminUrl)('votes, comments, grievances, moderation (PostgreSQL)
     it('enrol, confirm, grant, gate', async () => {
       const e = await call('mod', 'POST', '/v1/me/totp/enrol');
       secret = b(e).secret;
-      expect(b(e).otpauth_uri).toContain('otpauth://totp/StockPanic:mod');
+      expect(b(e).otpauth_uri).toContain('otpauth://totp/Bazaar%20Updates:mod');
       const stored = (await db.query('SELECT totp_secret_enc FROM app_user WHERE id = $1', [ids['mod']!.id])).rows[0].totp_secret_enc;
       expect(stored).not.toContain(secret);
       expect(b(await call('mod', 'POST', '/v1/me/totp/confirm', { code: '000000' })).error).toBe('invalid_code');

@@ -210,10 +210,14 @@ export async function handleWebhook(db: pg.ClientBase, rawBody: string, signatur
 async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: Date): Promise<string> {
   const sub = evt.payload?.subscription?.entity;
   if (!sub || typeof sub.id !== 'string' || !String(evt.event).startsWith('subscription.')) return 'ignored';
-  const existing = await subscriptionByRef(db, sub.id);
-  const checkout = existing ? null : await checkoutByRef(db, sub.id);
-  const userId = existing?.userId ?? checkout?.userId;
+  const mapped = await subscriptionByRef(db, sub.id);
+  const checkout = mapped ? null : await checkoutByRef(db, sub.id);
+  const userId = mapped?.userId ?? checkout?.userId;
   if (!userId) return 'unknown_subscription';
+  // Razorpay delivers activation/authentication/charge events concurrently. Serialize webhook
+  // state changes with checkouts for this user, then reread after the preceding event commits.
+  await db.query(`SELECT pg_advisory_xact_lock(hashtextextended('stockpanic-checkout:' || $1::text, 0))`, [userId]);
+  const existing = await subscriptionByRef(db, sub.id);
   const plan: PlanId = (Object.entries(deps.planIds).find(([, p]) => p === sub.plan_id)?.[0] as PlanId | undefined) ?? existing?.plan ?? checkout!.plan;
   const eventAt = fromUnix(evt.created_at) ?? now;
   const periodEnd = fromUnix(sub.current_end) ?? existing?.currentPeriodEnd ?? null;
@@ -236,7 +240,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
         const { created, invoice } = await createInvoice(db, { userId, subscriptionId: saved?.id ?? null, paymentRef: pay.id, amountInr, ...tax, plan, periodEnd, at: eventAt });
         if (created) {
           const text = renderInvoice({ number: invoice.number, issuedAt: invoice.issuedAt, seller: deps.seller, buyerEmail: (await userEmailOf(db, userId)) ?? '', plan, amountInr, periodEnd });
-          await tell(db, deps, userId, `StockPanic invoice ${invoice.number}`, text); // sent by the account worker after this transaction commits
+          await tell(db, deps, userId, `Bazaar Updates invoice ${invoice.number}`, text); // sent by the account worker after this transaction commits
         }
       }
       return 'active';
@@ -249,7 +253,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
       if (r === 'stale') return 'stale';
       if (!existing?.pastDueSince) {
         await addUserNotice(db, userId, 'payment_retrying', { access_until: graceEnd });
-        await tell(db, deps, userId, 'StockPanic: payment failed, retrying', `We couldn't take your StockPanic payment. Your bank or UPI app will be retried over the next ${RETRY_GRACE_DAYS} days, and paid features stay on meanwhile. You can update your payment method from your Razorpay mandate.`);
+        await tell(db, deps, userId, 'Bazaar Updates: payment failed, retrying', `We couldn't take your Bazaar Updates payment. Your bank or UPI app will be retried over the next ${RETRY_GRACE_DAYS} days, and paid features stay on meanwhile. You can update your payment method from your Razorpay mandate.`);
       }
       return 'past_due';
     }
@@ -257,7 +261,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
       const r = await applySubscription(db, { ...base, status: 'expired', currentPeriodEnd: eventAt });
       if (r === 'stale') return 'stale';
       await addUserNotice(db, userId, 'downgraded', { reason: 'payment_failed' });
-      await tell(db, deps, userId, 'StockPanic: your account is now on Free', 'All payment retries failed, so your account has moved to the Free plan. Your watchlist and saved views are kept; subscribe again any time to restore paid features.');
+      await tell(db, deps, userId, 'Bazaar Updates: your account is now on Free', 'All payment retries failed, so your account has moved to the Free plan. Your watchlist and saved views are kept; subscribe again any time to restore paid features.');
       return 'expired';
     }
     case 'subscription.cancelled':

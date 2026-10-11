@@ -30,3 +30,16 @@ FEDERALBNK,Federal,INE171A01029,common_word
 AWL,AWL Agri,INE699H01024
 NAUKRI,Info Edge,INE663F01032
 AJMERA,Ajmera Realty,INE298G01035
+# Hospital identities reviewed against issuer/NSE filings and full publisher articles, 2026-10-10 (D-080).
+# Bare brands remain unresolved except inside the guarded hospital-stock list rule.
+APOLLOHOSP,Apollo Hospital,INE437A01024
+MAXHEALTH,Max Health,INE027H01010
+MEDANTA,Medanta,INE474Q01031
+MANIPALHOS,Manipal Hospitals,INE459N01021
+APOLLOHOSP,Apollo,INE437A01024,ambiguous
+MAXHEALTH,Max,INE027H01010,ambiguous
+MANIPALHOS,Manipal,INE459N01021,ambiguous
+FORTIS,Fortis,INE061F01013,ambiguous
+YATHARTH,Yatharth,INE0JO301016,ambiguous
+BPCL,Bharat Petroleum,INE029A01011
+HINDPETRO,Hindustan Petroleum,INE094A01015

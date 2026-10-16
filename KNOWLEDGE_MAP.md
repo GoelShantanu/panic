@@ -66,7 +66,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | File | Purpose | Owner | Depends on | Feeds | Source of truth for | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `system-overview.md` | Components, data flow, PRD→component map, market-session assumptions, failure modes, scaling | Architect/CTO | PRD-001…007, D-024 | Database, Backend, Ops | **What runs where, and how it fails** | Medium (volumes `[ASSUMPTION]`) | ✅ v1.0 approved — D-026 |
-| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` | Component designs for C4 and C5; ingestion.md §4.1 relevance supplement and §12 RSS publication freshness | Architect/CTO | system overview, PRD-002, PRD-004, ADR-004/006, D-025, D-059, D-085 | Database, Backend | **How items, stories, tags and AI outputs are produced** | Medium (thresholds and volumes `[ASSUMPTION]`; relevance heuristic uncalibrated) | ✅ v1.0 preserved; ingestion v1.1 additive supplement |
+| `ingestion.md`, `deduplication.md`, `entity-resolution.md`, `ai-layer.md` | Component designs for C4 and C5; ingestion.md §4.1 relevance, §12 RSS freshness, §13 Moneycontrol fallback and §14 filtered Zee Business RSS | Architect/CTO | system overview, PRD-002, PRD-004, ADR-004/006, D-025, D-059, D-085/086/087 | Database, Backend | **How items, stories, tags and AI outputs are produced** | Medium (thresholds and volumes `[ASSUMPTION]`; relevance heuristic uncalibrated) | ✅ v1.0 preserved; additive supplements; activation status owned by PROJECT_STATE |
 | `adr/adr-007-google-workspace-email.md` | Email through Google: free Gmail or Workspace | Founder/CTO | PRD-003, PRD-007 | Backend | **Email provider and limits** | Medium (limits `[INFERRED]`) | ✅ Accepted — D-031 |
 | `adr/adr-001…006` | Architecture decisions | Architect/CTO | as above | all later phases | **Each significant structural choice** | Medium | ✅ Accepted — D-026 |
 
@@ -103,7 +103,7 @@ Not research, not foundation. Historical context once their decision is recorded
 | `src/packages/push` | Pusher interface: web-push (VAPID), memory | CTO | PRD-003 US-003.6 | ✅ B6 — 2 tests |
 | `src/packages/mail` | Mailer interface: smtp (free Gmail / Workspace), log, memory | CTO | ADR-007 | ✅ B5 — 3 tests |
 | `src/apps/live` | SSE live channel: LISTEN/NOTIFY broadcast, replay, resync, heartbeat | CTO | ADR-004, ADR-005 | ✅ B4 — 7 integration tests |
-| `src/apps/worker` | Ingestion (RSS scope + relevance gate/review CLI; filings poll, push inbox and reconciliation; health, scheduler), pipeline (classify, tag, cluster, recompute), account jobs (export, deletion), alerts (evaluate, deliver, digest, corrections), AI jobs (classify, summarise with pdf.js attachment text; Anthropic SDK client behind an interface); worker CLIs including `ingest`, `pipeline`, `account`, `alerts`, `ai`, `reconcile`, `maintenance`, `admin` | CTO | ingestion.md, deduplication.md, entity-resolution.md, PRD-002, D-029, D-030, D-059 | ✅ B2–B3; relevance path covered by targeted tests |
+| `src/apps/worker` | Ingestion (RSS scope/relevance, Moneycontrol Google fallback, filtered Zee Business adapter, health/scheduler), pipeline, account jobs, alerts and AI; source activation CLIs `moneycontrol` and `zee-business` supplement the existing operational CLIs | CTO | ingestion.md §13/14, deduplication.md, entity-resolution.md, PRD-002, D-029/030/059/086/087 | ✅ B2–B3; additional source acceptance owned by QA §26/27, deployment by PROJECT_STATE |
 
 ### 1.3 Planned paths — not yet present
 

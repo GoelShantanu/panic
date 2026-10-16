@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { migrate } from '@stockpanic/db';
 import { MALFORMED, RSS_MIXED_QUALITY, RSS_THREE_ITEMS, RSS_TWO_ITEMS } from './fixtures.ts';
 import { tick } from './scheduler.ts';
+import { MONEYCONTROL_GOOGLE_FEED } from './google-news.ts';
 
 const adminUrl = process.env['TEST_DATABASE_URL'];
 
@@ -210,5 +211,32 @@ describe.skipIf(!adminUrl)('ingestion end-to-end (local feed server + PostgreSQL
     await tick(db, at(9204), deps);
     expect((await db.query(`SELECT latest_published_at, publication_observed_at FROM source_fetch_state WHERE source_id = 'src_test_desk'`)).rows[0]).toEqual({ latest_published_at: null, publication_observed_at: at(9204) });
     expect((await tick(db, at(9505), deps)).fetched[0]).toMatchObject({ outcome: 'not_modified' });
+  });
+
+  it('ingests only attributed recent Moneycontrol headlines, dedups replay and reports a frozen fallback as stale', async () => {
+    await db.query("UPDATE source SET enabled=false WHERE source_id='src_test_desk'");
+    await db.query(`INSERT INTO source(source_id,name,kind,tier,access_basis,access_checked_on,enabled,excerpt_allowed,cadence,adapter,article_scope)
+      VALUES ('src_mc_google_news','Moneycontrol via Google News','article',3,'test',current_date,true,true,$1,$2,'business')`,
+      [CADENCE, { type:'rss',url:MONEYCONTROL_GOOGLE_FEED,format:'moneycontrol_google_news' }]);
+    const item = (id: string, publisher: string, date: Date) => `<item><title>Tech Mahindra declares Rs 15 dividend - Moneycontrol.com</title><link>https://news.google.com/rss/articles/${id}</link><guid>${id}</guid><pubDate>${date.toUTCString()}</pubDate><description>Duplicate headline and publisher footer, never an excerpt</description><source url="${publisher}">Moneycontrol.com</source></item>`;
+    let xml = `<rss><channel>${item('CBMi_kept','https://www.moneycontrol.com',at(9900))}${item('CBMi_wrong','https://other.example',at(9999))}${item('CBMi_old','https://www.moneycontrol.com',new Date('2024-04-23T09:00:00Z'))}</channel></rss>`;
+    const fetchImpl = async () => new Response(xml, {status:200,headers:{'content-type':'application/rss+xml'}});
+    const first = await tick(db,at(10000),{...deps,fetchImpl});
+    expect(first.fetched[0]).toMatchObject({sourceId:'src_mc_google_news',inserted:1});
+    const saved = (await db.query("SELECT headline,excerpt,dedup_key FROM item WHERE source_id='src_mc_google_news'")).rows;
+    expect(saved).toEqual([{headline:'Tech Mahindra declares Rs 15 dividend',excerpt:null,dedup_key:'guid:CBMi_kept'}]);
+    expect((await tick(db,at(10301),{...deps,fetchImpl})).fetched[0]).toMatchObject({inserted:0,duplicates:1});
+    expect((await db.query("SELECT latest_published_at FROM source_fetch_state WHERE source_id='src_mc_google_news'")).rows[0].latest_published_at).toEqual(at(9900));
+    xml = `<rss><channel>${item('CBMi_old','https://www.moneycontrol.com',new Date('2024-04-23T09:00:00Z'))}</channel></rss>`;
+    const frozen = await tick(db,at(10602),{...deps,fetchImpl});
+    expect(frozen.fetched[0]).toMatchObject({inserted:0});
+    expect(await health('src_mc_google_news')).toMatchObject({state:'stale'});
+    xml = `<rss><channel>${Array.from({length:20},(_,i)=>item(`CBMi_limit_${i}`,'https://www.moneycontrol.com',at(11000+i))).join('')}</channel></rss>`;
+    const limited = await tick(db,at(11303),{...deps,fetchImpl});
+    expect(limited.fetched[0]).toMatchObject({inserted:10,heldForReview:0});
+    const keys = (await db.query("SELECT dedup_key FROM item WHERE source_id='src_mc_google_news' AND dedup_key LIKE 'guid:CBMi_limit_%' ORDER BY dedup_key")).rows.map(r=>r.dedup_key);
+    expect(keys).toEqual(Array.from({length:10},(_,i)=>`guid:CBMi_limit_${i+10}`));
+    expect((await tick(db,at(11604),{...deps,fetchImpl})).fetched[0]).toMatchObject({inserted:0,duplicates:10,heldForReview:0});
+    expect((await db.query("SELECT count(*)::int AS n FROM article_relevance_candidate WHERE source_id='src_mc_google_news'")).rows[0].n).toBe(11);
   });
 });

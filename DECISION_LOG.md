@@ -2427,3 +2427,35 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Freshness:** Add nullable publication metadata through forward migration0020. Observe all parsed feed entries before editorial filtering; invalid/future dates cannot prove freshness. Preserve observations across304/failure and inspect content once despite pre-upgrade validators. An observed newest publication older than seven days makes an RSS source stale, independent of overnight quiet, while existing fetch-failure precedence remains. Show successful fetch and newest publication separately. The seven-day threshold is a conservative operational safeguard, not a news-latency guarantee.
 
 **Ownership and limits:** Ingestion design/schema notes own the observation contract; QA §25 owns tests and live evidence; the runbook owns current release/feed operations; PROJECT_STATE owns completion and remaining work. Moneycontrol coverage still requires a publisher-supported current English feed/API. No paid resource, live-payment activation or Git publication is included.
+
+## D-086 — Prepare an explicitly labelled Moneycontrol Google News fallback (2026-10-15)
+
+**Authority:** Founder requested fixing the frozen Moneycontrol coverage, opened Oracle Console for deployment access, and then explicitly limited the import to ten recent articles, skipping the other search results for now.
+
+**Decision:** Add an optional public Google News RSS adapter for Moneycontrol business news, under a distinct `Moneycontrol via Google News` source. Preserve publisher attribution, reject other/spoofed publishers and unsafe links, suppress headline-only descriptions, retain real feed publication observations and existing relevance/dedup rules. Select only the ten newest eligible articles per response before persistence; do not backfill older results on subsequent identical polls. Prepared activation verifies fresh eligible results before atomically pausing the three frozen direct feeds; retain their historical records.
+
+**Limits:** This is indirect, incomplete headlines-only coverage, not a restored official feed or full-article summary service. No paid service, publisher access bypass or additional credentials are introduced. Oracle activation and access recovery must be observed separately; local test acceptance does not establish deployment. Ingestion §13 owns the contract, QA §26 the evidence, the runbook activation/rollback, and PROJECT_STATE current status.
+
+## D-087 — Add filtered Zee Business publisher RSS while Oracle recovery is blocked (2026-10-16)
+
+**Authority:** Founder requested integrating additional news sources and supplied the Zee Business stocks page while the Oracle VM remains unavailable.
+
+**Decision:** Reuse the verified public publisher RSS, filtering market article routes before persistence. Keep source attribution and direct publisher links; suppress descriptions, reject untrusted links/dates and irrelevant sections, apply existing relevance rules, and start with ten newest eligible results per response. An opt-in activation command preflights fresh content, records audited configuration, and leaves other sources intact. Prefer this supported RSS path over scraping the page or adding another Google fallback. No separate current stocks RSS was verified.
+
+**Limits:** Public RSS and restrictive general terms do not establish redistribution permission; this change asserts none, retains headlines-only operation and follows the existing D-075 approval-record policy. Coverage is limited by the publisher's broad recent feed. No paid service, new credential, schema migration or Git publication is included. Architecture §14 owns behavior, QA §27 acceptance, the runbook operating commands, and PROJECT_STATE local/deployed status.
+
+## D-088 — Replace the stuck Oracle testing VM while preserving recovery assets (2026-10-16)
+
+**Authority:** After the original instance remained in `Starting` for more than five hours, the founder requested replacement and explicitly approved permanent termination of only `bazaarnews-test`, preservation of its disk/full backup, and the prepared Mumbai2OCPU/12GB/50GB replacement. Approval includes existing-key restricted SSH/public web access, recovery of the database and protected Razorpay Test Mode settings, DuckDNS update and deployment of both tested source integrations. No paid resource/account upgrade is authorized; stop if termination is rejected or free capacity is unavailable.
+
+**Decision:** Create and verify a full disk backup before terminating the old VM, leave the boot-volume deletion option unchecked, and wait for termination before submitting the full-size replacement so concurrent compute does not exceed the published free allocation. Recover from the preserved disk/backup into a fresh OS rather than losing current data by relying on the older downloaded dump. Preserve both recovery assets even if replacement capacity fails. Termination releases the original IP; DNS cutover follows successful restoration.
+
+**Outcome and limits:** Oracle completed the old VM's termination but rejected the replacement launch for lack of A1Flex capacity in Mumbai AD-1. Provisioning stopped as approved; no paid fallback was attempted. This decision does not establish a completed deployment, successful restore or uptime guarantee. PROJECT_STATE owns current status and the next action; ignored preparation records/screenshots own exact resource IDs and provider responses.
+
+## D-089 — Checkpoint source work and hand off a smaller free Oracle deployment (2026-10-16)
+
+**Authority:** After running the app locally, the founder chose to try an Always Free1OCPU/6GB VM in a new chat in the same project folder, requested committing current code, and asked for a prompt covering instance creation, app deployment, domain connection and live performance/usability testing.
+
+**Decision:** Commit the tested Moneycontrol/Zee Business integrations and current operating/handoff documentation without credentials, data dumps, generated artifacts or a new Git push. The next Oracle attempt should use1OCPU/6GB rather than the previously rejected2OCPU/12GB allocation, retaining the existing zero-paid-resource, preserved-disk/backup, restricted-access and Test Mode constraints. Keep the local app running during this handoff. Smaller allocation may fit available host capacity but success and adequate runtime performance remain unverified.
+
+**Ownership and limits:** PROJECT_STATE owns the detailed current recovery/deployment checklist and remaining blockers. This checkpoint does not provision a VM, restore data, make the public site live, establish new capacity or validate smaller-host performance.

@@ -11,6 +11,7 @@ export interface FeedEntry {
   guid: string | null;
   published: string | null;
   description: string | null;
+  publisher?: { name: string; url: string };
 }
 
 // Read publication dates before language/relevance filtering: rejected stories still prove
@@ -69,12 +70,16 @@ export function parseFeed(xml: string): FeedEntry[] {
     return items.map((raw) => {
       const it = raw as Record<string, unknown>;
       const links = it['link'];
+      const source = it['source'];
+      const publisherName = text(source);
+      const publisherUrl = source && typeof source === 'object' ? text((source as Record<string, unknown>)['@_url']) : null;
       return {
         title: text(it['title']),
         link: Array.isArray(links) ? text(links[0]) : text(links),
         guid: text(it['guid']),
         published: text(it['pubDate']) ?? text(it['dc:date']),
         description: text(it['description']) ?? text(it['content:encoded']),
+        ...(publisherName && publisherUrl ? { publisher: { name: publisherName, url: publisherUrl } } : {}),
       };
     });
   }

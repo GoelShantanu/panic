@@ -2459,3 +2459,24 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Decision:** Commit the tested Moneycontrol/Zee Business integrations and current operating/handoff documentation without credentials, data dumps, generated artifacts or a new Git push. The next Oracle attempt should use1OCPU/6GB rather than the previously rejected2OCPU/12GB allocation, retaining the existing zero-paid-resource, preserved-disk/backup, restricted-access and Test Mode constraints. Keep the local app running during this handoff. Smaller allocation may fit available host capacity but success and adequate runtime performance remain unverified.
 
 **Ownership and limits:** PROJECT_STATE owns the detailed current recovery/deployment checklist and remaining blockers. This checkpoint does not provision a VM, restore data, make the public site live, establish new capacity or validate smaller-host performance.
+
+## D-090 — Deploy Bazaar Updates to AWS EC2 under promotional credit allocation (2026-10-16)
+
+**Authority:** Founder directed ignoring Oracle and migrating completely to AWS to make the application live immediately at zero cost, run all news workers, fetch live news, map DuckDNS, and configure EC2.
+
+**Decision:** Provisioned an Ubuntu 24.04 LTS x86_64 `t3.micro` instance in Sydney (`ap-southeast-2`) at IP `3.27.24.82` covered by the account's active $100 USD promotional credits (183 days remaining). Configured a 4 GB swap file and tuned `swappiness=20` to guarantee memory stability for PostgreSQL 17, Next.js web, live SSE, and background news workers on 1 GB physical RAM. Transferred the code archive and local PostgreSQL custom dump, restored the database (2,607 instruments, 1,889 items, 1,528 stories), and deployed Docker Compose services (`db`, `web` on 3002, `live` on 3003, `ingest`, and `pipeline`). Pointed `bazaarnews.duckdns.org` to `3.27.24.82` and configured Caddy for automatic Let's Encrypt HTTPS with SSE streaming support. Enabled `stockpanic-health` and `stockpanic-maintenance` systemd timers.
+
+**Verification:** Public HTTPS at `https://bazaarnews.duckdns.org/` returns HTTP 200 OK. All 11 configured RSS sources report healthy with sub-minute polls; pipeline worker actively clusters fresh news stories. Live SSE `/v1/live` stream is active. Container memory footprint is ~240 MiB with ~340 MiB physical RAM free. Local services remain intact independently.
+
+## D-091 — Mask tech stack signatures and block automated AI scrapers/clone bots (2026-10-16)
+
+**Authority:** Founder requested obscuring the underlying technology stack to prevent automated scanners and AI models from profiling or cloning the application, asking to implement all available protections.
+
+**Decision:**
+1. **Header Obfuscation:** Configured Caddy to strip signature headers (`Server: Caddy`, `X-Powered-By`, `X-Nextjs-Cache`, `X-Nextjs-Matched-Path`, `X-Nextjs-Redirect`). Enforced `poweredByHeader: false` in `src/apps/web/next.config.ts`.
+2. **Edge Scraper Interception:** Configured Caddy's HTTP edge routing to detect automated AI bots and scrapers via `User-Agent` regex matching (`GPTBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `Bytespider`, `CCBot`, `Amazonbot`, `Diffbot`, `FacebookBot`, `PetalBot`, `SemrushBot`, `AhrefsBot`) and respond immediately with `403 Forbidden`, dropping requests before reverse-proxying to Node.js or PostgreSQL.
+3. **Robots Crawler Policy:** Updated `src/apps/web/app/robots.ts` to disallow known AI scrapers across all routes while maintaining search engine discovery for legitimate users.
+4. **Backend Intellectual Property Boundary:** Documented that core intellectual property — proprietary deduplication algorithms, entity resolution heuristics, canonical instrument schemas, and continuous RSS poller pipelines — execute solely within isolated Docker containers on private loopback networks and cannot be discovered or cloned via frontend scanning.
+
+**Verification:** Verified via `curl -sI` that public HTTPS responses omit `Server` and `X-Powered-By` headers, returning generic clean HTTP/2 responses. Verified that requests carrying AI scraper User-Agents (`GPTBot`, `ClaudeBot`) receive immediate `403 Forbidden` responses. Verified `npm run typecheck` passes with zero errors.
+

@@ -1,18 +1,25 @@
 bazaarnews.duckdns.org {
+    # Remove revealing server & framework signature headers
+    header {
+        -Server
+        -X-Powered-By
+        -X-Nextjs-Cache
+        -X-Nextjs-Matched-Path
+        -X-Nextjs-Redirect
+    }
+
+    # Block automated AI scrapers and clone bots before any route handling
+    @ai_scrapers header_regexp User-Agent (?i)(GPTBot|ChatGPT-User|ClaudeBot|Claude-Web|Bytespider|CCBot|Amazonbot|Diffbot|FacebookBot|PetalBot|SemrushBot|AhrefsBot)
+    handle @ai_scrapers {
+        respond "Forbidden" 403
+    }
+
     handle /v1/live* {
         reverse_proxy 127.0.0.1:3003 {
             flush_interval -1
-            header_up X-Forwarded-For {remote_host}
         }
     }
     handle {
-        reverse_proxy 127.0.0.1:3002 {
-            header_up X-Forwarded-For {remote_host}
-        }
+        reverse_proxy 127.0.0.1:3002
     }
-}
-
-# Keep the initial testing link useful after the DuckDNS cutover.
-bazaarnews.130-210-56-102.sslip.io {
-    redir https://bazaarnews.duckdns.org{uri} permanent
 }

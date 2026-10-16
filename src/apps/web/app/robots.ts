@@ -10,7 +10,17 @@ const BASE = process.env['PUBLIC_BASE_URL'] ?? 'http://localhost:3000';
 // crawlable so search engines can see their noindex (PRD-006 US-006.10 AC-4).
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: '*', allow: '/', disallow: ['/v1/', '/settings', '/watchlist', '/alerts', '/replies', '/welcome', '/sign-in', '/unsubscribe'] }],
+    rules: [
+      {
+        userAgent: ['GPTBot', 'ChatGPT-User', 'CCBot', 'anthropic-ai', 'ClaudeBot', 'Claude-Web', 'Bytespider', 'Diffbot', 'FacebookBot', 'Google-Extended', 'Amazonbot', 'PetalBot'],
+        disallow: ['/'],
+      },
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/v1/', '/settings', '/watchlist', '/alerts', '/replies', '/welcome', '/sign-in', '/unsubscribe'],
+      },
+    ],
     sitemap: `${BASE}/sitemap.xml`,
   };
 }

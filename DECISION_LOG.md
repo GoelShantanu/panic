@@ -2480,3 +2480,16 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 
 **Verification:** Verified via `curl -sI` that public HTTPS responses omit `Server` and `X-Powered-By` headers, returning generic clean HTTP/2 responses. Verified that requests carrying AI scraper User-Agents (`GPTBot`, `ClaudeBot`) receive immediate `403 Forbidden` responses. Verified `npm run typecheck` passes with zero errors.
 
+## D-092 — Enable full mobile participation: unrestricted voting, comments, and following (2026-10-16)
+
+**Authority:** Founder reported mobile phone usability issues where the UI displayed "Open on desktop to take part" on articles and comments, requesting a review of mobile compatibility and removal of the desktop restriction.
+
+**Decision:** Superseded the historical desktop-only participation restriction (D-013, D-016, and D-067 limited mobile scope):
+1. **Unrestricted Commenting:** Removed `.desktop-only` restrictions from the comment composer and individual comment actions (Reply, Edit, Delete, Report) in `src/apps/web/site/comments/Comments.tsx`. Users can now read, post, reply to, and manage comments seamlessly on mobile phones.
+2. **Mobile Voting & Story Actions:** Removed `.desktop-only` and `.panel-bar { display: none }` restrictions from `StoryView.tsx`, `StoryRow.tsx`, and `responsive.css`. The story voting bar and stream row voting/follow controls are now fully accessible and touch-friendly on mobile devices, with shortcut key badges (`.vote-key`) automatically hidden on touchscreens.
+3. **Company Following:** Enabled `<FollowButton />` directly in mobile headers on `/c/[ref]` without hiding behind desktop media queries.
+4. **Eliminated "Open on desktop" Prompts:** Removed `<PhoneNote />` ("Open on desktop to take part.") and global `<PhoneNotice />` warning banner across the application (`layout.tsx`, `StoryView.tsx`, `Comments.tsx`, `StoryRow.tsx`, and company pages), providing an unrestricted native mobile web experience.
+
+**Verification:** Verified via `npm run typecheck` and automated Vitest suites (`phone.test.tsx`, `comments.test.tsx`, `panel.test.tsx`, `stream.test.tsx`, `a11y.test.tsx`) that all 43 tests pass cleanly.
+
+

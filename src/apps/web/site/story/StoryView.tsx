@@ -6,7 +6,6 @@ import { Comments } from '../comments/Comments.tsx';
 import type { CommentPage } from '../comments/Comments.tsx';
 import { istDateTime } from '../format.ts';
 import { Icon } from '../Icon.tsx';
-import { PhoneNote } from '../Phone.tsx';
 import type { Instrument, VoteDisplay } from '../types.ts';
 import { StoryVotes } from './StoryVotes.tsx';
 
@@ -80,9 +79,7 @@ export function StoryView({
   const excerpt = primary.excerpt;
   const Title = panel ? 'h2' : 'h1';
   const votes = (
-    <div className="desktop-only">
-      <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} shortcuts={shortcuts} />
-    </div>
+    <StoryVotes storyId={s.story_id} initial={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} shortcuts={shortcuts} />
   );
 
   return (
@@ -187,8 +184,6 @@ export function StoryView({
           </ol>
         </section>
       )}
-
-      <PhoneNote />
 
       {comments && <Comments storyId={s.story_id} initial={comments} me={me} />}
 

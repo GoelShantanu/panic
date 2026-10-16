@@ -6,7 +6,6 @@ import type { SessionInfo } from '../site/format.ts';
 import { Header } from '../site/Header.tsx';
 import type { Viewer } from '../site/Header.tsx';
 import { LiveProvider } from '../site/live.tsx';
-import { PhoneNotice } from '../site/Phone.tsx';
 import { ScrollReset } from '../site/ScrollReset.tsx';
 import { THEME_BOOT } from '../site/ThemeToggle.tsx';
 import { DENSITY_BOOT } from '../site/DensityToggle.tsx';
@@ -65,7 +64,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
             <main id="main" className="main">
               <ScrollReset />
-              <PhoneNotice />
               {children}
             </main>
             <footer className="footer">

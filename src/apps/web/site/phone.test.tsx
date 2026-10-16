@@ -13,20 +13,12 @@ function Keys({ onJ }: { onJ: () => void }) {
   return null;
 }
 
-describe('phone view (PRD-001 US-001.8)', () => {
-  it('the notice is dismissible and stays dismissed for the browser session', () => {
-    const { unmount } = render(<PhoneNotice />);
-    expect(screen.getByRole('status').textContent).toContain('Manage your watchlist and alerts here.');
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-    expect(screen.queryByRole('status')).toBeNull();
-    unmount();
-    render(<PhoneNotice />);
-    expect(screen.queryByRole('status')).toBeNull();
-  });
-
-  it('the take-part line is phone-only', () => {
-    const { container } = render(<PhoneNote />);
-    expect(container.querySelector('.phone-only')!.textContent).toBe('Open on desktop to take part.');
+describe('phone view (PRD-001 US-001.8, D-092)', () => {
+  it('phone notice and desktop notes render null (unrestricted mobile participation)', () => {
+    const { container: cNotice } = render(<PhoneNotice />);
+    expect(cNotice.firstChild).toBeNull();
+    const { container: cNote } = render(<PhoneNote />);
+    expect(cNote.firstChild).toBeNull();
   });
 
   it('keyboard shortcuts are off on the phone view and on at desktop width', () => {

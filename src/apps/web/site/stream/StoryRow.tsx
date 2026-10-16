@@ -5,7 +5,6 @@ import { age, istDateTime } from '../format.ts';
 import { Icon } from '../Icon.tsx';
 import type { StoryCard, VoteDisplay } from '../types.ts';
 import { CommunityOpinion, VoteControls } from '../votes/VoteControls.tsx';
-import { PhoneNote } from '../Phone.tsx';
 
 export interface RowProps {
   story: StoryCard;
@@ -96,9 +95,8 @@ export function StoryRow({ story: s, selected, labels, signedIn, message, onSele
           </div>
         )}
       </div>
-      {selected && <PhoneNote />}
       {selected && actions && (
-        <div className="row-actions desktop-only">
+        <div className="row-actions">
           <VoteControls storyId={s.story_id} votes={s.votes} instruments={s.instruments} signedIn={signedIn} onVotes={onVotes} />
           {signedIn && followed && onFollow && s.instruments.length > 0 && (
             <span className="row-follow" onClick={(e) => e.stopPropagation()}>

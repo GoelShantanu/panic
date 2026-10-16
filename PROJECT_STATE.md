@@ -1,5 +1,9 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Full mobile phone participation live — 2026-10-16 (D-092)
+
+[VERIFIED] On the owner's report of mobile issues where "Open on desktop to view/take part" was displayed for comments and articles, removed the historical desktop-only restrictions (D-013, D-016, D-067). Removed `.desktop-only` from comment composer and comment actions (reply, edit, delete, report) in `Comments.tsx`. Removed `.desktop-only` and `.panel-bar { display: none }` from `StoryView.tsx`, `StoryRow.tsx`, and `responsive.css` to enable full touch-friendly voting on mobile. Enabled `<FollowButton />` on company pages on mobile. Removed `<PhoneNote />` and global `<PhoneNotice />` warning banner across the application. Verified via `npm run typecheck` and automated Vitest suites (`phone.test.tsx`, `comments.test.tsx`, `panel.test.tsx`, `stream.test.tsx`, `a11y.test.tsx`) that all 43 tests pass.
+
 ## Tech stack masking and scraper defense live — 2026-10-16 (D-091)
 
 [VERIFIED] At the owner's direction to prevent scanners, clone bots, and AI models from profiling or cloning the application, deployed edge and application-level hardening. Stripped `Server` and `X-Powered-By` headers in Caddy and Next.js config. Configured edge interceptor in `/etc/caddy/Caddyfile` that returns immediate `403 Forbidden` to AI scrapers (GPTBot, ClaudeBot, Bytespider, CCBot, etc.). Updated `src/apps/web/app/robots.ts` with explicit AI bot disallow directives. Verified via live HTTP probing that responses from `https://bazaarnews.duckdns.org/` omit revealing headers, while AI user agents are immediately rejected with 403 Forbidden.

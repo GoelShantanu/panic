@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { age, istDateTime } from '../format.ts';
 import type { SessionInfo } from '../format.ts';
 import { Icon } from '../Icon.tsx';
-import type { PulseResponse, SectorItem } from '../../src/pulse.ts';
+import type { PulseResponse, SectorItem, PcrData } from '../../src/pulse.ts';
+import { CLIENT_DEFAULT_PCR, CLIENT_FALLBACK_PCR } from './pcrDefaults.ts';
 import type { StoryCard } from '../types.ts';
 import './pulse.css';
 
@@ -91,6 +92,8 @@ export function PulseScreen({
   trialUsed = false,
 }: PulseScreenProps) {
   const [pulse, setPulse] = useState<PulseResponse>(initialPulse);
+  const [pcrOverride, setPcrOverride] = useState<'live' | 'paused' | null>(null);
+  const [previewTierOverride, setPreviewTierOverride] = useState<'free' | 'paid' | null>(null);
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
   const [stories, setStories] = useState<StoryCard[]>(initialStories);
   const [isLoadingStories, setIsLoadingStories] = useState(false);
@@ -103,7 +106,7 @@ export function PulseScreen({
   const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
 
   // Upgrade modal state
-  const [upgradeModal, setUpgradeModal] = useState<{ feature: 'refresh' | 'sector'; sectorName?: string } | null>(null);
+  const [upgradeModal, setUpgradeModal] = useState<{ feature: 'refresh' | 'sector' | 'pcr'; sectorName?: string } | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isActivatingTrial, setIsActivatingTrial] = useState(false);
   const [trialError, setTrialError] = useState<string | null>(null);
@@ -284,6 +287,30 @@ export function PulseScreen({
   const { breadth, sectors } = pulse;
   const selectedSector = sectors.find((s) => s.id === selectedSectorId) ?? null;
 
+  const effectiveTier = previewTierOverride ?? userTier;
+  const isPro = effectiveTier === 'paid';
+
+  const rawPcr = pulse.pcr ?? CLIENT_DEFAULT_PCR;
+  const effectivePcr: PcrData =
+    pcrOverride === 'paused'
+      ? { ...CLIENT_FALLBACK_PCR, lastConfirmedAt: rawPcr.lastConfirmedAt ?? '14:30 IST' }
+      : pcrOverride === 'live'
+      ? { ...CLIENT_DEFAULT_PCR, updatedAt: new Date().toISOString() }
+      : rawPcr;
+  const isPcrLive = effectivePcr.status === 'live';
+
+  // Gauge range: 0.5 to 1.7 (spread of 1.2)
+  const gaugeMin = 0.5;
+  const gaugeMax = 1.7;
+  const needlePct = Math.max(3, Math.min(97, ((effectivePcr.nifty.pcr - gaugeMin) / (gaugeMax - gaugeMin)) * 100));
+
+  function handleTogglePcrStatus() {
+    setPcrOverride((prev) => {
+      const current = prev ?? effectivePcr.status;
+      return current === 'live' ? 'paused' : 'live';
+    });
+  }
+
   const advPct = breadth.total > 0 ? Number(((breadth.advances / breadth.total) * 100).toFixed(1)) : 50;
   const decPct = breadth.total > 0 ? Number(((breadth.declines / breadth.total) * 100).toFixed(1)) : 50;
   const unchPct = breadth.total > 0 ? Number(((breadth.unchanged / breadth.total) * 100).toFixed(1)) : 0;
@@ -317,12 +344,17 @@ export function PulseScreen({
               <b>Data as of:</b> {formatDataAsOf(pulse.updatedAt, isCashOpen)}
             </span>
             <span className="pulse-time-item">
-              <b>Refresh:</b> {userTier === 'paid' ? 'Every 60s' : 'Every 15 min.'}{' '}
+              <b>Refresh:</b>{' '}
+              {effectiveTier === 'paid' ? (
+                <>Every 1 min <span className="pulse-btn-pro-tag">PRO</span></>
+              ) : (
+                <>Every 15 min. <span className="pulse-pro-refresh-hint" title="Pro members get 1-minute live auto-refreshes">(1 min for Pro ⚡)</span></>
+              )}{' '}
               {isCashOpen ? '(Active)' : '(Paused while closed)'}
             </span>
 
             <div className="pulse-refresh-action-group">
-              {userTier === 'paid' ? (
+              {effectiveTier === 'paid' ? (
                 <button
                   type="button"
                   className="pulse-refresh-btn"
@@ -372,108 +404,324 @@ export function PulseScreen({
         </div>
       </header>
 
-      {/* Hero Breadth Command Card */}
-      <section className="pulse-breadth-card" aria-label="Market Breadth">
-        <div className="breadth-card-header">
-          <h2 className="breadth-card-title">NSE Market Breadth &amp; Participation</h2>
-          <span className="breadth-sentiment-pill" data-sentiment={breadth.sentiment}>
-            {breadth.sentiment === 'strong_bullish' || breadth.sentiment === 'bullish' ? '▲' : '▼'} {breadth.sentimentLabel} ({breadth.ratio} : 1)
-          </span>
-        </div>
+      {/* Dual Command Hero Grid: Cash Market Breadth & Derivatives Sentiment (PCR) */}
+      <div className="pulse-hero-grid">
+        {/* Left Hero: Cash Market Breadth Command Card */}
+        <section className="pulse-breadth-card" aria-label="Market Breadth">
+          <div className="breadth-card-header">
+            <h2 className="breadth-card-title">NSE Market Breadth &amp; Participation</h2>
+            <span className="breadth-sentiment-pill" data-sentiment={breadth.sentiment}>
+              {breadth.sentiment === 'strong_bullish' || breadth.sentiment === 'bullish' ? '▲' : '▼'} {breadth.sentimentLabel} ({breadth.ratio} : 1)
+            </span>
+          </div>
 
-        {/* Visual Multi-Segment Advance / Decline Bar */}
-        <div className="breadth-bar-container">
-          <div className="breadth-bar">
-            <div
-              className="breadth-segment breadth-segment-adv"
-              style={{ flex: `${advPct}` }}
-              title={`Advances: ${breadth.advances.toLocaleString('en-IN')} (${advPct}%)`}
-            >
-              {advPct > 8 ? `${advPct}%` : ''}
+          {/* Visual Multi-Segment Advance / Decline Bar */}
+          <div className="breadth-bar-container">
+            <div className="breadth-bar">
+              <div
+                className="breadth-segment breadth-segment-adv"
+                style={{ flex: `${advPct}` }}
+                title={`Advances: ${breadth.advances.toLocaleString('en-IN')} (${advPct}%)`}
+              >
+                {advPct > 8 ? `${advPct}%` : ''}
+              </div>
+              <div
+                className="breadth-segment breadth-segment-dec"
+                style={{ flex: `${decPct}` }}
+                title={`Declines: ${breadth.declines.toLocaleString('en-IN')} (${decPct}%)`}
+              >
+                {decPct > 8 ? `${decPct}%` : ''}
+              </div>
+              <div
+                className="breadth-segment breadth-segment-unch"
+                style={{ flex: `${unchPct}`, minWidth: '45px' }}
+                title={`Unchanged: ${breadth.unchanged.toLocaleString('en-IN')} (${unchPct}%)`}
+              >
+                {unchPct > 2 ? `${unchPct}%` : ''}
+              </div>
             </div>
-            <div
-              className="breadth-segment breadth-segment-dec"
-              style={{ flex: `${decPct}` }}
-              title={`Declines: ${breadth.declines.toLocaleString('en-IN')} (${decPct}%)`}
-            >
-              {decPct > 8 ? `${decPct}%` : ''}
+            <div className="breadth-bar-legend">
+              <span className="legend-item legend-adv">
+                <span className="legend-dot" aria-hidden="true" />
+                <span>Advances</span>
+                <span className="legend-count">({breadth.advances.toLocaleString('en-IN')})</span>
+              </span>
+              <span className="legend-item legend-dec">
+                <span className="legend-dot" aria-hidden="true" />
+                <span>Declines</span>
+                <span className="legend-count">({breadth.declines.toLocaleString('en-IN')})</span>
+              </span>
+              <span className="legend-item legend-unch">
+                <span className="legend-dot" aria-hidden="true" />
+                <span>Unchanged</span>
+                <span className="legend-count">({breadth.unchanged.toLocaleString('en-IN')})</span>
+              </span>
             </div>
+          </div>
+
+          {/* Breadth Numbers Grid */}
+          <div className="breadth-metrics-grid">
+            <div className="breadth-metric-box">
+              <span className="breadth-metric-label">Advances</span>
+              <span className="breadth-metric-val bull mono">
+                <span className="breadth-metric-sym">▲</span>
+                <span>{breadth.advances.toLocaleString('en-IN')}</span>
+              </span>
+            </div>
+
+            <div className="breadth-metric-box">
+              <span className="breadth-metric-label">Declines</span>
+              <span className="breadth-metric-val bear mono">
+                <span className="breadth-metric-sym">▼</span>
+                <span>{breadth.declines.toLocaleString('en-IN')}</span>
+              </span>
+            </div>
+
+            <div className="breadth-metric-box">
+              <span className="breadth-metric-label">Unchanged</span>
+              <span className="breadth-metric-val neu mono">
+                <span className="breadth-metric-sym">▬</span>
+                <span>{breadth.unchanged.toLocaleString('en-IN')}</span>
+              </span>
+            </div>
+
+            <div className="breadth-metric-box">
+              <span className="breadth-metric-label">A/D Ratio</span>
+              <span className="breadth-metric-val mono">
+                {breadth.ratio} : 1
+              </span>
+            </div>
+
             <div
-              className="breadth-segment breadth-segment-unch"
-              style={{ flex: `${unchPct}`, minWidth: '45px' }}
-              title={`Unchanged: ${breadth.unchanged.toLocaleString('en-IN')} (${unchPct}%)`}
+              className="breadth-metric-box"
+              title={`Nifty 50: ${breadth.nifty50.advances} Adv, ${breadth.nifty50.declines} Dec${breadth.nifty50.unchanged > 0 ? `, ${breadth.nifty50.unchanged} Unch` : ''} (50 stocks)`}
             >
-              {unchPct > 2 ? `${unchPct}%` : ''}
+              <span className="breadth-metric-label">Nifty 50 Breadth</span>
+              <span className="breadth-metric-val mono">
+                <span className="bull">{breadth.nifty50.advances}</span> / <span className="bear">{breadth.nifty50.declines}</span>
+                {breadth.nifty50.unchanged > 0 && (
+                  <span className="neu" style={{ fontSize: '13px', marginLeft: '3px' }}>
+                    / {breadth.nifty50.unchanged}
+                  </span>
+                )}
+              </span>
             </div>
           </div>
-          <div className="breadth-bar-legend">
-            <span className="legend-item legend-adv">
-              <span className="legend-dot" aria-hidden="true" />
-              <span>Advances</span>
-              <span className="legend-count">({breadth.advances.toLocaleString('en-IN')})</span>
-            </span>
-            <span className="legend-item legend-dec">
-              <span className="legend-dot" aria-hidden="true" />
-              <span>Declines</span>
-              <span className="legend-count">({breadth.declines.toLocaleString('en-IN')})</span>
-            </span>
-            <span className="legend-item legend-unch">
-              <span className="legend-dot" aria-hidden="true" />
-              <span>Unchanged</span>
-              <span className="legend-count">({breadth.unchanged.toLocaleString('en-IN')})</span>
-            </span>
-          </div>
-        </div>
+        </section>
 
-        {/* Breadth Numbers Grid */}
-        <div className="breadth-metrics-grid">
-          <div className="breadth-metric-box">
-            <span className="breadth-metric-label">Advances</span>
-            <span className="breadth-metric-val bull mono">
-              <span className="breadth-metric-sym">▲</span>
-              <span>{breadth.advances.toLocaleString('en-IN')}</span>
-            </span>
-          </div>
+        {/* Right Hero: F&O Derivatives Sentiment (PCR) Command Card */}
+        <section
+          className={`pulse-pcr-card ${!isPro ? 'pulse-pcr-locked' : ''}`}
+          aria-label="F&O Derivatives Sentiment"
+        >
+          {/* Pro Lock Overlay for Free / Non-Paid Users */}
+          {!isPro && (
+            <div className="pcr-pro-lock-overlay" role="region" aria-label="Pro Feature: Put/Call Ratio">
+              <div className="pcr-lock-card">
+                <div className="pcr-lock-badge-row">
+                  <span className="pcr-lock-pro-pill">🔒 PRO EXCLUSIVE</span>
+                  <span className="pcr-lock-sub-pill">1-MIN REFRESH</span>
+                </div>
+                <h3 className="pcr-lock-title">Put/Call Ratio (PCR) Sentiment</h3>
+                <p className="pcr-lock-desc">
+                  Institutional F&amp;O derivatives positioning, Put/Call writing open interest distribution &amp; visual sentiment range gauge.
+                </p>
+                <div className="pcr-lock-actions">
+                  <button
+                    type="button"
+                    className="pcr-lock-upgrade-btn"
+                    onClick={() => setUpgradeModal({ feature: 'pcr' })}
+                  >
+                    Upgrade to Pro (₹149/mo) →
+                  </button>
+                  {!trialUsed && (
+                    <Link
+                      href={signedIn ? '/settings' : '/sign-in?next=/settings'}
+                      className="pcr-lock-trial-btn"
+                    >
+                      Start 3-Day Free Trial
+                    </Link>
+                  )}
+                </div>
+                {process.env.NODE_ENV !== 'production' && (
+                  <button
+                    type="button"
+                    className="pcr-lock-dev-toggle"
+                    onClick={() => setPreviewTierOverride('paid')}
+                    title="Local development only: Toggle to preview Pro unlocked state"
+                  >
+                    👁️ Preview as Pro (Dev)
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
-          <div className="breadth-metric-box">
-            <span className="breadth-metric-label">Declines</span>
-            <span className="breadth-metric-val bear mono">
-              <span className="breadth-metric-sym">▼</span>
-              <span>{breadth.declines.toLocaleString('en-IN')}</span>
-            </span>
-          </div>
+          {/* Inner Content (dimmed / blurred when locked) */}
+          <div className={!isPro ? 'pcr-card-inner-locked' : 'pcr-card-inner'}>
+            <div className="pcr-card-header">
+              <div className="pcr-title-group">
+                <div className="pcr-title-with-tag">
+                  <h2 className="pcr-card-title">F&amp;O Derivatives Sentiment (PCR)</h2>
+                  <span className="pulse-btn-pro-tag">PRO</span>
+                </div>
+                <span className="pcr-subtitle">Smart-money hedging vs speculative positioning</span>
+              </div>
+              <div className="pcr-status-wrap">
+                {process.env.NODE_ENV !== 'production' && isPro && (
+                  <button
+                    type="button"
+                    className="pcr-dev-tier-toggle"
+                    onClick={() => setPreviewTierOverride('free')}
+                    title="Development only: Toggle to preview Free locked state"
+                  >
+                    Lock (Free)
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`pcr-status-pill pcr-status-${effectivePcr.status}`}
+                  onClick={handleTogglePcrStatus}
+                  title="Click to toggle between LIVE and PAUSED preview states"
+                  aria-label={`PCR status: ${isPcrLive ? 'Live' : 'Paused / Offline'}. Click to toggle preview.`}
+                >
+                  <span className={isPcrLive ? 'pcr-live-dot' : 'pcr-paused-dot'} />
+                  <span>{isPcrLive ? '● LIVE' : 'PAUSED / OFFLINE'}</span>
+                </button>
+              </div>
+            </div>
 
-          <div className="breadth-metric-box">
-            <span className="breadth-metric-label">Unchanged</span>
-            <span className="breadth-metric-val neu mono">
-              <span className="breadth-metric-sym">▬</span>
-              <span>{breadth.unchanged.toLocaleString('en-IN')}</span>
-            </span>
-          </div>
+            {/* Graceful Fallback Notice (When upstream is paused/offline) */}
+            {!isPcrLive && (
+              <div className="pcr-notice-banner" role="status">
+                <span className="pcr-notice-icon">⚡</span>
+                <span>{effectivePcr.notice || 'Exchange feed paused • Background retry in progress (No impact on cash breadth)'}</span>
+              </div>
+            )}
 
-          <div className="breadth-metric-box">
-            <span className="breadth-metric-label">A/D Ratio</span>
-            <span className="breadth-metric-val mono">
-              {breadth.ratio} : 1
-            </span>
-          </div>
+            {/* Dual Index PCR Hero Metrics (NIFTY 50 & BANK NIFTY) */}
+            <div className="pcr-metrics-row">
+              {/* Primary: NIFTY 50 PCR */}
+              <div className="pcr-primary-box">
+                <div className="pcr-metric-meta">
+                  <span className="pcr-metric-label">NIFTY 50 PCR</span>
+                  {!isPcrLive && effectivePcr.lastConfirmedAt && (
+                    <span className="pcr-timestamp-pill">LAST CONFIRMED ({effectivePcr.lastConfirmedAt})</span>
+                  )}
+                </div>
+                <div className="pcr-val-row">
+                  <span className={`pcr-hero-num ${!isPcrLive ? 'pcr-dimmed' : ''}`}>
+                    {effectivePcr.nifty.pcr.toFixed(2)}
+                  </span>
+                  <span
+                    className={`pcr-sentiment-pill ${!isPcrLive ? 'pcr-sentiment-pill-muted' : ''}`}
+                    data-sentiment={isPcrLive ? effectivePcr.nifty.sentiment : 'neutral'}
+                  >
+                    {isPcrLive && (effectivePcr.nifty.sentiment === 'bullish' || effectivePcr.nifty.sentiment === 'strong_bullish' ? '▲ ' : effectivePcr.nifty.sentiment === 'neutral' ? '▬ ' : '▼ ')}
+                    {effectivePcr.nifty.sentimentLabel}
+                  </span>
+                </div>
+              </div>
 
-          <div
-            className="breadth-metric-box"
-            title={`Nifty 50: ${breadth.nifty50.advances} Adv, ${breadth.nifty50.declines} Dec${breadth.nifty50.unchanged > 0 ? `, ${breadth.nifty50.unchanged} Unch` : ''} (50 stocks)`}
-          >
-            <span className="breadth-metric-label">Nifty 50 Breadth</span>
-            <span className="breadth-metric-val mono">
-              <span className="bull">{breadth.nifty50.advances}</span> / <span className="bear">{breadth.nifty50.declines}</span>
-              {breadth.nifty50.unchanged > 0 && (
-                <span className="neu" style={{ fontSize: '13px', marginLeft: '3px' }}>
-                  / {breadth.nifty50.unchanged}
+              {/* Secondary: BANK NIFTY PCR */}
+              <div className="pcr-secondary-box">
+                <div className="pcr-metric-meta">
+                  <span className="pcr-metric-label">BANK NIFTY PCR</span>
+                </div>
+                <div className="pcr-val-row">
+                  <span className={`pcr-secondary-num ${!isPcrLive ? 'pcr-dimmed' : ''}`}>
+                    {effectivePcr.bankNifty.pcr.toFixed(2)}
+                  </span>
+                  <span
+                    className={`pcr-sentiment-pill pcr-sentiment-pill-sm ${!isPcrLive ? 'pcr-sentiment-pill-muted' : ''}`}
+                    data-sentiment={isPcrLive ? effectivePcr.bankNifty.sentiment : 'neutral'}
+                  >
+                    {effectivePcr.bankNifty.sentimentLabel}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Horizontal Sentiment Range Gauge */}
+            <div className="pcr-gauge-container">
+              <div className="pcr-gauge-title-row">
+                <span className="pcr-gauge-title">Sentiment Range Gauge</span>
+                <span
+                  className="pcr-gauge-current-val"
+                  data-sentiment={isPcrLive ? effectivePcr.nifty.sentiment : 'neutral'}
+                >
+                  Current: <b>{effectivePcr.nifty.pcr.toFixed(2)}</b>{' '}
+                  <span className="pcr-gauge-current-zone">
+                    ({isPcrLive ? effectivePcr.nifty.sentimentLabel.split(' ')[0] : 'PAUSED'})
+                  </span>
                 </span>
-              )}
-            </span>
+              </div>
+
+              <div className="pcr-gauge-wrapper">
+                {/* Dynamic Needle Pin placed ABOVE the bar - ZERO text overlap */}
+                <div
+                  className={`pcr-gauge-pointer ${!isPcrLive ? 'pcr-pointer-paused' : ''}`}
+                  data-sentiment={isPcrLive ? effectivePcr.nifty.sentiment : 'neutral'}
+                  style={{ left: `${needlePct}%` }}
+                >
+                  <span className="pcr-pointer-badge">{effectivePcr.nifty.pcr.toFixed(2)}</span>
+                  <span className="pcr-pointer-arrow">▼</span>
+                </div>
+
+                {/* The 5-zone Track */}
+                <div className={`pcr-gauge-track ${!isPcrLive ? 'pcr-gauge-dimmed' : ''}`}>
+                  <div className="pcr-gauge-zone pcr-zone-oversold" title="Oversold (< 0.70)" />
+                  <div className="pcr-gauge-zone pcr-zone-bearish" title="Bearish Resistance (0.70 - 0.90)" />
+                  <div className="pcr-gauge-zone pcr-zone-neutral" title="Neutral / Balanced (0.90 - 1.10)" />
+                  <div className="pcr-gauge-zone pcr-zone-bullish" title="Bullish Support (1.10 - 1.40)" />
+                  <div className="pcr-gauge-zone pcr-zone-overbought" title="Overbought (> 1.40)" />
+                  {/* Subtle vertical indicator needle mark inside track */}
+                  <div className="pcr-gauge-mark-line" style={{ left: `${needlePct}%` }} />
+                </div>
+              </div>
+
+              {/* Labels below the track with generous margin - clean, separated, no overlap */}
+              <div className="pcr-gauge-labels">
+                <span>&lt;0.70 <span className="pcr-zone-word">Oversold</span></span>
+                <span>0.70–0.90 <span className="pcr-zone-word">Bear</span></span>
+                <span>0.90–1.10 <span className="pcr-zone-word">Neutral</span></span>
+                <span>1.10–1.40 <span className="pcr-zone-word">Bull</span></span>
+                <span>&gt;1.40 <span className="pcr-zone-word">Overbought</span></span>
+              </div>
+            </div>
+
+            {/* Open Interest Breakdown */}
+            <div className="pcr-oi-grid">
+              <div className="pcr-oi-box">
+                <span className="pcr-oi-label">Put OI (Contracts)</span>
+                <span className={`pcr-oi-val ${isPcrLive ? 'bull' : 'neu'}`}>
+                  {isPcrLive && effectivePcr.nifty.putOi > 0
+                    ? `${(effectivePcr.nifty.putOi / 1_000_000).toFixed(1)}M`
+                    : '--'}
+                </span>
+              </div>
+              <div className="pcr-oi-box">
+                <span className="pcr-oi-label">Call OI (Contracts)</span>
+                <span className={`pcr-oi-val ${isPcrLive ? 'bear' : 'neu'}`}>
+                  {isPcrLive && effectivePcr.nifty.callOi > 0
+                    ? `${(effectivePcr.nifty.callOi / 1_000_000).toFixed(1)}M`
+                    : '--'}
+                </span>
+              </div>
+              <div className="pcr-oi-box">
+                <span className="pcr-oi-label">OI Net Bias</span>
+                <span className="pcr-oi-val neu">
+                  {isPcrLive && effectivePcr.nifty.putOi > 0 && effectivePcr.nifty.callOi > 0
+                    ? effectivePcr.nifty.putOi >= effectivePcr.nifty.callOi
+                      ? `+${((effectivePcr.nifty.putOi - effectivePcr.nifty.callOi) / 1_000_000).toFixed(1)}M Puts`
+                      : `+${((effectivePcr.nifty.callOi - effectivePcr.nifty.putOi) / 1_000_000).toFixed(1)}M Calls`
+                    : '--'}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* Sector Rotation Heatmap - Whole Tile Colored */}
       <section className="pulse-heatmap-section" aria-label="Sector Heatmap">
@@ -670,12 +918,16 @@ export function PulseScreen({
                 <span className="pulse-modal-pro-pill">PRO MEMBER FEATURE</span>
               </div>
               <h2 className="pulse-modal-title">
-                {upgradeModal.feature === 'refresh'
+                {upgradeModal.feature === 'pcr'
+                  ? 'Unlock Put/Call Ratio (PCR) with Pro'
+                  : upgradeModal.feature === 'refresh'
                   ? 'Unlock Manual Refresh with Pro'
                   : 'Unlock Sector & Index Intelligence with Pro'}
               </h2>
               <p className="pulse-modal-desc">
-                {upgradeModal.feature === 'refresh'
+                {upgradeModal.feature === 'pcr'
+                  ? 'Access live institutional derivatives sentiment, smart-money Put/Call writing open interest & 1-minute auto-refreshes.'
+                  : upgradeModal.feature === 'refresh'
                   ? 'Get instant on-demand market breadth, index tracking, and sector rotation updates.'
                   : 'Filter live corporate announcements, BSE/NSE filings, and expert commentary across all 12 sectors & benchmark indices.'}
               </p>
@@ -685,7 +937,13 @@ export function PulseScreen({
               <div className="pulse-modal-feature-item">
                 <span className="pulse-modal-check">✓</span>
                 <div>
-                  <b>Manual Refresh:</b> 4 refreshes per minute &amp; up to 100 refresh hits/day.
+                  <b>Live Put/Call Ratio (PCR):</b> Real-time F&amp;O derivatives sentiment, smart-money Put/Call writing bias &amp; 5-zone range gauge.
+                </div>
+              </div>
+              <div className="pulse-modal-feature-item">
+                <span className="pulse-modal-check">✓</span>
+                <div>
+                  <b>1-Minute Live Refresh:</b> Breadth &amp; F&amp;O refresh every 1 min (vs 15 min on Free) + up to 100 on-demand refreshes/day.
                 </div>
               </div>
               <div className="pulse-modal-feature-item">

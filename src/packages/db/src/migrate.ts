@@ -4,7 +4,13 @@ import { fileURLToPath } from 'node:url';
 import type pg from 'pg';
 
 // Single source of truth for migrations is docs/database/migrations (REPOSITORY_STRUCTURE §2).
-export const MIGRATIONS_DIR = fileURLToPath(new URL('../../../../docs/database/migrations/', import.meta.url));
+export const MIGRATIONS_DIR = (() => {
+  try {
+    return fileURLToPath(new URL('../../../../docs/database/migrations/', import.meta.url));
+  } catch {
+    return path.resolve(process.cwd(), 'docs/database/migrations');
+  }
+})();
 
 const MIGRATION_FILE = /^(\d{4}_[a-z0-9_]+)\.sql$/;
 const ADVISORY_LOCK_KEY = 730_120_261;

@@ -13,9 +13,11 @@ declare global {
 // PRD-007 §2.1, as shown to people (C-007.2: depth and convenience only, nothing about any company).
 const ROWS: [string, string, string][] = [
   ['Live stream, story and company pages', 'Included', 'Included'],
+  ['Market Breadth intelligence', 'Every 15 min (overview)', 'Every 1 min live refresh + instant manual refresh'],
+  ['Put/Call Ratio (PCR) sentiment', '—', 'Live Nifty & Bank Nifty PCR, smart-money writing bias & range gauge'],
+  ['Sector & Index intelligence', 'Overview only', 'Deep filtering across all 12 sectors & benchmark indices'],
   ['Watchlist size', '20 companies', '200 companies'],
   ['Individual alerts per day', 'Up to 3', 'Up to 25'],
-  ['Market Pulse intelligence', 'Market breadth overview', 'Manual refresh & sector news filtering'],
   ['Daily digest', 'Included', 'Included'],
   ['Stream and company history', 'Last 3 days', 'Last 30 days'],
   ['Event-type filter', 'One type at a time', 'Combine several'],

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { api } from '../../site/api.ts';
 import { PulseScreen } from '../../site/pulse/PulseScreen.tsx';
 import type { PulseResponse } from '../../src/pulse.ts';
+import { CLIENT_DEFAULT_PCR } from '../../site/pulse/pcrDefaults.ts';
 import type { StoryCard } from '../../site/types.ts';
 import type { SessionInfo } from '../../site/format.ts';
 
@@ -22,6 +23,7 @@ const FALLBACK_PULSE: PulseResponse = {
     nifty50: { advances: 27, declines: 23, unchanged: 0 },
     updatedAt: new Date().toISOString(),
   },
+  pcr: CLIENT_DEFAULT_PCR,
   sectors: [
     { id: 'nifty50', name: 'NIFTY 50', symbol: 'NSE:NIFTY', price: 23146.15, change: 148.8, percent: 0.65, sentiment: 'bull', status: 'bullish', topConstituents: ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK'] },
     { id: 'smallcap', name: 'NIFTY SMALLCAP', symbol: 'NSE:CNXSMALLCAP', price: 19129.8, change: -1.9, percent: -0.01, sentiment: 'bear', status: 'neutral', topConstituents: ['SUZLON', 'EXIDEIND', 'CDSL', 'ANGELONE', 'RADICO'] },

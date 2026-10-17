@@ -453,7 +453,9 @@ export async function route(
   if (path === 'market/ticker') return ok(await fetchMarketTicker());
   if (path === 'market/pulse') {
     const isPro = Boolean(user && (viewer.tier === 'paid' || viewer.historyAccess === 'trial' || viewer.historyAccess === 'paid'));
-    const pulse = await fetchMarketPulse(false, isPro);
+    const pcrParam = url.searchParams.get('pcrState');
+    const pcrState = pcrParam === 'live' || pcrParam === 'paused' ? pcrParam : undefined;
+    const pulse = await fetchMarketPulse(false, isPro, pcrState);
     const usage = isPro ? await checkPulseRefreshUsage(db, user!.id, now) : null;
     return ok({
       ...pulse,

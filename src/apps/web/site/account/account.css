@@ -91,6 +91,25 @@
 .plans-table th, .plans-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: left; }
 .plans-table thead th { color: var(--muted); font-weight: 600; }
 .plans-table tbody th { font-weight: 400; color: var(--muted); }
+@media (max-width: 640px) {
+  .plans-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: var(--text-sm);
+  }
+  .plans-table th, .plans-table td {
+    padding: 7px 8px;
+    font-size: var(--text-xs);
+  }
+  .plans-table thead th,
+  .plans-table tbody th {
+    min-width: 130px;
+  }
+  .plans-table td {
+    min-width: 95px;
+  }
+}
 .plan-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px; }
 .plan-card { padding: 16px; }
 .plan-card h2 { margin: 0 0 4px; font-size: var(--text-lg); }

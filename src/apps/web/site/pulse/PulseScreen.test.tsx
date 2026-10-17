@@ -188,8 +188,9 @@ describe('PulseScreen component', () => {
     expect(screen.getByText(/Unlock Sector & Index Intelligence with Pro/i)).toBeTruthy();
     expect(screen.getByRole('link', { name: /^Upgrade to Pro$/i })).toBeTruthy();
 
-    // Verify updated copy
-    expect(screen.getByText(/4 refreshes per minute & up to 100 refresh hits\/day\./i)).toBeTruthy();
+    // Verify updated copy and all features present
+    expect(screen.getByText(/Live Put\/Call Ratio \(PCR\):/i)).toBeTruthy();
+    expect(screen.getByText(/1-Minute Live Refresh:/i)).toBeTruthy();
     expect(screen.queryByText(/\(up to 100 hits\/day\)\./i)).toBeNull();
 
     // Verify 3-day free trial card and banner
@@ -275,4 +276,155 @@ describe('PulseScreen component', () => {
 
     expect(screen.getByText(/Only 8 hits left for the day/i)).toBeTruthy();
   });
+
+  it('renders PCR Pro lock overlay and 1-min Pro hint for free users', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        userTier="free"
+        session={{ state: 'open', exchange_date: '2026-10-19', next_transition_at: '2026-10-19T10:00:00Z' }}
+      />
+    );
+
+    // Refresh interval mentions 1 min for Pro
+    expect(screen.getByText(/(1 min for Pro ⚡)/i)).toBeTruthy();
+
+    // Lock overlay is present on PCR card
+    expect(screen.getByText(/PRO EXCLUSIVE/i)).toBeTruthy();
+    expect(screen.getByText(/Put\/Call Ratio \(PCR\) Sentiment/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Upgrade to Pro \(₹149\/mo\) →/i })).toBeTruthy();
+    expect(screen.getAllByText(/Start 3-Day Free Trial/i).length).toBeGreaterThan(0);
+  });
+
+  it('clicking upgrade on PCR lock overlay opens upgrade modal with PCR feature details', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        userTier="free"
+      />
+    );
+
+    const upgradeBtn = screen.getByRole('button', { name: /Upgrade to Pro \(₹149\/mo\) →/i });
+    fireEvent.click(upgradeBtn);
+
+    // Modal appears with PCR specific headline and feature bullet
+    expect(screen.getByText('Unlock Put/Call Ratio (PCR) with Pro')).toBeTruthy();
+    expect(screen.getByText(/Access live institutional derivatives sentiment/i)).toBeTruthy();
+    expect(screen.getByText(/Live Put\/Call Ratio \(PCR\):/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /^Upgrade to Pro$/i })).toBeTruthy();
+  });
+
+  it('renders F&O Derivatives Sentiment (PCR) card in LIVE state for paid users', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        userTier="paid"
+        session={{ state: 'open', exchange_date: '2026-10-19', next_transition_at: '2026-10-19T10:00:00Z' }}
+      />
+    );
+
+    // Header displays 1 min refresh for PRO
+    expect(screen.getByText(/Every 1 min/i)).toBeTruthy();
+    expect(screen.getAllByText('PRO').length).toBeGreaterThan(0);
+
+    // Lock overlay should NOT be present
+    expect(screen.queryByText(/PRO EXCLUSIVE/i)).toBeNull();
+
+    // PCR card title & live badge
+    expect(screen.getByText('F&O Derivatives Sentiment (PCR)')).toBeTruthy();
+    expect(screen.getByText(/● LIVE/)).toBeTruthy();
+
+    // Nifty & Bank Nifty PCR values and sentiment
+    expect(screen.getByText('NIFTY 50 PCR')).toBeTruthy();
+    expect(screen.getByText('BANK NIFTY PCR')).toBeTruthy();
+    expect(screen.getAllByText('1.18').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('0.84').length).toBeGreaterThan(0);
+    expect(screen.getByText(/BULLISH SUPPORT \(PUT WRITING\)/)).toBeTruthy();
+    expect(screen.getByText(/NEUTRAL \/ RESISTANCE/)).toBeTruthy();
+
+    // Open Interest stats
+    expect(screen.getByText('14.3M')).toBeTruthy();
+    expect(screen.getByText('12.1M')).toBeTruthy();
+    expect(screen.getByText('+2.2M Puts')).toBeTruthy();
+  });
+
+  it('renders PCR card in graceful FALLBACK (PAUSED) state for paid users', () => {
+    const pausedPulse: PulseResponse = {
+      ...mockPulse,
+      pcr: {
+        status: 'paused',
+        nifty: {
+          symbol: 'NIFTY',
+          name: 'NIFTY 50',
+          pcr: 1.18,
+          sentiment: 'bullish',
+          sentimentLabel: 'BULLISH SUPPORT (PUT WRITING)',
+          putOi: 14_250_000,
+          callOi: 12_080_000,
+        },
+        bankNifty: {
+          symbol: 'BANKNIFTY',
+          name: 'BANK NIFTY',
+          pcr: 0.84,
+          sentiment: 'neutral',
+          sentimentLabel: 'NEUTRAL / RESISTANCE',
+          putOi: 8_120_000,
+          callOi: 9_640_000,
+        },
+        lastConfirmedAt: '14:30 IST',
+        notice: 'Exchange feed paused • Background retry in progress (No impact on cash breadth)',
+        updatedAt: '2026-10-17T12:00:00.000Z',
+      },
+    };
+
+    render(
+      <PulseScreen
+        initialPulse={pausedPulse}
+        initialStories={mockStories}
+        userTier="paid"
+      />
+    );
+
+    // Paused badge & retry notice banner
+    expect(screen.getByText('PAUSED / OFFLINE')).toBeTruthy();
+    expect(screen.getByText(/Exchange feed paused • Background retry in progress/)).toBeTruthy();
+
+    // Last confirmed timestamp
+    expect(screen.getAllByText(/LAST CONFIRMED \(14:30 IST\)/).length).toBeGreaterThan(0);
+
+    // Cash breadth remains 100% operational alongside fallback PCR
+    expect(screen.getByText('NSE Market Breadth & Participation')).toBeTruthy();
+    expect(screen.getAllByText(/1,684/).length).toBeGreaterThan(0);
+
+    // OI figures show graceful placeholders (--)
+    expect(screen.getAllByText('--').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('allows clicking the status pill to toggle preview between Live and Paused states', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        userTier="paid"
+      />
+    );
+
+    // Starts in Live
+    const statusBtn = screen.getByRole('button', { name: /PCR status:/i });
+    expect(screen.getByText(/● LIVE/)).toBeTruthy();
+
+    // Click to toggle to Paused
+    fireEvent.click(statusBtn);
+    expect(screen.getByText('PAUSED / OFFLINE')).toBeTruthy();
+    expect(screen.getByText(/Exchange feed paused • Background retry in progress/)).toBeTruthy();
+
+    // Click again to toggle back to Live
+    fireEvent.click(statusBtn);
+    expect(screen.getByText(/● LIVE/)).toBeTruthy();
+    expect(screen.queryByText(/Exchange feed paused • Background retry in progress/)).toBeNull();
+  });
 });
+

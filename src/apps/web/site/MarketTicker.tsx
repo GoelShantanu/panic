@@ -173,44 +173,57 @@ export function MarketTicker({ initial, session: initialSession }: MarketTickerP
     statusTooltip = 'Markets are currently closed';
   }
 
+  const sequenceItems = data.indices.length < 12
+    ? [...data.indices, ...data.indices]
+    : data.indices;
+
+  const renderSequence = (items: TickerItem[], keyPrefix: string, isAriaHidden = false) => (
+    <div className="ticker-sequence" aria-hidden={isAriaHidden || undefined}>
+      {items.map((idx: TickerItem, i: number) => {
+        const isBull = idx.change > 0;
+        const isBear = idx.change < 0;
+        const changeSign = isBull ? '+' : '';
+        const arrow = isBull ? '▲' : isBear ? '▼' : '';
+        const sentimentClass = isBull ? 'bull' : isBear ? 'bear' : 'neu';
+
+        return (
+          <div
+            key={`${keyPrefix}-${idx.symbol}-${i}`}
+            className="ticker-item"
+            data-futures={idx.isFutures || undefined}
+            data-tag={idx.tag || undefined}
+          >
+            <div className="ticker-label-group">
+              {idx.tag && (
+                <span className={`ticker-tag ticker-tag-${idx.tag.toLowerCase()}`}>
+                  {idx.tag}
+                </span>
+              )}
+              <span className="ticker-name">{idx.name}</span>
+            </div>
+            <span className="ticker-price mono">
+              {idx.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            <span className={`ticker-change mono ${sentimentClass}`}>
+              {arrow} {changeSign}{idx.change.toFixed(2)} ({changeSign}{idx.percent.toFixed(2)}%)
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="market-ticker" aria-label="Live Market Indices & Futures">
       <div className="ticker-header" data-status={statusKind} title={statusTooltip}>
         <span className="ticker-dot" aria-hidden="true" />
         <span className="ticker-header-title">{statusLabel}</span>
       </div>
-      <div className="ticker-track">
-        {data.indices.map((idx: TickerItem) => {
-          const isBull = idx.change > 0;
-          const isBear = idx.change < 0;
-          const changeSign = isBull ? '+' : '';
-          const arrow = isBull ? '▲' : isBear ? '▼' : '';
-          const sentimentClass = isBull ? 'bull' : isBear ? 'bear' : 'neu';
-
-          return (
-            <div
-              key={idx.symbol}
-              className="ticker-item"
-              data-futures={idx.isFutures || undefined}
-              data-tag={idx.tag || undefined}
-            >
-              <div className="ticker-label-group">
-                {idx.tag && (
-                  <span className={`ticker-tag ticker-tag-${idx.tag.toLowerCase()}`}>
-                    {idx.tag}
-                  </span>
-                )}
-                <span className="ticker-name">{idx.name}</span>
-              </div>
-              <span className="ticker-price mono">
-                {idx.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className={`ticker-change mono ${sentimentClass}`}>
-                {arrow} {changeSign}{idx.change.toFixed(2)} ({changeSign}{idx.percent.toFixed(2)}%)
-              </span>
-            </div>
-          );
-        })}
+      <div className="ticker-viewport">
+        <div className="ticker-track">
+          {renderSequence(sequenceItems, 'seq1')}
+          {renderSequence(sequenceItems, 'seq2', true)}
+        </div>
       </div>
     </div>
   );

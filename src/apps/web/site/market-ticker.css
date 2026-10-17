@@ -65,20 +65,48 @@
   color: var(--muted);
 }
 
+/* Marquee Viewport with Edge Fade Mask */
+.ticker-viewport {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  mask-image: linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+}
+
+/* Continuously Moving Ticker Track */
 .ticker-track {
   display: flex;
   align-items: center;
-  gap: 18px;
-  overflow-x: auto;
-  overflow-y: hidden;
+  width: max-content;
   white-space: nowrap;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  flex: 1;
+  will-change: transform;
+  animation: ticker-marquee 38s linear infinite;
 }
 
-.ticker-track::-webkit-scrollbar {
-  display: none;
+.ticker-viewport:hover .ticker-track,
+.ticker-viewport:active .ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.ticker-sequence {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-right: 20px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .ticker-item {
@@ -155,6 +183,15 @@
   color: var(--neutral);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+  .ticker-viewport {
+    overflow-x: auto;
+  }
+}
+
 @media (max-width: 767px) {
   .market-ticker {
     padding: 0 8px;
@@ -165,6 +202,10 @@
   .ticker-header {
     padding-right: 8px;
     margin-right: 6px;
+  }
+  .ticker-sequence {
+    gap: 15px;
+    padding-right: 15px;
   }
   .ticker-item {
     font-size: 11px;

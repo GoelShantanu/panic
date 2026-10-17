@@ -61,7 +61,7 @@ describe('isMcxActive schedule helper', () => {
 });
 
 describe('MarketTicker component', () => {
-  it('renders OFFLINE when session is closed on weekends', () => {
+  it('renders moving infinite marquee with OFFLINE badge on weekends', () => {
     render(
       <MarketTicker
         initial={mockTicker}
@@ -74,17 +74,23 @@ describe('MarketTicker component', () => {
     expect(header?.getAttribute('data-status')).toBe('offline');
     expect(screen.getByText('OFFLINE')).toBeTruthy();
 
-    // Verify index names
-    expect(screen.getByText('GIFT NIFTY')).toBeTruthy();
-    expect(screen.getByText('NIFTY 50')).toBeTruthy();
-    expect(screen.getByText('SENSEX')).toBeTruthy();
-    expect(screen.getByText('GIFT')).toBeTruthy();
+    // Verify viewport and sequences for marquee animation
+    const viewport = document.querySelector('.ticker-viewport');
+    expect(viewport).toBeTruthy();
+    const sequences = document.querySelectorAll('.ticker-sequence');
+    expect(sequences.length).toBe(2);
+
+    // Verify index names & tags across sequences
+    expect(screen.getAllByText('GIFT NIFTY').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY 50').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SENSEX').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('GIFT').length).toBeGreaterThan(0);
 
     // Verify MCX commodities
-    expect(screen.getByText('CRUDE OIL')).toBeTruthy();
-    expect(screen.getByText('GOLD')).toBeTruthy();
-    expect(screen.getByText('SILVER')).toBeTruthy();
-    expect(screen.getAllByText('MCX')).toHaveLength(3);
+    expect(screen.getAllByText('CRUDE OIL').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('GOLD').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SILVER').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('MCX').length).toBeGreaterThan(0);
 
     // Verify USD/INR is NOT rendered
     expect(screen.queryByText('USD/INR')).toBeNull();

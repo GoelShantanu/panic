@@ -1,9 +1,24 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PulseScreen } from './PulseScreen.tsx';
 import type { PulseResponse } from '../../src/pulse.ts';
 import type { StoryCard } from '../types.ts';
+
+beforeEach(() => {
+  global.fetch = vi.fn().mockImplementation(async (url: string) => {
+    if (url.includes('sector=it')) {
+      return {
+        ok: true,
+        json: async () => ({ stories: [mockStories[0]] }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({ stories: mockStories }),
+    };
+  });
+});
 
 afterEach(() => {
   cleanup();
@@ -111,20 +126,43 @@ const mockStories: StoryCard[] = [
 ];
 
 describe('PulseScreen component', () => {
-  it('renders market breadth metrics and ratio', () => {
-    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} />);
+  it('renders market breadth metrics, ratio and OFFLINE badge when market is closed', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        session={{ state: 'closed', exchange_date: '2026-10-17', next_transition_at: '2026-10-19T03:30:00Z' }}
+      />
+    );
 
     expect(screen.getByText('Market Pulse')).toBeTruthy();
     expect(screen.getByText('NSE Market Breadth & Participation')).toBeTruthy();
+    expect(screen.getByText('OFFLINE (MARKET CLOSED)')).toBeTruthy();
 
     // Verify breadth metrics
     expect(screen.getAllByText(/1,684/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/1,427/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/84/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/1\.18\s*:\s*1/).length).toBeGreaterThan(0);
+
+    // Verify refresh text
+    expect(screen.getByText(/Data as of:/)).toBeTruthy();
+    expect(screen.getByText(/Refresh:/)).toBeTruthy();
   });
 
-  it('renders sector heatmap cards and filters stories on click', () => {
+  it('renders LIVE TELEMETRY when session is open', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        session={{ state: 'open', exchange_date: '2026-10-19', next_transition_at: '2026-10-19T10:00:00Z' }}
+      />
+    );
+
+    expect(screen.getByText('LIVE TELEMETRY')).toBeTruthy();
+  });
+
+  it('renders sector heatmap cards and filters stories on click', async () => {
     render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} />);
 
     // Both stories initially shown
@@ -135,16 +173,20 @@ describe('PulseScreen component', () => {
     const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
     fireEvent.click(itCard);
 
-    // Only TCS story should now be visible
-    expect(screen.getByText('TCS signs major enterprise deal')).toBeTruthy();
-    expect(screen.queryByText('Tata Motors expands EV production capacity')).toBeNull();
+    // Wait for fetch to update stories: only TCS story visible
+    await waitFor(() => {
+      expect(screen.getByText('TCS signs major enterprise deal')).toBeTruthy();
+      expect(screen.queryByText('Tata Motors expands EV production capacity')).toBeNull();
+    });
 
     // Clear filter
     const clearBtn = screen.getByRole('button', { name: /Show All News/i });
     fireEvent.click(clearBtn);
 
     // Both stories visible again
-    expect(screen.getByText('TCS signs major enterprise deal')).toBeTruthy();
-    expect(screen.getByText('Tata Motors expands EV production capacity')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('TCS signs major enterprise deal')).toBeTruthy();
+      expect(screen.getByText('Tata Motors expands EV production capacity')).toBeTruthy();
+    });
   });
 });

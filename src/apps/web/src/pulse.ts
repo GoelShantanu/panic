@@ -2,6 +2,9 @@
 // Aggregates real-time NSE market-wide Advances/Declines, Nifty 50 breadth,
 // and sector heatmap performance rankings with 60s in-memory caching (100% free data).
 
+import type pg from 'pg';
+import { loadStoryCards, streamPage } from '@stockpanic/db';
+import type { StoryCard } from '@stockpanic/db';
 import { fetchMarketTicker } from './market.ts';
 
 export interface MarketBreadth {
@@ -43,49 +46,77 @@ export const SECTOR_DEFINITIONS: Record<string, { id: string; name: string; symb
     id: 'it',
     name: 'NIFTY IT',
     symbol: 'NSE:CNXIT',
-    constituents: ['TCS', 'INFY', 'WIPRO', 'HCLTECH', 'LTIM', 'TECHM', 'COFORGE', 'PERSISTENT', 'MPHASIS'],
+    constituents: [
+      'TCS', 'INFY', 'WIPRO', 'HCLTECH', 'LTIM', 'LTM', 'TECHM', 'COFORGE', 'PERSISTENT',
+      'MPHASIS', 'OFSS', 'KPITTECH', 'TATAELXSI', 'LTTS', 'CYIENT', 'SONACOMS', 'ZENSARTECH', 'BSOFT', 'HEXAWARE', 'MASTEK'
+    ],
   },
   'NSE:BANKNIFTY': {
     id: 'bank',
     name: 'BANK NIFTY',
     symbol: 'NSE:BANKNIFTY',
-    constituents: ['HDFCBANK', 'ICICIBANK', 'SBIN', 'KOTAKBANK', 'AXISBANK', 'INDUSINDBK', 'PNB', 'BANKBARODA', 'AUBANK', 'FEDERALBNK'],
+    constituents: [
+      'HDFCBANK', 'ICICIBANK', 'SBIN', 'KOTAKBANK', 'AXISBANK', 'INDUSINDBK', 'PNB',
+      'BANKBARODA', 'AUBANK', 'FEDERALBNK', 'IDFCFIRSTB', 'BANDHANBNK', 'CANBK', 'YESBANK',
+      'IDBI', 'INDIANB', 'BANKINDIA', 'UNIONBANK', 'BAJFINANCE', 'BAJAJFINSV', 'POONAWALLA', 'HDFCLIFE', 'SBILIFE'
+    ],
   },
   'NSE:CNXAUTO': {
     id: 'auto',
     name: 'NIFTY AUTO',
     symbol: 'NSE:CNXAUTO',
-    constituents: ['TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'EICHERMOT', 'HEROMOTOCO', 'TVSMOTOR', 'BHARATFORG', 'BOSCHLTD', 'MRF'],
+    constituents: [
+      'TATAMOTORS', 'M&M', 'MARUTI', 'BAJAJ-AUTO', 'EICHERMOT', 'HEROMOTOCO', 'TVSMOTOR',
+      'BHARATFORG', 'BOSCHLTD', 'MRF', 'BALKRISIND', 'ASHOKLEY', 'APOLLOTYRE', 'OLAELEC',
+      'EXIDEIND', 'AMARAJABAT', 'SAMVARDHANA'
+    ],
   },
   'NSE:CNXPHARMA': {
     id: 'pharma',
     name: 'NIFTY PHARMA',
     symbol: 'NSE:CNXPHARMA',
-    constituents: ['SUNPHARMA', 'CIPLA', 'DRREDDY', 'DIVISLAB', 'LUPIN', 'TORNTPHARM', 'MANKIND', 'ZYDUSLIFE', 'AUROPHARMA', 'BIOCON'],
+    constituents: [
+      'SUNPHARMA', 'CIPLA', 'DRREDDY', 'DIVISLAB', 'LUPIN', 'TORNTPHARM', 'MANKIND',
+      'ZYDUSLIFE', 'AUROPHARMA', 'BIOCON', 'ALKEM', 'ABBOTINDIA', 'GLENMARK', 'APOLLOHOSP',
+      'IPCALAB', 'LAURUSLABS', 'GRANULES', 'NATCOPHARM', 'FORTIS', 'MAXHEALTH'
+    ],
   },
   'NSE:CNXFMCG': {
     id: 'fmcg',
     name: 'NIFTY FMCG',
     symbol: 'NSE:CNXFMCG',
-    constituents: ['ITC', 'HINDUNILVR', 'NESTLEIND', 'BRITANNIA', 'TATACONSUM', 'DABUR', 'MARICO', 'COLPAL', 'GODREJCP', 'VBL'],
+    constituents: [
+      'ITC', 'HINDUNILVR', 'NESTLEIND', 'BRITANNIA', 'TATACONSUM', 'DABUR', 'MARICO',
+      'COLPAL', 'GODREJCP', 'VBL', 'EMAMILTD', 'RADICO', 'UBL', 'TITAN', 'TRENT',
+      'DMART', 'HONASA', 'PATANJALI', 'BIKAJI'
+    ],
   },
   'NSE:CNXMETAL': {
     id: 'metal',
     name: 'NIFTY METAL',
     symbol: 'NSE:CNXMETAL',
-    constituents: ['TATASTEEL', 'JSWSTEEL', 'HINDALCO', 'VEDL', 'JINDALSTEL', 'COALINDIA', 'NMDC', 'SAIL', 'NATIONALUM'],
+    constituents: [
+      'TATASTEEL', 'JSWSTEEL', 'HINDALCO', 'VEDL', 'JINDALSTEL', 'COALINDIA', 'NMDC',
+      'SAIL', 'NATIONALUM', 'HINDZINC', 'APLAPOLLO', 'JINDALSAW', 'HINDCOPPER', 'WELCORP'
+    ],
   },
   'NSE:CNXREALTY': {
     id: 'realty',
     name: 'NIFTY REALTY',
     symbol: 'NSE:CNXREALTY',
-    constituents: ['DLF', 'GODREJPROP', 'LODHA', 'OBEROIRLTY', 'PHOENIXLTD', 'BRIGADE', 'PRESTIGE', 'SOBHA'],
+    constituents: [
+      'DLF', 'GODREJPROP', 'LODHA', 'OBEROIRLTY', 'PHOENIXLTD', 'BRIGADE', 'PRESTIGE',
+      'SOBHA', 'SUNTECK', 'MAHLIFE', 'IBREALEST', 'KOLTEPATIL', 'SIGNATURE'
+    ],
   },
   'NSE:CNXENERGY': {
     id: 'energy',
     name: 'NIFTY ENERGY',
     symbol: 'NSE:CNXENERGY',
-    constituents: ['RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'BPCL', 'IOC', 'TATAPOWER', 'GAIL', 'ADANIGREEN'],
+    constituents: [
+      'RELIANCE', 'ONGC', 'NTPC', 'POWERGRID', 'BPCL', 'IOC', 'TATAPOWER', 'GAIL',
+      'ADANIGREEN', 'ADANIPOWER', 'OIL', 'PETRONET', 'JSWENERGY', 'NHPC', 'SJVN', 'SUZLON'
+    ],
   },
 };
 
@@ -312,3 +343,48 @@ export async function fetchMarketPulse(): Promise<PulseResponse> {
 
   return pendingPulseFetch;
 }
+
+export async function fetchPulseStoriesBySector(
+  db: pg.ClientBase,
+  sectorId: string | null,
+  limit = 50
+): Promise<StoryCard[]> {
+  try {
+    if (!sectorId) {
+      // Query top stories across the entire stream
+      const rows = await streamPage(db, {
+        view: 'latest',
+        eventTypes: null,
+        filingsOnly: false,
+        isin: null,
+        watchlistUserId: null,
+        before: null,
+        notBefore: null,
+        limit,
+      });
+      const cards = await loadStoryCards(db, rows.map((r) => r.id));
+      return rows.map((r) => cards.get(r.id)).filter((c): c is StoryCard => c !== undefined);
+    }
+
+    const def = Object.values(SECTOR_DEFINITIONS).find((s) => s.id === sectorId);
+    if (!def) return [];
+
+    // Query distinct story IDs matching any constituent symbol across the entire database
+    const sql = `
+      SELECT DISTINCT s.id, s.first_seen_at
+      FROM story s
+      JOIN story_tag st ON st.story_id = s.id
+      JOIN instrument_code ic ON ic.isin = st.isin
+      WHERE ic.code = ANY($1::text[])
+      ORDER BY s.first_seen_at DESC, s.id DESC
+      LIMIT $2
+    `;
+    const result = await db.query<{ id: string }>(sql, [def.constituents, limit]);
+    const storyIds = result.rows.map((r) => r.id);
+    const cards = await loadStoryCards(db, storyIds);
+    return storyIds.map((id) => cards.get(id)).filter((c): c is StoryCard => c !== undefined);
+  } catch {
+    return [];
+  }
+}
+

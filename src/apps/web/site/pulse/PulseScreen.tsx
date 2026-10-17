@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { age, istDateTime } from '../format.ts';
+import type { SessionInfo } from '../format.ts';
 import { Icon } from '../Icon.tsx';
 import type { PulseResponse, SectorItem } from '../../src/pulse.ts';
 import type { StoryCard } from '../types.ts';
@@ -11,65 +12,106 @@ import './pulse.css';
 export interface PulseScreenProps {
   initialPulse: PulseResponse;
   initialStories: StoryCard[];
+  session?: SessionInfo | null;
 }
 
-export function PulseScreen({ initialPulse, initialStories }: PulseScreenProps) {
+function formatIstTime(isoString: string): string {
+  try {
+    const d = new Date(isoString);
+    return new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(d) + ' IST';
+  } catch {
+    return isoString;
+  }
+}
+
+export function PulseScreen({ initialPulse, initialStories, session }: PulseScreenProps) {
   const [pulse, setPulse] = useState<PulseResponse>(initialPulse);
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
+  const [stories, setStories] = useState<StoryCard[]>(initialStories);
+  const [isLoadingStories, setIsLoadingStories] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Auto-refresh pulse telemetry every 60 seconds when active
-  useEffect(() => {
-    let active = true;
+  const isCashOpen = session?.state === 'open' || session?.state === 'special';
 
-    async function refresh() {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      try {
-        const res = await fetch('/v1/market/pulse', { signal: AbortSignal.timeout(6_000) });
-        if (!res.ok) return;
-        const json = (await res.json()) as PulseResponse;
-        if (active && json && json.breadth) {
-          setPulse(json);
-        }
-      } catch {
-        // Silently keep last known state
+  // Fetch telemetry updates
+  async function refreshPulse() {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/v1/market/pulse', { signal: AbortSignal.timeout(6_000) });
+      if (!res.ok) return;
+      const json = (await res.json()) as PulseResponse;
+      if (json && json.breadth) {
+        setPulse(json);
       }
+    } catch {
+      // Keep last known good telemetry
+    } finally {
+      setIsRefreshing(false);
     }
+  }
 
-    const timer = setInterval(refresh, 60_000);
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') refresh();
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
+  // Auto-refresh pulse telemetry every 60 seconds during live market hours
+  useEffect(() => {
+    if (!isCashOpen) return; // Paused while offline
+
+    let active = true;
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      if (active) refreshPulse();
+    }, 60_000);
 
     return () => {
       active = false;
       clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, []);
+  }, [isCashOpen]);
+
+  // Fetch sector-specific stories across the entire 1,500+ database
+  async function loadSectorStories(sectorId: string | null) {
+    setIsLoadingStories(true);
+    try {
+      const url = sectorId ? `/v1/market/pulse/stories?sector=${encodeURIComponent(sectorId)}` : '/v1/market/pulse/stories';
+      const res = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+      if (res.ok) {
+        const json = (await res.json()) as { stories?: StoryCard[] };
+        if (json?.stories) {
+          setStories(json.stories);
+        }
+      }
+    } catch {
+      // Keep existing stories on error
+    } finally {
+      setIsLoadingStories(false);
+    }
+  }
+
+  const toggleSector = (id: string) => {
+    if (selectedSectorId === id) {
+      setSelectedSectorId(null);
+      loadSectorStories(null);
+    } else {
+      setSelectedSectorId(id);
+      loadSectorStories(id);
+    }
+  };
 
   const { breadth, sectors } = pulse;
   const selectedSector = sectors.find((s) => s.id === selectedSectorId) ?? null;
-
-  // Filter stories matching the selected sector's constituents
-  const filteredStories = selectedSector
-    ? initialStories.filter((story) => {
-        const symbols = story.instruments.map((i) => i.display_symbol ?? i.exchange_codes?.nse ?? '');
-        return symbols.some((sym) => selectedSector.topConstituents.includes(sym));
-      })
-    : initialStories.slice(0, 25);
 
   const advPct = breadth.total > 0 ? Number(((breadth.advances / breadth.total) * 100).toFixed(1)) : 50;
   const decPct = breadth.total > 0 ? Number(((breadth.declines / breadth.total) * 100).toFixed(1)) : 50;
   const unchPct = breadth.total > 0 ? Number(((breadth.unchanged / breadth.total) * 100).toFixed(1)) : 0;
 
-  const toggleSector = (id: string) => {
-    setSelectedSectorId((curr) => (curr === id ? null : id));
-  };
-
   return (
     <div className="pulse-screen">
-      {/* Header */}
+      {/* Header with Offline/Live Status & Refresh Timestamps */}
       <header className="pulse-header">
         <div className="pulse-title-group">
           <h1 className="pulse-title">
@@ -80,9 +122,33 @@ export function PulseScreen({ initialPulse, initialStories }: PulseScreenProps) 
             Real-time NSE market breadth, sector rotation &amp; targeted news intelligence
           </p>
         </div>
-        <div className="pulse-live-badge" title="Auto-refreshed every 60 seconds">
-          <span className="pulse-live-dot" />
-          <span>LIVE TELEMETRY</span>
+
+        <div className="pulse-header-controls">
+          <div
+            className="pulse-live-badge"
+            data-status={isCashOpen ? 'live' : 'offline'}
+            title={isCashOpen ? 'NSE/BSE Indian stock market is OPEN' : 'NSE/BSE Indian stock market is currently CLOSED'}
+          >
+            <span className={isCashOpen ? 'pulse-live-dot' : 'pulse-dot-offline'} />
+            <span>{isCashOpen ? 'LIVE TELEMETRY' : 'OFFLINE (MARKET CLOSED)'}</span>
+          </div>
+
+          <div className="pulse-time-meta">
+            <span className="pulse-time-item">
+              <b>Data as of:</b> {formatIstTime(pulse.updatedAt)} {isCashOpen ? '(Live)' : '(Closing Data)'}
+            </span>
+            <span className="pulse-time-item">
+              <b>Refresh:</b> Every 60s {isCashOpen ? '(Active)' : '(Paused while closed)'}
+            </span>
+            <button
+              type="button"
+              className="pulse-refresh-btn"
+              onClick={refreshPulse}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? '↻ Refreshing...' : '↻ Refresh Now'}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -163,20 +229,23 @@ export function PulseScreen({ initialPulse, initialStories }: PulseScreenProps) 
         </div>
       </section>
 
-      {/* Sector Rotation Heatmap */}
+      {/* Sector Rotation Heatmap - Whole Tile Colored */}
       <section className="pulse-heatmap-section" aria-label="Sector Heatmap">
         <div className="pulse-section-header">
           <h2 className="pulse-section-title">
             Sector Heatmap
             <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)' }}>
-              (Click a sector to filter news below)
+              (Click any sector tile to load all matching stories)
             </span>
           </h2>
           {selectedSectorId && (
             <button
               type="button"
               className="pulse-clear-filter-btn"
-              onClick={() => setSelectedSectorId(null)}
+              onClick={() => {
+                setSelectedSectorId(null);
+                loadSectorStories(null);
+              }}
             >
               ✕ Clear Filter
             </button>
@@ -187,15 +256,16 @@ export function PulseScreen({ initialPulse, initialStories }: PulseScreenProps) 
           {sectors.map((sec: SectorItem) => {
             const isSelected = sec.id === selectedSectorId;
             const isBull = sec.change > 0;
-            const isBear = sec.change < 0;
             const changeSign = isBull ? '+' : '';
-            const arrow = isBull ? '▲' : isBear ? '▼' : '';
+            const arrow = isBull ? '▲' : sec.change < 0 ? '▼' : '';
 
             return (
               <button
                 key={sec.id}
                 type="button"
                 className="pulse-sector-card"
+                data-status={sec.status}
+                data-sentiment={sec.sentiment}
                 data-selected={isSelected ? 'true' : undefined}
                 onClick={() => toggleSector(sec.id)}
               >
@@ -224,36 +294,48 @@ export function PulseScreen({ initialPulse, initialStories }: PulseScreenProps) 
         </div>
       </section>
 
-      {/* Sector-Filtered News Section */}
+      {/* Sector News Section Across All Stories */}
       <section className="pulse-news-section" aria-label="Sector News">
         <div className="pulse-section-header">
           <h2 className="pulse-section-title">
             {selectedSector ? `${selectedSector.name} Corporate News & Filings` : 'Market-Wide Breaking News'}
+            {!isLoadingStories && (
+              <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)' }}>
+                ({stories.length} stories found)
+              </span>
+            )}
           </h2>
         </div>
 
         {selectedSector && (
           <div className="pulse-active-filter-banner">
             <span>
-              Filtered for <b>{selectedSector.name}</b> constituents ({selectedSector.topConstituents.slice(0, 6).join(', ')}...)
+              Filtered across database for <b>{selectedSector.name}</b> constituents ({selectedSector.topConstituents.slice(0, 8).join(', ')}...)
             </span>
             <button
               type="button"
               className="pulse-clear-filter-btn"
-              onClick={() => setSelectedSectorId(null)}
+              onClick={() => {
+                setSelectedSectorId(null);
+                loadSectorStories(null);
+              }}
             >
               Show All News
             </button>
           </div>
         )}
 
-        {filteredStories.length === 0 ? (
+        {isLoadingStories ? (
+          <div className="pulse-news-loading">
+            Loading {selectedSector?.name ?? 'market'} stories from database...
+          </div>
+        ) : stories.length === 0 ? (
           <div className="pulse-news-empty">
-            No breaking corporate announcements recorded yet for {selectedSector?.name ?? 'this sector'} in the active window.
+            No corporate announcements recorded yet for {selectedSector?.name ?? 'this sector'} in the database.
           </div>
         ) : (
           <ul className="pulse-news-list">
-            {filteredStories.map((s) => {
+            {stories.map((s) => {
               const symbols = s.instruments.map((i) => i.display_symbol ?? i.exchange_codes?.nse ?? i.isin);
               const sourceName = s.primary_item?.source?.name ?? 'News';
 
@@ -270,7 +352,7 @@ export function PulseScreen({ initialPulse, initialStories }: PulseScreenProps) 
 
                     {symbols.length > 0 && (
                       <div className="pulse-news-symbols">
-                        {symbols.slice(0, 4).map((sym) => (
+                        {symbols.slice(0, 5).map((sym) => (
                           <span key={sym} className="pulse-news-ticker-tag mono">
                             {sym}
                           </span>

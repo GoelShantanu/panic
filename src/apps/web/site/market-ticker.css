@@ -23,6 +23,16 @@
   flex-shrink: 0;
 }
 
+.ticker-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--closed);
+  opacity: 0.65;
+}
+
+.ticker-header[data-status="live"] .ticker-dot,
+.ticker-header[data-status="gift-live"] .ticker-dot,
 .ticker-live-dot {
   width: 7px;
   height: 7px;
@@ -30,6 +40,7 @@
   background: var(--bull);
   box-shadow: 0 0 8px var(--bull);
   animation: pulse-dot 2s infinite ease-in-out;
+  opacity: 1;
 }
 
 @keyframes pulse-dot {
@@ -43,6 +54,15 @@
   letter-spacing: 0.08em;
   color: var(--faint);
   text-transform: uppercase;
+}
+
+.ticker-header[data-status="live"] .ticker-header-title,
+.ticker-header[data-status="gift-live"] .ticker-header-title {
+  color: var(--bull);
+}
+
+.ticker-header[data-status="offline"] .ticker-header-title {
+  color: var(--muted);
 }
 
 .ticker-track {

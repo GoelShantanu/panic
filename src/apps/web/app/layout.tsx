@@ -68,7 +68,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
             <main id="main" className="main">
               <ScrollReset />
-              <MarketTicker initial={tickerRes && tickerRes.status === 200 ? tickerRes.body : null} />
+              <MarketTicker
+                initial={tickerRes && tickerRes.status === 200 ? tickerRes.body : null}
+                session={session && session.status === 200 ? session.body.session : null}
+              />
               {children}
             </main>
             <footer className="footer">

@@ -2,13 +2,72 @@
 
 import { useEffect, useState } from 'react';
 import type { TickerItem, TickerResponse } from '../src/market.ts';
+import type { SessionInfo } from './format.ts';
+import { useLiveEvent } from './live.tsx';
 
 export interface MarketTickerProps {
   initial?: TickerResponse | null;
+  session?: SessionInfo | null;
 }
 
-export function MarketTicker({ initial }: MarketTickerProps) {
+/**
+ * Checks if GIFT Nifty futures continuous session is active (NSE IX at GIFT City).
+ * Trading days: Monday to Friday (excl. holidays)
+ * - Session 1: 06:30 to 15:40 IST
+ * - Session 2: 16:35 to 03:40 IST next morning
+ * Weekends (Saturday after 03:40 IST & all Sunday): CLOSED
+ */
+export function isGiftNiftyActive(now: Date = new Date()): boolean {
+  const istFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hourCycle: 'h23',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+  });
+  const parts = istFormatter.formatToParts(now);
+  const weekday = parts.find((p) => p.type === 'weekday')?.value;
+  const hour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  const minute = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+  const mins = hour * 60 + minute;
+
+  // Saturday: Friday's Session 2 ends at 03:40 AM IST.
+  if (weekday === 'Sat') {
+    return mins < 3 * 60 + 40;
+  }
+  // Sunday: Closed all day
+  if (weekday === 'Sun') {
+    return false;
+  }
+  // Monday: Opens at 06:30 AM IST. Closed prior to 06:30.
+  if (weekday === 'Mon' && mins < 6 * 60 + 30) {
+    return false;
+  }
+  // Tuesday to Friday: Morning break between 03:40 AM and 06:30 AM IST
+  if (mins >= 3 * 60 + 40 && mins < 6 * 60 + 30) {
+    return false;
+  }
+  // Monday to Friday: Afternoon break between Session 1 and Session 2 (15:40 - 16:35 IST)
+  if (mins >= 15 * 60 + 40 && mins < 16 * 60 + 35) {
+    return false;
+  }
+
+  return true;
+}
+
+export function MarketTicker({ initial, session: initialSession }: MarketTickerProps) {
   const [data, setData] = useState<TickerResponse | null>(initial ?? null);
+  const [session, setSession] = useState<SessionInfo | null>(initialSession ?? null);
+  const [, tick] = useState(0);
+
+  // Keep session in sync via SSE
+  useLiveEvent('session.changed', (e) => setSession(e.session));
+
+  // Periodic tick every minute to re-evaluate time-based status
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -53,11 +112,37 @@ export function MarketTicker({ initial }: MarketTickerProps) {
     return null;
   }
 
+  const isCashOpen = session?.state === 'open' || session?.state === 'special';
+  const isPreOpen = session?.state === 'pre_open';
+  const isFuturesLive = isGiftNiftyActive();
+
+  let statusKind: 'live' | 'gift-live' | 'offline' = 'offline';
+  let statusLabel = 'OFFLINE';
+  let statusTooltip = 'Markets are currently closed';
+
+  if (isCashOpen) {
+    statusKind = 'live';
+    statusLabel = 'LIVE';
+    statusTooltip = 'NSE/BSE Indian stock market is OPEN';
+  } else if (isPreOpen) {
+    statusKind = 'live';
+    statusLabel = 'PRE-OPEN';
+    statusTooltip = 'NSE/BSE pre-market session active';
+  } else if (isFuturesLive) {
+    statusKind = 'gift-live';
+    statusLabel = 'GIFT LIVE';
+    statusTooltip = 'NSE IX GIFT Nifty futures session is ACTIVE';
+  } else {
+    statusKind = 'offline';
+    statusLabel = 'OFFLINE';
+    statusTooltip = 'Markets are currently closed';
+  }
+
   return (
     <div className="market-ticker" aria-label="Live Market Indices & Futures">
-      <div className="ticker-header">
-        <span className="ticker-live-dot" aria-hidden="true" />
-        <span className="ticker-header-title">LIVE</span>
+      <div className="ticker-header" data-status={statusKind} title={statusTooltip}>
+        <span className="ticker-dot" aria-hidden="true" />
+        <span className="ticker-header-title">{statusLabel}</span>
       </div>
       <div className="ticker-track">
         {data.indices.map((idx: TickerItem) => {

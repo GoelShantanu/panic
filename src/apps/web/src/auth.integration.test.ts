@@ -13,7 +13,7 @@ import { createApiServer } from './server.ts';
 
 const adminUrl = process.env['TEST_DATABASE_URL'];
 const CLIENT_ID = 'test-client.apps.googleusercontent.com';
-const PASSWORD = 'An isolated test passphrase';
+const PASSWORD = 'SecretPass1@';
 const signupBody = (email: string) => ({ email, password: PASSWORD, first_name: 'Ada', last_name: 'Lovelace' });
 const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const jwk: Jwk = { ...(keys.publicKey.export({ format: 'jwk' }) as Jwk), kid: 'k1' };
@@ -291,7 +291,7 @@ describe.skipIf(!adminUrl)('accounts (PRD-007) against PostgreSQL', () => {
         { id: 'monthly', price_inr: 149, gst_inclusive: true },
         { id: 'yearly', price_inr: 1199, gst_inclusive: true },
       ],
-      trial_days: 14,
+      trial_days: 3,
     });
   });
 

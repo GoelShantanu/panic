@@ -125,7 +125,7 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
       </div>
       {signedIn && !trialUsed && tier === 'free' && (
         <p>
-          Or <Link href="/settings">start a 14-day free trial</Link> from settings, including 10 days of news history, with no payment details needed.
+          Or <Link href="/settings">start a 3-day free trial</Link> from settings, including 10 days of news history, with no payment details needed.
         </p>
       )}
       <p className="faint">UPI AutoPay, cards and net banking through Razorpay. Bazaar Updates never sees your card or bank details. Cancel any time from settings in one step; paid features last until the end of the period you paid for.</p>

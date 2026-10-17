@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { DUMMY_PASSWORD_HASH, hashChallenge, hashPassword, hashToken, isValidPassword, normaliseEmail, verifyPassword } from '@stockpanic/core';
+import { DUMMY_PASSWORD_HASH, hashChallenge, hashPassword, hashToken, hasEmailAlias, isValidPassword, normaliseEmail, verifyPassword } from '@stockpanic/core';
 import { consumeAuthChallenge, findCredentials, linkGoogleSub, setUserPassword } from '@stockpanic/db';
 import type { ChallengePurpose } from '@stockpanic/db';
 import { CLEAR_SESSION_COOKIE, issuePending, issueSession, requestAuthChallenge } from './auth.ts';
@@ -37,6 +37,7 @@ export async function postPasswordSignIn(db: pg.ClientBase, body: unknown, now: 
 export async function postPasswordSignupStart(db: pg.ClientBase, body: unknown, deps: AuthDeps, now: Date, ip: string | null): Promise<AuthResponse> {
   const email = emailOf(body), firstName = nameOf(body, 'first_name'), lastName = nameOf(body, 'last_name'), password = field(body, 'password');
   if (!email) return invalid('email');
+  if (hasEmailAlias(email)) return { status: 400, body: { error: 'invalid_param', param: 'email_alias' } };
   if (!firstName) return invalid('first_name');
   if (!lastName) return invalid('last_name');
   if (!isValidPassword(password)) return invalid('password');

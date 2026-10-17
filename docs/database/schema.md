@@ -237,3 +237,17 @@ WORKFLOW DoD item 9 ("verified, not asserted") is met for the schema. Query plan
 ## 11. RSS publication observation — 2026-10-12 (D-085)
 
 Forward migration [0020_feed_publication_freshness.sql](migrations/0020_feed_publication_freshness.sql) adds nullable `latest_published_at` and `publication_observed_at` to `source_fetch_state`. The first is the newest usable date from the most recently parsed response; the second distinguishes an inspected undated response from a source not yet inspected after upgrade. Existing HTTP validators, fetch success and last inserted item remain separate observations. Existing code can run after the additive migration; deploy new readers/workers only after it is applied. No historical article/story data is rewritten. Semantics belong to [ingestion §12](../architecture/ingestion.md#12-rss-publication-freshness-amendment--2026-10-12-d-085); validation belongs to QA §25.
+
+## 12. Pulse refresh telemetry and plan entitlement ceilings — 2026-10-17 (D-093, D-095)
+
+[VERIFIED] Forward migration [0021_pulse_refresh_usage_and_entitlements.sql](migrations/0021_pulse_refresh_usage_and_entitlements.sql) introduces telemetry rate-limiting and updates plan alert limits:
+1. `pulse_refresh_usage`: Tracks on-demand market pulse telemetry hits per subscriber per IST day:
+   - Composite primary key `(user_id, day)` referencing `app_user(id) ON DELETE CASCADE`.
+   - Columns: `daily_hits integer NOT NULL DEFAULT 0`, `window_start timestamptz NOT NULL DEFAULT now()`, `window_hits integer NOT NULL DEFAULT 0`, `last_hit_at timestamptz NOT NULL DEFAULT now()`.
+   - Supporting index `idx_pulse_refresh_usage_user` on `(user_id)`.
+   - Grants `SELECT, INSERT, UPDATE, DELETE` to `stockpanic_app`.
+   - Rate limit bounds: Maximum 4 requests per 60-second sliding window, 100 requests per IST calendar day, and 15-second inter-request cooldown timer.
+2. `plan_entitlement`:
+   - Updated `alert_budget_ceiling = 3` and `default_alert_budget = 3` for `free` tier.
+   - Updated `alert_budget_ceiling = 25` for `paid` tier.
+

@@ -67,7 +67,7 @@
   /* Rail */
   .header {
     grid-row: 1 / -1; position: static; flex-direction: column; align-items: stretch; gap: 2px;
-    min-height: 0; padding: 12px 6px 10px; border-bottom: 0; border-right: 1px solid var(--border); overflow-y: auto;
+    min-height: 0; padding: 12px 6px 10px; border-bottom: 0; border-right: 1px solid var(--border); overflow-y: auto; overflow-x: hidden;
   }
   .brand { flex-direction: column; gap: 6px; padding: 2px 0 14px; font-size: 11px; letter-spacing: 0.01em; }
   .brand-name { white-space: normal; text-align: center; }
@@ -89,7 +89,7 @@
   .search-results { position: static; width: auto; margin-top: 6px; padding: 0; border: 0; box-shadow: none; background: transparent; }
   .search-hint { display: block; margin: 8px 2px 0; font-size: var(--text-xs); }
   .header-spacer { min-height: 12px; }
-  .reconnecting { align-self: center; font-size: 10px; padding: 1px 6px; text-align: center; }
+  .reconnecting { align-self: center; font-size: 10px; padding: 1px 6px; text-align: center; max-width: 100%; box-sizing: border-box; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .session { flex-direction: column; gap: 2px; padding: 10px 2px; border-top: 1px solid var(--border); font-size: var(--text-xs); text-align: center; white-space: normal; }
   .session-detail { color: var(--faint); font-size: 10px; line-height: 1.3; }
   .session-detail::before { content: none; }

@@ -174,13 +174,44 @@ describe('PulseScreen component', () => {
   it('free user clicking sector card opens upgrade modal', () => {
     render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
 
+    // Verify refresh text shows 15 min for free user
+    expect(screen.getByText(/Every 15 min\./i)).toBeTruthy();
+
+    // Sector card should NOT have PRO label badge
+    expect(screen.queryByText(/PRO 🔒/i)).toBeNull();
+
     // Click NIFTY IT sector card
     const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
     fireEvent.click(itCard);
 
     // Modal appears
-    expect(screen.getByText(/Sector Intelligence is a Paid Feature/i)).toBeTruthy();
-    expect(screen.getByText(/Upgrade to Paid \(from ₹149\/mo\)/i)).toBeTruthy();
+    expect(screen.getByText(/Unlock Sector & Index Intelligence with Pro/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /^Upgrade to Pro$/i })).toBeTruthy();
+
+    // Verify updated copy
+    expect(screen.getByText(/4 refreshes per minute & up to 100 refresh hits\/day\./i)).toBeTruthy();
+    expect(screen.queryByText(/\(up to 100 hits\/day\)\./i)).toBeNull();
+
+    // Verify 3-day free trial card and banner
+    expect(screen.getAllByText(/3-DAY FREE TRIAL/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Start 3-Day Free Trial →/i).length).toBeGreaterThan(0);
+
+    // Maybe Later button should not exist
+    expect(screen.queryByRole('button', { name: /Maybe Later/i })).toBeNull();
+
+    // Monthly and Yearly plan cards are clickable
+    const monthlyBtn = screen.getByRole('button', { name: /Monthly/i });
+    const yearlyBtn = screen.getByRole('button', { name: /Yearly/i });
+    expect(monthlyBtn).toBeTruthy();
+    expect(yearlyBtn).toBeTruthy();
+
+    fireEvent.click(yearlyBtn);
+    expect(yearlyBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(monthlyBtn.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(monthlyBtn);
+    expect(monthlyBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(yearlyBtn.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('paid user can click sector heatmap cards and filter stories', async () => {
@@ -217,7 +248,7 @@ describe('PulseScreen component', () => {
     const refreshBtn = screen.getByRole('button', { name: /Refresh Now/i });
     fireEvent.click(refreshBtn);
 
-    expect(screen.getByText(/Manual Telemetry Refresh is a Paid Feature/i)).toBeTruthy();
+    expect(screen.getByText(/Unlock Manual Refresh with Pro/i)).toBeTruthy();
   });
 
   it('paid user clicking refresh triggers rate limit and runs cooldown timer', async () => {

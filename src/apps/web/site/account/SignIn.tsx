@@ -15,16 +15,70 @@ async function post(path: string, body: unknown) {
 }
 type Mode = 'login' | 'signup' | 'reset' | 'google';
 
-export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: string; googleClientId: string | null; initialMode?: 'login' | 'reset' }) {
+function hasEmailAlias(e: string): boolean {
+  const at = e.lastIndexOf('@');
+  if (at < 1) return false;
+  const local = e.slice(0, at);
+  return local.includes('+') || local.includes('%2b');
+}
+
+function hasSequentialDigits(s: string): boolean {
+  for (let i = 0; i <= s.length - 3; i++) {
+    const a = s.charCodeAt(i);
+    const b = s.charCodeAt(i + 1);
+    const c = s.charCodeAt(i + 2);
+    if (a >= 48 && a <= 57 && b >= 48 && b <= 57 && c >= 48 && c <= 57) {
+      if ((b === a + 1 && c === b + 1) || (b === a - 1 && c === b - 1) || (a === b && b === c)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function getPasswordChecklist(p: string) {
+  return [
+    { label: '8–16 characters', valid: p.length >= 8 && p.length <= 16 },
+    { label: 'At least one uppercase letter (A–Z)', valid: /[A-Z]/.test(p) },
+    { label: 'At least one lowercase letter (a–z)', valid: /[a-z]/.test(p) },
+    { label: 'At least one special character (!@#$...)', valid: /[^A-Za-z0-9]/.test(p) },
+    { label: 'No 3 sequential or repeating numbers (e.g. 123, 321, 111)', valid: p.length > 0 && !hasSequentialDigits(p) },
+  ];
+}
+
+function isPasswordValid(p: string): boolean {
+  return (
+    p.length >= 8 &&
+    p.length <= 16 &&
+    /[A-Z]/.test(p) &&
+    /[a-z]/.test(p) &&
+    /[^A-Za-z0-9]/.test(p) &&
+    !hasSequentialDigits(p)
+  );
+}
+
+export function SignIn({
+  next,
+  googleClientId,
+  initialMode = 'login',
+  initialEmail = '',
+  initialCode = '',
+}: {
+  next: string;
+  googleClientId: string | null;
+  initialMode?: 'login' | 'signup' | 'reset';
+  initialEmail?: string;
+  initialCode?: string;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [step, setStep] = useState<'entry' | 'verify'>('entry');
-  const [email, setEmail] = useState('');
+  const [step, setStep] = useState<'entry' | 'verify'>(initialCode && initialEmail ? 'verify' : 'entry');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -70,6 +124,25 @@ export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: 
     e.preventDefault();
     if (busy) return;
     setBusy(true); setError(null); setNotice(null);
+
+    if (mode === 'signup') {
+      if (!firstName.trim()) { setBusy(false); return setError('First name is required.'); }
+      if (!lastName.trim()) { setBusy(false); return setError('Last name is required.'); }
+      if (!email.trim()) { setBusy(false); return setError('Email is required.'); }
+      if (hasEmailAlias(email)) { setBusy(false); return setError('Email aliases (e.g. using "+") are not allowed. Please use your primary email address.'); }
+      if (!isPasswordValid(password)) {
+        setBusy(false);
+        if (password.length < 8 || password.length > 16) return setError('Password must be 8–16 characters.');
+        if (!/[A-Z]/.test(password)) return setError('Password must contain at least one uppercase letter (A–Z).');
+        if (!/[a-z]/.test(password)) return setError('Password must contain at least one lowercase letter (a–z).');
+        if (!/[^A-Za-z0-9]/.test(password)) return setError('Password must contain at least one special character (!@#$...).');
+        if (hasSequentialDigits(password)) return setError('Password cannot contain 3 sequential or repeating numbers (e.g. 123, 321, 111).');
+      }
+    } else if (mode === 'login') {
+      if (!email.trim()) { setBusy(false); return setError('Email is required.'); }
+      if (!password) { setBusy(false); return setError('Password is required.'); }
+    }
+
     const path = mode === 'login' ? '/v1/auth/password/sign-in' : mode === 'signup' ? '/v1/auth/password/signup/start' : '/v1/auth/password/reset/start';
     const r = await post(path, { email, ...(mode === 'login' || mode === 'signup' ? { password } : {}), ...(mode === 'signup' ? { first_name: firstName, last_name: lastName } : {}) });
     setBusy(false);
@@ -77,7 +150,11 @@ export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: 
     if (r.status === 204) { setStep('verify'); setPassword(''); return; }
     if (r.status === 429) setError('Too many attempts. Please try again later.');
     else if (mode === 'login' && r.status === 401) setError('Email or password is incorrect. If you previously used an email code, use Forgot password to set a password.');
-    else if (r.body?.param === 'password') setError('Use a password with 15–128 characters.');
+    else if (r.body?.param === 'email_alias') setError('Email aliases (e.g. using "+") are not allowed. Please use your primary email address.');
+    else if (r.body?.param === 'first_name') setError('First name is required.');
+    else if (r.body?.param === 'last_name') setError('Last name is required.');
+    else if (r.body?.param === 'password') setError('Use a password with 8–16 characters.');
+    else if (r.body?.error === 'account_exists') setError('This email already has an account. Sign in or reset your password.');
     else if (r.status === 400) setError('Please check the information you entered.');
     else setError('Could not complete your request. Please try again.');
   }
@@ -85,7 +162,16 @@ export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: 
   async function verify(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
-    if (mode === 'reset' && password !== confirmPassword) return setError('Passwords do not match.');
+    if (mode === 'reset') {
+      if (password !== confirmPassword) return setError('Passwords do not match.');
+      if (!isPasswordValid(password)) {
+        if (password.length < 8 || password.length > 16) return setError('Password must be 8–16 characters.');
+        if (!/[A-Z]/.test(password)) return setError('Password must contain at least one uppercase letter (A–Z).');
+        if (!/[a-z]/.test(password)) return setError('Password must contain at least one lowercase letter (a–z).');
+        if (!/[^A-Za-z0-9]/.test(password)) return setError('Password must contain at least one special character (!@#$...).');
+        if (hasSequentialDigits(password)) return setError('Password cannot contain 3 sequential or repeating numbers (e.g. 123, 321, 111).');
+      }
+    }
     setBusy(true); setError(null);
     const path = mode === 'signup' ? '/v1/auth/password/signup/verify' : mode === 'reset' ? '/v1/auth/password/reset/complete' : '/v1/auth/google/verify';
     const r = await post(path, { email, code: code.trim(), ...(mode === 'reset' ? { password } : {}) });
@@ -96,7 +182,7 @@ export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: 
     if (r.status === 200) return after(r.body.is_new);
     if (r.status === 423) setError('Too many wrong attempts. Request a new code.');
     else if (r.status === 429) setError('Too many attempts. Please try again later.');
-    else if (r.body?.param === 'password') setError('Use a password with 15–128 characters.');
+    else if (r.body?.param === 'password') setError('Use a password with 8–16 characters.');
     else if (r.body?.error === 'account_exists') setError('This email already has an account. Sign in or reset your password.');
     else if (r.body?.error === 'google_already_linked') setError('This account is already linked to a different Google account.');
     else if (r.status === 400) setError('That code is not right, or it has expired.');
@@ -122,23 +208,46 @@ export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: 
       {step === 'entry' ? (
         <form onSubmit={start} className="form">
           {mode === 'signup' && <div className="auth-name-row">
-            <label>First name<input required maxLength={80} autoComplete="given-name" value={firstName} onChange={e => setFirstName(e.target.value)} /></label>
-            <label>Last name<input required maxLength={80} autoComplete="family-name" value={lastName} onChange={e => setLastName(e.target.value)} /></label>
+            <label><span className="label-text required">First name</span><input aria-label="First name" required maxLength={80} autoComplete="given-name" value={firstName} onChange={e => setFirstName(e.target.value)} /></label>
+            <label><span className="label-text required">Last name</span><input aria-label="Last name" required maxLength={80} autoComplete="family-name" value={lastName} onChange={e => setLastName(e.target.value)} /></label>
           </div>}
-          <label>Email<input type="email" required autoComplete={mode === 'login' ? 'username' : 'email'} autoFocus value={email} onChange={e => setEmail(e.target.value)} /></label>
-          {(mode === 'login' || mode === 'signup') && <label>Password<input type="password" required minLength={mode === 'signup' ? 15 : undefined} maxLength={128} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} /></label>}
-          {mode === 'signup' && <p className="faint field-help">Use 15–128 characters. A unique passphrase works well.</p>}
+          <label><span className="label-text required">Email</span><input aria-label="Email" type="email" required autoComplete={mode === 'login' ? 'username' : 'email'} autoFocus value={email} onChange={e => setEmail(e.target.value)} /></label>
+          {(mode === 'login' || mode === 'signup') && <label><span className="label-text required">Password</span><input aria-label="Password" type="password" required minLength={8} maxLength={16} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} /></label>}
+          {mode === 'signup' && (
+            <div className="password-rules-card">
+              <div className="password-rules-title">Password requirements:</div>
+              <ul className="password-rules-list">
+                {getPasswordChecklist(password).map(rule => (
+                  <li key={rule.label} className={rule.valid ? 'rule-met' : 'rule-unmet'}>
+                    <span className="rule-icon">{rule.valid ? '✓' : '○'}</span>
+                    <span>{rule.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Send verification code' : 'Send password reset code'}</button>
           {mode === 'login' && <button type="button" className="auth-text-button" disabled={busy} onClick={() => changeMode('reset')}>Forgot password?</button>}
         </form>
       ) : (
         <form onSubmit={verify} className="form">
           <p className="muted">Check your inbox for a 6-digit code at <strong>{email}</strong>. It works once, for 10 minutes.{mode === 'reset' && ' We only send recovery codes for existing accounts.'}{mode === 'signup' && ' Already registered? Sign in or reset your password instead.'}</p>
-          <label>Code<input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required autoComplete="one-time-code" autoFocus value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} /></label>
+          <label><span className="label-text required">Code</span><input aria-label="Code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required autoComplete="one-time-code" autoFocus value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} /></label>
           {mode === 'reset' && <>
-            <label>New password<input type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></label>
-            <label>Confirm new password<input type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></label>
-            <p className="faint field-help">Use 15–128 characters. Saving signs out your other sessions.</p>
+            <label><span className="label-text required">New password</span><input aria-label="New password" type="password" required minLength={8} maxLength={16} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></label>
+            <div className="password-rules-card">
+              <div className="password-rules-title">Password requirements:</div>
+              <ul className="password-rules-list">
+                {getPasswordChecklist(password).map(rule => (
+                  <li key={rule.label} className={rule.valid ? 'rule-met' : 'rule-unmet'}>
+                    <span className="rule-icon">{rule.valid ? '✓' : '○'}</span>
+                    <span>{rule.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <label><span className="label-text required">Confirm new password</span><input aria-label="Confirm new password" type="password" required minLength={8} maxLength={16} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></label>
+            <p className="faint field-help">Use 8–16 characters. Saving signs out your other sessions.</p>
           </>}
           <button type="submit" className="button button-primary" disabled={busy || code.length !== 6}>{busy ? 'Please wait…' : mode === 'reset' ? 'Save new password' : 'Verify email'}</button>
           <button type="button" className="auth-text-button" disabled={busy} onClick={() => void resend()}>{mode === 'signup' ? 'Start again and send a new code' : 'Send a new code'}</button>
@@ -157,7 +266,7 @@ export function SignIn({ next, googleClientId, initialMode = 'login' }: { next: 
         <button type="button" className="button auth-google-unavailable" disabled>Continue with Google</button>
         <p className="faint auth-google-note">{googleError ? 'Google could not load. Please use email or try again later.' : 'Google sign-in is not available yet. Please use email.'}</p>
       </>}
-      <p className="faint auth-legal">New accounts need to be 18 or older. See the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Notice</Link>.</p>
+      <p className="faint auth-legal">See the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Notice</Link>.</p>
     </div>
   );
 }

@@ -8,8 +8,8 @@ import { route } from './api.ts';
 import { createGoogleVerifier } from './google.ts';
 
 const adminUrl = process.env['TEST_DATABASE_URL'];
-const PASSWORD = 'A unique testing passphrase!';
-const REPLACEMENT = 'A different testing passphrase!';
+const PASSWORD = 'SecretPass1@';
+const REPLACEMENT = 'BetterPass2#';
 const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const clientId = 'credential-test.apps.googleusercontent.com';
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -66,6 +66,7 @@ describe.skipIf(!adminUrl)('passwords and identity verification against PostgreS
 
   it('validates profile and password inputs without creating challenges', async () => {
     const base = { email: 'invalid@example.invalid', password: PASSWORD, first_name: 'Ada', last_name: 'Lovelace' };
+    expect((await call('/v1/auth/password/signup/start', { ...base, email: 'user+alias@example.invalid' })).body).toMatchObject({ param: 'email_alias' });
     expect((await call('/v1/auth/password/signup/start', { ...base, password: 'short' })).body).toMatchObject({ param: 'password' });
     expect((await call('/v1/auth/password/signup/start', { ...base, first_name: '\n' })).body).toMatchObject({ param: 'first_name' });
     expect((await call('/v1/auth/password/signup/start', { ...base, last_name: 'x'.repeat(81) })).body).toMatchObject({ param: 'last_name' });

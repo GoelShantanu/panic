@@ -11,6 +11,58 @@
 .auth-intro { font-size: var(--text-sm); margin: 0 0 18px; line-height: 1.5; }
 .auth-name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .auth-name-row input { width: 100%; min-width: 0; box-sizing: border-box; }
+.req, .label-text.required::after { color: #ef4444; font-weight: 700; }
+.label-text.required::after { content: ' *'; }
+.auth .button,
+.auth .form button[type='submit'],
+.auth-google-unavailable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+.password-rules-card {
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 4px 0 8px;
+  font-size: var(--text-xs);
+}
+.password-rules-title {
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.password-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.password-rules-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+  transition: color 0.15s ease;
+}
+.password-rules-list li.rule-unmet {
+  color: var(--muted);
+}
+.password-rules-list li.rule-met {
+  color: #10b981;
+  font-weight: 500;
+}
+.rule-icon {
+  font-weight: bold;
+  display: inline-block;
+  width: 14px;
+  text-align: center;
+}
 .auth-text-button { border: 0; background: none; color: var(--link); font: inherit; font-size: var(--text-sm); padding: 6px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .auth-text-button:disabled { opacity: .6; cursor: default; }
 .auth-switches { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 12px; }

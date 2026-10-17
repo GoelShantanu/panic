@@ -23,9 +23,9 @@ describe('sign in (PRD-007 US-007.1)', () => {
     expect(screen.getByLabelText('Password').getAttribute('autocomplete')).toBe('current-password');
     expect(screen.queryByRole('button', { name: 'Sign in with an email code' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'A browser test passphrase' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ValidPass#1' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Sign in' })));
-    expect(f).toHaveBeenCalledWith('/v1/auth/password/sign-in', expect.objectContaining({ body: JSON.stringify({ email: 'ada@example.invalid', password: 'A browser test passphrase' }) }));
+    expect(f).toHaveBeenCalledWith('/v1/auth/password/sign-in', expect.objectContaining({ body: JSON.stringify({ email: 'ada@example.invalid', password: 'ValidPass#1' }) }));
     expect(push).toHaveBeenCalledWith('/watchlist');
   });
 
@@ -36,7 +36,7 @@ describe('sign in (PRD-007 US-007.1)', () => {
     fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Ada' } });
     fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'A browser test passphrase' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ValidPass#1' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send verification code' })));
     expect(JSON.parse(f.mock.calls[0]![1].body)).toMatchObject({ first_name: 'Ada', last_name: 'Lovelace' });
     expect(push).not.toHaveBeenCalled(); expect(screen.queryByLabelText('Password')).toBeNull();
@@ -53,11 +53,11 @@ describe('sign in (PRD-007 US-007.1)', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send password reset code' })));
     fireEvent.change(screen.getByLabelText('Code'), { target: { value: '123456' } });
-    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'A browser test passphrase' } });
-    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'A different passphrase' } });
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'ValidPass#1' } });
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'ValidPass#2' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Save new password' })));
     expect(screen.getByRole('alert').textContent).toContain('do not match'); expect(f).toHaveBeenCalledTimes(1);
-    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'A browser test passphrase' } });
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'ValidPass#1' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Save new password' })));
     expect(f.mock.calls[1]![0]).toBe('/v1/auth/password/reset/complete');
     expect(screen.getByRole('status').textContent).toContain('Password saved'); expect(push).not.toHaveBeenCalled();
@@ -85,7 +85,7 @@ describe('sign in (PRD-007 US-007.1)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
     fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Ada' } });
     fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'A browser test passphrase' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ValidPass#1' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.invalid' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send verification code' })));
     expect(screen.getByText(/Check your inbox for a 6-digit code/)).toBeTruthy();

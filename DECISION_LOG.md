@@ -2492,4 +2492,49 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 
 **Verification:** Verified via `npm run typecheck` and automated Vitest suites (`phone.test.tsx`, `comments.test.tsx`, `panel.test.tsx`, `stream.test.tsx`, `a11y.test.tsx`) that all 43 tests pass cleanly.
 
+## D-093 — Market Pulse Dashboard & Telemetry Refresh Model (2026-10-17)
+
+**Authority:** Founder request to introduce a dedicated real-time NSE market intelligence and breadth dashboard ("Market Pulse"), distinguishing free/guest vs. Pro member capabilities, sector rotation heatmaps, and bounded manual refresh.
+
+**Decision:**
+1. **Market Pulse Surface (`/pulse`):** Implemented real-time market breadth monitoring for the Indian equity market (NSE Advances, Declines, Unchanged, A/D Ratio, sentiment classification, NIFTY 50 breadth, and 12 sector performance tiles).
+2. **Tier-Differentiated Telemetry:**
+   - **Pro Tier (Subscribers & Active 3-Day Trials):** Background polling every 60 seconds during live market hours. On-demand manual refresh button with rate limiting (4 refreshes/min, 100 refreshes/day, 15-second cooldown timer). Clickable sector cards filter the news stream to relevant constituent equities across the database.
+   - **Free & Guest Tier:** Background polling every 15 minutes (900 seconds) with server-side caching (`CACHE_TTL_FREE_MS = 900_000`). Clicking sector tiles opens a conversion modal with 3-Day Free Trial activation and monthly/yearly subscription options. Individual tile PRO badges removed in favor of clean card presentation.
+3. **Multi-Segment Visual Bar & Legends:** Displays advance/decline ratio with multi-segment percentage bar showing clean numeric percentages (`52.7%`, `44.7%`, `2.6%`). Positioned below the bar are dedicated styled legend pills with status dots (`#10b981` green for Advances, `#ef4444` red for Declines, `#64748b` slate for Unchanged) and monospace counts.
+
+**Verification:** Verified via automated Vitest test suite (`PulseScreen.test.tsx`), TypeScript typechecking, and browser inspection across simulated free, trial, and paid users.
+
+## D-094 — Account Security: Bounded Passwords, Alias Abuse Prevention, and Magic Verification Links (2026-10-17)
+
+**Authority:** Founder request to enhance credential authentication, enforce industrial-standard password constraints, prevent pirated account signups via email alias abuse, and streamline OTP verification.
+
+**Decision:**
+1. **Strict Password Bounds & Complexity Validation:**
+   - Enforced password length between 8 and 16 characters (`MIN_PASSWORD_LENGTH = 8`, `MAX_PASSWORD_LENGTH = 16`) across client UI validation and backend verification (`src/packages/core/src/auth.ts`, `src/apps/web/src/credential-auth.ts`).
+   - Implemented professional complexity checking: requires at least one uppercase letter, one lowercase letter, one special character, and prohibits sequential 3-digit number runs (e.g., `123`, `987`).
+2. **Anti-Abuse Canonical Email Normalization:**
+   - Enhanced canonical email generation to strip `+` alias extensions (`user+promo@domain.com` normalizes to `user@domain.com`). Prevents users from bypassing trial limitations by signing up repeatedly with email aliases.
+3. **1-Click Magic Link Verification & Branded Dark HTML Emails:**
+   - Upgraded transactional email dispatcher (`src/packages/mail/src/index.ts`) with responsive, dark-themed HTML card templates featuring monospace OTP display boxes and direct 1-click verification links (`https://bazaarnews.duckdns.org/sign-in?mode=signup&email=...&code=...`).
+   - Updated `src/apps/web/site/account/SignIn.tsx` to inspect URL search parameters, automatically pre-filling the user's email address and verification code, allowing seamless single-click confirmation.
+4. **UI Refinements:** Centered button text across account forms, marked mandatory fields (`First Name`, `Last Name`, `Email`, `Password`) with standard red asterisks (`*`), and removed obsolete age restriction notices.
+5. **Trial Expiry Access Handling:** Confirmed that 3-day trials automatically downgrade to Free tier permissions upon expiration via the dynamic PostgreSQL view `user_tier` without requiring forced session revocation or token invalidation.
+
+**Verification:** Unit tests passing in `src/packages/core/src/password.test.ts` and `src/apps/web/site/account/account.test.tsx`. Verified email parsing, canonicalization, and HTML generation.
+
+## D-095 — Migration 0021 Execution & Database Health Verification (2026-10-17)
+
+**Authority:** Founder directed a deep database architecture and data integrity review, requiring explicit approval prior to applying database modifications.
+
+**Decision:**
+1. **Database Audit & 500-Error Diagnosis:** Exhaustive inspection of all 96 tables, 3 views, 674 columns, 8 sequences, and 87 foreign key constraints. Confirmed 100% referential integrity with zero orphaned records across all core tables. Diagnosed that migration `0021_pulse_refresh_usage_and_entitlements.sql` had not been executed on PostgreSQL, causing a latent HTTP 500 error on `POST /v1/market/pulse/refresh`.
+2. **Migration 0021 Execution:** With founder approval, executed `0021_pulse_refresh_usage_and_entitlements.sql`:
+   - Created table `pulse_refresh_usage (user_id, day, daily_hits, window_start, window_hits, last_hit_at)` with primary key `(user_id, day)` and index `idx_pulse_refresh_usage_user`.
+   - Updated plan entitlements: free tier alert ceiling set to 3; paid tier alert ceiling set to 25.
+   - Recorded `0021_pulse_refresh_usage_and_entitlements` in `schema_migrations`.
+3. **Process & Subagent Hygiene:** Terminated dangling inspection tasks and idle design subagents, maintaining active web and SSE daemons.
+
+**Verification:** Verified table creation, row locking, and rollback in PostgreSQL. All 404 vitest unit tests pass and TypeScript typecheck passes with 0 errors.
+
 

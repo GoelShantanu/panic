@@ -9,7 +9,7 @@ export const OTP_MAX_PER_HOUR = 5; // per email; requests beyond this are accept
 export const PENDING_SIGNUP_TTL_MS = 30 * 60_000;
 export const SESSION_IDLE_DAYS = 30; // PRD-007 US-007.1 AC-6
 export const SESSION_COOKIE = 'sp_session';
-export const TRIAL_DAYS = 14; // PRD-007 OQ-007.2
+export const TRIAL_DAYS = 3; // PRD-007 3-day free trial
 export const USERNAME_CHANGE_INTERVAL_DAYS = 30; // PRD-007 US-007.2 AC-3
 export const USERNAME_HOLD_DAYS = 30; // old name held after a change
 export const DELETED_USERNAME_HOLD_DAYS = 90; // PRD-007 §6
@@ -57,10 +57,49 @@ export function isValidUsername(u: string): boolean {
 
 export const daysFrom = (d: Date, days: number) => new Date(d.getTime() + days * 86_400_000);
 
-export const PASSWORD_MIN_LENGTH = 15;
-export const PASSWORD_MAX_LENGTH = 128;
+export function hasEmailAlias(email: string): boolean {
+  const at = email.lastIndexOf('@');
+  if (at < 1) return false;
+  const local = email.slice(0, at);
+  return local.includes('+') || local.includes('%2b');
+}
+
+export function hasSequentialDigits(s: string): boolean {
+  for (let i = 0; i <= s.length - 3; i++) {
+    const a = s.charCodeAt(i);
+    const b = s.charCodeAt(i + 1);
+    const c = s.charCodeAt(i + 2);
+    if (a >= 48 && a <= 57 && b >= 48 && b <= 57 && c >= 48 && c <= 57) {
+      if ((b === a + 1 && c === b + 1) || (b === a - 1 && c === b - 1) || (a === b && b === c)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 16;
 export function isValidPassword(value: unknown): value is string {
   return typeof value === 'string' && [...value].length >= PASSWORD_MIN_LENGTH && [...value].length <= PASSWORD_MAX_LENGTH;
+}
+
+export function validatePasswordComplexity(password: string): {
+  valid: boolean;
+  length: boolean;
+  hasUpper: boolean;
+  hasLower: boolean;
+  hasSpecial: boolean;
+  noSequence: boolean;
+} {
+  const len = [...password].length;
+  const length = len >= PASSWORD_MIN_LENGTH && len <= PASSWORD_MAX_LENGTH;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  const noSequence = !hasSequentialDigits(password);
+  const valid = length && hasUpper && hasLower && hasSpecial && noSequence;
+  return { valid, length, hasUpper, hasLower, hasSpecial, noSequence };
 }
 
 // OWASP's scrypt alternative: N=2^15, r=8, p=3. Async, salted, and bounded in memory.
@@ -70,7 +109,7 @@ const derivePassword = (password: string, salt: string) => new Promise<Buffer>((
 });
 export const DUMMY_PASSWORD_HASH = `scrypt$32768$8$3$${'0'.repeat(32)}$${'0'.repeat(128)}`;
 export async function hashPassword(password: string): Promise<string> {
-  if (!isValidPassword(password)) throw new Error('Password must be 15–128 characters');
+  if (!isValidPassword(password)) throw new Error('Password must be 8–16 characters');
   const salt = randomBytes(16).toString('hex');
   return `scrypt$32768$8$3$${salt}$${(await derivePassword(password, salt)).toString('hex')}`;
 }

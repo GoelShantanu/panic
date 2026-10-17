@@ -21,6 +21,8 @@ export interface PulseScreenProps {
   session?: SessionInfo | null;
   userTier?: 'free' | 'paid';
   initialUsage?: UsageInfo | null;
+  signedIn?: boolean;
+  trialUsed?: boolean;
 }
 
 function formatIstTime(isoString: string): string {
@@ -39,12 +41,54 @@ function formatIstTime(isoString: string): string {
   }
 }
 
+function formatDataAsOf(isoString: string, isCashOpen: boolean): string {
+  if (isCashOpen) {
+    return `${formatIstTime(isoString)} (Live)`;
+  }
+
+  // Market is closed/offline: compute last market close time (15:30 IST)
+  try {
+    const now = new Date();
+    // IST offset is UTC + 5h30m (330 minutes)
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffsetMs);
+
+    const dayOfWeek = istNow.getUTCDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const hours = istNow.getUTCHours();
+    const minutes = istNow.getUTCMinutes();
+    const timeInMinutes = hours * 60 + minutes;
+
+    let daysBack = 0;
+    if (dayOfWeek === 0) {
+      daysBack = 2; // Sunday -> previous Friday
+    } else if (dayOfWeek === 6) {
+      daysBack = 1; // Saturday -> Friday
+    } else if (dayOfWeek === 1 && timeInMinutes < 15 * 60 + 30) {
+      daysBack = 3; // Monday before 15:30 -> previous Friday
+    } else if (timeInMinutes < 15 * 60 + 30) {
+      daysBack = 1; // Tue-Fri before 15:30 -> yesterday
+    } else {
+      daysBack = 0; // Weekday after 15:30 -> today
+    }
+
+    const targetDate = new Date(istNow.getTime() - daysBack * 24 * 60 * 60 * 1000);
+    const day = targetDate.getUTCDate();
+    const month = targetDate.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+
+    return `${day} ${month}, 15:30 IST (Closing Data)`;
+  } catch {
+    return `${formatIstTime(isoString)} (Closing Data)`;
+  }
+}
+
 export function PulseScreen({
   initialPulse,
   initialStories,
   session,
   userTier = 'free',
   initialUsage = null,
+  signedIn = false,
+  trialUsed = false,
 }: PulseScreenProps) {
   const [pulse, setPulse] = useState<PulseResponse>(initialPulse);
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
@@ -60,6 +104,27 @@ export function PulseScreen({
 
   // Upgrade modal state
   const [upgradeModal, setUpgradeModal] = useState<{ feature: 'refresh' | 'sector'; sectorName?: string } | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [isActivatingTrial, setIsActivatingTrial] = useState(false);
+  const [trialError, setTrialError] = useState<string | null>(null);
+
+  async function handleStartTrial() {
+    setIsActivatingTrial(true);
+    setTrialError(null);
+    try {
+      const res = await fetch('/v1/billing/trial', { method: 'POST', credentials: 'same-origin' });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        const data = await res.json().catch(() => null);
+        setTrialError(data?.error === 'trial_used' ? 'The free trial has already been used on this account.' : 'Could not activate trial.');
+      }
+    } catch {
+      setTrialError('Network error while activating trial.');
+    } finally {
+      setIsActivatingTrial(false);
+    }
+  }
 
   const isCashOpen = session?.state === 'open' || session?.state === 'special';
 
@@ -132,11 +197,13 @@ export function PulseScreen({
     }
   }
 
-  // Passive auto-refresh pulse telemetry every 60 seconds during live market hours
+  // Passive auto-refresh pulse telemetry during live market hours
+  // Every 60s for Pro/Trial; every 15 minutes (900s) for Free/Guest
   useEffect(() => {
     if (!isCashOpen) return;
 
     let active = true;
+    const intervalMs = userTier === 'paid' ? 60_000 : 900_000;
     const timer = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       if (active) {
@@ -147,15 +214,34 @@ export function PulseScreen({
           })
           .catch(() => undefined);
       }
-    }, 60_000);
+    }, intervalMs);
 
     return () => {
       active = false;
       clearInterval(timer);
     };
-  }, [isCashOpen]);
+  }, [isCashOpen, userTier]);
 
-  // Fetch sector-specific stories across the entire 1,500+ database
+  // Client-side fallback: auto-fetch stories if SSR initialStories was empty
+  useEffect(() => {
+    if (initialStories.length === 0) {
+      loadSectorStories(null);
+    }
+  }, []);
+
+  // Client-side fallback: auto-fetch pulse if SSR initialPulse sectors was empty
+  useEffect(() => {
+    if (initialPulse.sectors.length === 0) {
+      fetch('/v1/market/pulse', { signal: AbortSignal.timeout(6_000) })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => {
+          if (json?.breadth && json?.sectors) setPulse(json);
+        })
+        .catch(() => undefined);
+    }
+  }, []);
+
+  // Fetch sector-specific stories across the entire database
   async function loadSectorStories(sectorId: string | null) {
     setIsLoadingStories(true);
     try {
@@ -228,10 +314,11 @@ export function PulseScreen({
 
           <div className="pulse-time-meta">
             <span className="pulse-time-item">
-              <b>Data as of:</b> {formatIstTime(pulse.updatedAt)} {isCashOpen ? '(Live)' : '(Closing Data)'}
+              <b>Data as of:</b> {formatDataAsOf(pulse.updatedAt, isCashOpen)}
             </span>
             <span className="pulse-time-item">
-              <b>Refresh:</b> Every 60s {isCashOpen ? '(Active)' : '(Paused while closed)'}
+              <b>Refresh:</b> {userTier === 'paid' ? 'Every 60s' : 'Every 15 min.'}{' '}
+              {isCashOpen ? '(Active)' : '(Paused while closed)'}
             </span>
 
             <div className="pulse-refresh-action-group">
@@ -241,7 +328,7 @@ export function PulseScreen({
                   className="pulse-refresh-btn"
                   onClick={handleManualRefresh}
                   disabled={cooldown > 0 || isRefreshing || hitsLeft === 0}
-                  title={hitsLeft === 0 ? 'Daily limit reached (100/100)' : 'Instant manual telemetry refresh'}
+                  title={hitsLeft === 0 ? 'Daily limit reached (100/100)' : 'Instant manual refresh'}
                 >
                   {cooldown > 0
                     ? `↻ Wait ${cooldown}s...`
@@ -256,7 +343,7 @@ export function PulseScreen({
                   type="button"
                   className="pulse-refresh-btn pulse-pro-btn"
                   onClick={() => setUpgradeModal({ feature: 'refresh' })}
-                  title="Manual refresh is available on the Paid Plan"
+                  title="Manual refresh is available for Pro members"
                 >
                   ↻ Refresh Now <span className="pulse-btn-pro-tag">PRO</span>
                 </button>
@@ -299,32 +386,42 @@ export function PulseScreen({
           <div className="breadth-bar">
             <div
               className="breadth-segment breadth-segment-adv"
-              style={{ width: `${advPct}%` }}
-              title={`Advances: ${breadth.advances} (${advPct}%)`}
+              style={{ flex: `${advPct}` }}
+              title={`Advances: ${breadth.advances.toLocaleString('en-IN')} (${advPct}%)`}
             >
-              {advPct > 15 ? `${advPct}% Adv` : ''}
+              {advPct > 8 ? `${advPct}%` : ''}
             </div>
-            {unchPct > 3 && (
-              <div
-                className="breadth-segment breadth-segment-unch"
-                style={{ width: `${unchPct}%` }}
-                title={`Unchanged: ${breadth.unchanged} (${unchPct}%)`}
-              >
-                {unchPct > 8 ? `${unchPct}%` : ''}
-              </div>
-            )}
             <div
               className="breadth-segment breadth-segment-dec"
-              style={{ width: `${decPct}%` }}
-              title={`Declines: ${breadth.declines} (${decPct}%)`}
+              style={{ flex: `${decPct}` }}
+              title={`Declines: ${breadth.declines.toLocaleString('en-IN')} (${decPct}%)`}
             >
-              {decPct > 15 ? `${decPct}% Dec` : ''}
+              {decPct > 8 ? `${decPct}%` : ''}
+            </div>
+            <div
+              className="breadth-segment breadth-segment-unch"
+              style={{ flex: `${unchPct}`, minWidth: '45px' }}
+              title={`Unchanged: ${breadth.unchanged.toLocaleString('en-IN')} (${unchPct}%)`}
+            >
+              {unchPct > 2 ? `${unchPct}%` : ''}
             </div>
           </div>
           <div className="breadth-bar-legend">
-            <span className="legend-adv">● Advances ({breadth.advances.toLocaleString('en-IN')})</span>
-            <span className="legend-unch">● Unchanged ({breadth.unchanged.toLocaleString('en-IN')})</span>
-            <span className="legend-dec">● Declines ({breadth.declines.toLocaleString('en-IN')})</span>
+            <span className="legend-item legend-adv">
+              <span className="legend-dot" aria-hidden="true" />
+              <span>Advances</span>
+              <span className="legend-count">({breadth.advances.toLocaleString('en-IN')})</span>
+            </span>
+            <span className="legend-item legend-dec">
+              <span className="legend-dot" aria-hidden="true" />
+              <span>Declines</span>
+              <span className="legend-count">({breadth.declines.toLocaleString('en-IN')})</span>
+            </span>
+            <span className="legend-item legend-unch">
+              <span className="legend-dot" aria-hidden="true" />
+              <span>Unchanged</span>
+              <span className="legend-count">({breadth.unchanged.toLocaleString('en-IN')})</span>
+            </span>
           </div>
         </div>
 
@@ -333,21 +430,24 @@ export function PulseScreen({
           <div className="breadth-metric-box">
             <span className="breadth-metric-label">Advances</span>
             <span className="breadth-metric-val bull mono">
-              ▲ {breadth.advances.toLocaleString('en-IN')}
+              <span className="breadth-metric-sym">▲</span>
+              <span>{breadth.advances.toLocaleString('en-IN')}</span>
             </span>
           </div>
 
           <div className="breadth-metric-box">
             <span className="breadth-metric-label">Declines</span>
             <span className="breadth-metric-val bear mono">
-              ▼ {breadth.declines.toLocaleString('en-IN')}
+              <span className="breadth-metric-sym">▼</span>
+              <span>{breadth.declines.toLocaleString('en-IN')}</span>
             </span>
           </div>
 
           <div className="breadth-metric-box">
             <span className="breadth-metric-label">Unchanged</span>
             <span className="breadth-metric-val neu mono">
-              ▬ {breadth.unchanged.toLocaleString('en-IN')}
+              <span className="breadth-metric-sym">▬</span>
+              <span>{breadth.unchanged.toLocaleString('en-IN')}</span>
             </span>
           </div>
 
@@ -358,10 +458,18 @@ export function PulseScreen({
             </span>
           </div>
 
-          <div className="breadth-metric-box">
+          <div
+            className="breadth-metric-box"
+            title={`Nifty 50: ${breadth.nifty50.advances} Adv, ${breadth.nifty50.declines} Dec${breadth.nifty50.unchanged > 0 ? `, ${breadth.nifty50.unchanged} Unch` : ''} (50 stocks)`}
+          >
             <span className="breadth-metric-label">Nifty 50 Breadth</span>
             <span className="breadth-metric-val mono">
               <span className="bull">{breadth.nifty50.advances}</span> / <span className="bear">{breadth.nifty50.declines}</span>
+              {breadth.nifty50.unchanged > 0 && (
+                <span className="neu" style={{ fontSize: '13px', marginLeft: '3px' }}>
+                  / {breadth.nifty50.unchanged}
+                </span>
+              )}
             </span>
           </div>
         </div>
@@ -374,8 +482,8 @@ export function PulseScreen({
             Sector Heatmap
             <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)' }}>
               {userTier === 'paid'
-                ? '(Click any sector tile to load matching stories)'
-                : '(Sector intelligence is exclusive to Paid members)'}
+                ? '(Click any sector or index tile to load matching stories)'
+                : '(Sector & index intelligence is exclusive to Pro members)'}
             </span>
           </h2>
           {selectedSectorId && (
@@ -396,15 +504,25 @@ export function PulseScreen({
           <div className="pulse-pro-banner">
             <span className="pulse-pro-banner-icon">🔒</span>
             <div className="pulse-pro-banner-text">
-              <b>Sector News Intelligence (Paid Feature):</b> Click any sector below to upgrade and unlock real-time company filings, news, and institutional announcements filtered across 8 core sectors.
+              <b>Sector News Intelligence (Pro Feature):</b> Click any sector or index below to unlock deep company filings and institutional news across 12 core sectors. <b>Start a 3-day free trial — no credit card needed!</b>
             </div>
-            <button
-              type="button"
-              className="pulse-pro-banner-btn"
-              onClick={() => setUpgradeModal({ feature: 'sector' })}
-            >
-              Upgrade (₹149/mo)
-            </button>
+            <div className="pulse-pro-banner-actions">
+              <button
+                type="button"
+                className="pulse-pro-banner-btn"
+                onClick={() => setUpgradeModal({ feature: 'sector' })}
+              >
+                Upgrade to Pro (₹149/mo)
+              </button>
+              {!trialUsed && (
+                <Link
+                  href={signedIn ? '/settings' : '/sign-in?next=/settings'}
+                  className="pulse-pro-banner-trial-btn"
+                >
+                  Start 3-Day Free Trial →
+                </Link>
+              )}
+            </div>
           </div>
         )}
 
@@ -428,7 +546,6 @@ export function PulseScreen({
                 <div className="pulse-sector-top">
                   <h3 className="pulse-sector-name">{sec.name}</h3>
                   <div className="pulse-sector-badges">
-                    {userTier !== 'paid' && <span className="pulse-card-pro-tag">PRO 🔒</span>}
                     <span className="pulse-sector-status-pill" data-status={sec.status}>
                       {sec.status}
                     </span>
@@ -460,7 +577,7 @@ export function PulseScreen({
             {selectedSector ? `${selectedSector.name} Corporate News & Filings` : 'Market-Wide Breaking News'}
             {!isLoadingStories && (
               <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)' }}>
-                ({stories.length} stories found)
+                ({Math.min(stories.length, 50)} top stories)
               </span>
             )}
           </h2>
@@ -494,7 +611,7 @@ export function PulseScreen({
           </div>
         ) : (
           <ul className="pulse-news-list">
-            {stories.map((s) => {
+            {stories.slice(0, 50).map((s) => {
               const symbols = s.instruments.map((i) => i.display_symbol ?? i.exchange_codes?.nse ?? i.isin);
               const sourceName = s.primary_item?.source?.name ?? 'News';
 
@@ -549,16 +666,18 @@ export function PulseScreen({
             </button>
 
             <div className="pulse-modal-header">
-              <span className="pulse-modal-crown">⭐</span>
+              <div className="pulse-modal-pro-badge">
+                <span className="pulse-modal-pro-pill">PRO MEMBER FEATURE</span>
+              </div>
               <h2 className="pulse-modal-title">
                 {upgradeModal.feature === 'refresh'
-                  ? 'Manual Telemetry Refresh is a Paid Feature'
-                  : 'Sector Intelligence is a Paid Feature'}
+                  ? 'Unlock Manual Refresh with Pro'
+                  : 'Unlock Sector & Index Intelligence with Pro'}
               </h2>
               <p className="pulse-modal-desc">
                 {upgradeModal.feature === 'refresh'
-                  ? 'Get instant on-demand market breadth, index tracking, and sector rotation updates (up to 100 hits/day).'
-                  : `Filter live corporate announcements, BSE/NSE filings, and expert commentary across all 8 core sectors.`}
+                  ? 'Get instant on-demand market breadth, index tracking, and sector rotation updates.'
+                  : 'Filter live corporate announcements, BSE/NSE filings, and expert commentary across all 12 sectors & benchmark indices.'}
               </p>
             </div>
 
@@ -566,13 +685,13 @@ export function PulseScreen({
               <div className="pulse-modal-feature-item">
                 <span className="pulse-modal-check">✓</span>
                 <div>
-                  <b>Manual Telemetry Refresh:</b> 15s instant refresh timer &amp; up to 100 hits/day.
+                  <b>Manual Refresh:</b> 4 refreshes per minute &amp; up to 100 refresh hits/day.
                 </div>
               </div>
               <div className="pulse-modal-feature-item">
                 <span className="pulse-modal-check">✓</span>
                 <div>
-                  <b>Sector Intelligence:</b> Deep filtering across 1,500+ stories for IT, Banking, Auto, Pharma, Energy, Metal, Realty &amp; FMCG.
+                  <b>Sector Intelligence:</b> Deep filtering across all 30+ days stories for Nifty 50, Smallcap, Midcap, Largecap, IT, Banking, Auto, Pharma, Energy, Metal, Realty &amp; FMCG.
                 </div>
               </div>
               <div className="pulse-modal-feature-item">
@@ -589,31 +708,77 @@ export function PulseScreen({
               </div>
             </div>
 
+            {!trialUsed && (
+              <div className="pulse-modal-trial-card">
+                <div className="pulse-modal-trial-badge">⚡ 3-DAY FREE TRIAL</div>
+                <div className="pulse-modal-trial-body">
+                  <div className="pulse-modal-trial-heading">
+                    Want to test Pro first? Try it free for 3 days.
+                  </div>
+                  <div className="pulse-modal-trial-sub">
+                    Get full, unrestricted access to all 12 sectors, filings &amp; instant manual refresh — <b>no credit card required</b>.
+                  </div>
+                  {trialError && <div className="pulse-modal-trial-error">{trialError}</div>}
+                </div>
+                {signedIn ? (
+                  <button
+                    type="button"
+                    className="pulse-modal-trial-action-btn"
+                    onClick={handleStartTrial}
+                    disabled={isActivatingTrial}
+                  >
+                    {isActivatingTrial ? 'Activating Trial...' : 'Start 3-Day Free Trial →'}
+                  </button>
+                ) : (
+                  <Link
+                    href="/sign-in?next=/settings"
+                    className="pulse-modal-trial-action-btn"
+                  >
+                    Start 3-Day Free Trial →
+                  </Link>
+                )}
+              </div>
+            )}
+
             <div className="pulse-modal-pricing">
-              <div className="pulse-plan-box">
-                <div className="pulse-plan-name">Monthly</div>
+              <button
+                type="button"
+                className={`pulse-plan-box ${selectedPlan === 'monthly' ? 'selected' : ''}`}
+                onClick={() => setSelectedPlan('monthly')}
+                aria-pressed={selectedPlan === 'monthly'}
+              >
+                <div className="pulse-plan-top-row">
+                  <div className="pulse-plan-name">Monthly</div>
+                  <div className={`pulse-plan-radio ${selectedPlan === 'monthly' ? 'active' : ''}`}>
+                    {selectedPlan === 'monthly' && <span className="pulse-plan-radio-dot" />}
+                  </div>
+                </div>
                 <div className="pulse-plan-cost">₹149 <span>/ mo</span></div>
                 <div className="pulse-plan-tax">GST included · Cancel anytime</div>
-              </div>
-              <div className="pulse-plan-box featured">
+              </button>
+
+              <button
+                type="button"
+                className={`pulse-plan-box ${selectedPlan === 'yearly' ? 'selected' : ''}`}
+                onClick={() => setSelectedPlan('yearly')}
+                aria-pressed={selectedPlan === 'yearly'}
+              >
                 <span className="pulse-plan-badge">SAVE 33%</span>
-                <div className="pulse-plan-name">Yearly</div>
+                <div className="pulse-plan-top-row">
+                  <div className="pulse-plan-name">Yearly</div>
+                  <div className={`pulse-plan-radio ${selectedPlan === 'yearly' ? 'active' : ''}`}>
+                    {selectedPlan === 'yearly' && <span className="pulse-plan-radio-dot" />}
+                  </div>
+                </div>
                 <div className="pulse-plan-cost">₹1,199 <span>/ yr</span></div>
                 <div className="pulse-plan-tax">₹99/mo equivalent · GST included</div>
-              </div>
+              </button>
             </div>
 
             <div className="pulse-modal-actions">
-              <Link href="/plans" className="button button-primary pulse-modal-btn">
-                Upgrade to Paid (from ₹149/mo)
+              <Link href={`/plans?billing=${selectedPlan}`} className="button button-primary pulse-modal-btn">
+                Upgrade to Pro
               </Link>
-              <button
-                type="button"
-                className="button button-ghost"
-                onClick={() => setUpgradeModal(null)}
-              >
-                Maybe Later
-              </button>
             </div>
           </div>
         </div>

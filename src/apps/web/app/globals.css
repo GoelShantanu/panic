@@ -161,7 +161,7 @@ button { font: inherit; color: inherit; }
 .icon-button:hover { background: var(--hover-strong); color: var(--text); }
 .theme-toggle { display: inline-flex; align-items: center; justify-content: center; padding: 6px; }
 .button {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center; text-align: center; gap: 6px;
   padding: 5px 12px; border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
 }

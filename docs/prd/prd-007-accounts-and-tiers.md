@@ -103,11 +103,12 @@ Default split `[ASSUMPTION]` — §11 OQ-007.1…007.6:
 | Stream and company timeline history (lists) | 30 days | 30 days | **All history since launch** |
 | Individual story pages by direct link | ✅ any age | ✅ any age | ✅ any age |
 | Watchlist size | — | 20 | **200** |
-| Alert budget ceiling (individual alerts/day) | — | **5** | **30** |
-| Default alert budget | — | 5 | 10 |
+| Alert budget ceiling (individual alerts/day) | — | **3** *(D-095)* | **25** *(D-095)* |
+| Default alert budget | — | 3 | 10 |
 | Daily digest | — | ✅ | ✅ |
 | Alert history | — | 30 days | **1 year** |
 | Story pages, company pages, AI filing summaries | ✅ | ✅ | ✅ |
+| Market Pulse telemetry refresh (rate-limited) | 15 min. poll | 15 min. poll | **60s live poll + on-demand (4/min, 100/day)** *(D-093)* |
 | Voting, comments | — | ✅ (eligibility applies) | ✅ (same eligibility) |
 
 **US-007.6** As a free user, I know what paid adds without being nagged.

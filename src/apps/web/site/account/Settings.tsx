@@ -125,7 +125,7 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
                 else say('plan', 'The free trial has already been used on this account.');
               }}
             >
-              Start 14-day free trial
+              Start 3-day free trial
             </button>
           )}
           {(!sub || sub.cancel_at_period_end) && (

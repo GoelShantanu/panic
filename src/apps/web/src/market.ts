@@ -35,6 +35,9 @@ const SYMBOLS_MAP: Record<string, { name: string; tag?: string; isFutures?: bool
   'NSE:CNXMETAL': { name: 'NIFTY METAL', yahooSymbol: '^CNXMETAL' },
   'NSE:CNXREALTY': { name: 'NIFTY REALTY', yahooSymbol: '^CNXREALTY' },
   'NSE:CNXENERGY': { name: 'NIFTY ENERGY', yahooSymbol: '^CNXENERGY' },
+  'NSE:CNXMIDCAP': { name: 'NIFTY MIDCAP', tag: 'NSE' },
+  'NSE:CNXSMALLCAP': { name: 'NIFTY SMALLCAP', tag: 'NSE' },
+  'NSE:CNX100': { name: 'NIFTY LARGECAP', tag: 'NSE', yahooSymbol: '^CNX100' },
 };
 
 const FALLBACK_TICKER: TickerItem[] = [
@@ -53,6 +56,9 @@ const FALLBACK_TICKER: TickerItem[] = [
   { symbol: 'NSE:CNXMETAL', name: 'NIFTY METAL', price: 12133.20, change: 114.70, percent: 0.95 },
   { symbol: 'NSE:CNXREALTY', name: 'NIFTY REALTY', price: 825.95, change: -2.75, percent: -0.33 },
   { symbol: 'NSE:CNXENERGY', name: 'NIFTY ENERGY', price: 36190.85, change: -22.85, percent: -0.06 },
+  { symbol: 'NSE:CNXMIDCAP', name: 'NIFTY MIDCAP', price: 59129.75, change: -67.50, percent: -0.11 },
+  { symbol: 'NSE:CNXSMALLCAP', name: 'NIFTY SMALLCAP', price: 19129.80, change: -1.90, percent: -0.01 },
+  { symbol: 'NSE:CNX100', name: 'NIFTY LARGECAP', price: 24133.10, change: 147.00, percent: 0.61 },
 ];
 
 let cachedTicker: { expiresAt: number; data: TickerResponse } | null = null;

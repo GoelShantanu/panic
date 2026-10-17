@@ -419,7 +419,7 @@ export async function route(
   // Manual market pulse refresh (paid subscribers only, 4 hits/min, 100 hits/day)
   if (path === 'market/pulse/refresh' && method === 'POST') {
     if (!user || (viewer.tier !== 'paid' && viewer.historyAccess !== 'trial' && viewer.historyAccess !== 'paid')) {
-      return { status: 402, body: { error: 'upgrade_required', message: 'Manual telemetry refresh is exclusive to Paid subscribers.' } };
+      return { status: 402, body: { error: 'upgrade_required', message: 'Manual refresh is exclusive to Pro members.' } };
     }
     const hitResult = await recordPulseRefreshHit(db, user.id, now);
     if (!hitResult.allowed) {
@@ -437,7 +437,7 @@ export async function route(
         },
       };
     }
-    const freshPulse = await fetchMarketPulse(true);
+    const freshPulse = await fetchMarketPulse(true, true);
     return ok({
       pulse: freshPulse,
       usage: {
@@ -452,10 +452,9 @@ export async function route(
   if (path === 'plans') return getPlans();
   if (path === 'market/ticker') return ok(await fetchMarketTicker());
   if (path === 'market/pulse') {
-    const pulse = await fetchMarketPulse();
-    const usage = user && (viewer.tier === 'paid' || viewer.historyAccess === 'trial' || viewer.historyAccess === 'paid')
-      ? await checkPulseRefreshUsage(db, user.id, now)
-      : null;
+    const isPro = Boolean(user && (viewer.tier === 'paid' || viewer.historyAccess === 'trial' || viewer.historyAccess === 'paid'));
+    const pulse = await fetchMarketPulse(false, isPro);
+    const usage = isPro ? await checkPulseRefreshUsage(db, user!.id, now) : null;
     return ok({
       ...pulse,
       usage: usage ? { daily_hits: usage.dailyHits, hits_left: usage.hitsLeft, max_daily: usage.maxDaily } : null,
@@ -469,7 +468,7 @@ export async function route(
         body: {
           error: 'upgrade_required',
           feature: 'sector_news',
-          message: 'Sector news filtering is exclusive to Paid members.',
+          message: 'Sector news filtering is exclusive to Pro members.',
         },
       };
     }

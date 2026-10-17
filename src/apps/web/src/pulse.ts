@@ -118,23 +118,72 @@ export const SECTOR_DEFINITIONS: Record<string, { id: string; name: string; symb
       'ADANIGREEN', 'ADANIPOWER', 'OIL', 'PETRONET', 'JSWENERGY', 'NHPC', 'SJVN', 'SUZLON'
     ],
   },
+  'NSE:NIFTY': {
+    id: 'nifty50',
+    name: 'NIFTY 50',
+    symbol: 'NSE:NIFTY',
+    constituents: [
+      'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'SBIN', 'ITC',
+      'HINDUNILVR', 'LT', 'BAJFINANCE', 'HCLTECH', 'MARUTI', 'SUNPHARMA', 'TATAMOTORS', 'TMCV',
+      'KOTAKBANK', 'AXISBANK', 'NTPC', 'ONGC', 'TITAN', 'ADANIENT', 'ADANIPORTS', 'COALINDIA',
+      'POWERGRID', 'BAJAJFINSV', 'TATASTEEL', 'ULTRACEMCO', 'ASIANPAINT', 'JSWSTEEL', 'GRASIM',
+      'NESTLEIND', 'TECHM', 'WIPRO', 'HINDALCO', 'CIPLA', 'SBILIFE', 'HDFCLIFE', 'DRREDDY',
+      'BRITANNIA', 'TATACONSUM', 'EICHERMOT', 'APOLLOHOSP', 'HEROMOTOCO', 'BPCL', 'SHRIRAMFIN',
+      'BEL', 'TRENT', 'INDUSINDBK', 'M&M', 'BAJAJ-AUTO'
+    ],
+  },
+  'NSE:CNXSMALLCAP': {
+    id: 'smallcap',
+    name: 'NIFTY SMALLCAP',
+    symbol: 'NSE:CNXSMALLCAP',
+    constituents: [
+      'SUZLON', 'EXIDEIND', 'CDSL', 'ANGELONE', 'RADICO', 'BSOFT', 'KPITTECH', 'MOTILALOFS',
+      'BLS', 'CASTROLIND', 'KEC', 'NCC', 'CESC', 'HUDCO', 'IRB', 'PNBHOUSING', 'NATIONALUM',
+      'HINDCOPPER', 'AMARAJABAT', 'CENTRALBK', 'GLENMARK', 'IDFC', 'JBCHEPHARM', 'MANAPPURAM'
+    ],
+  },
+  'NSE:CNXMIDCAP': {
+    id: 'midcap',
+    name: 'NIFTY MIDCAP',
+    symbol: 'NSE:CNXMIDCAP',
+    constituents: [
+      'BHARATFORG', 'PERSISTENT', 'COFORGE', 'POLYCAB', 'CUMMINSIND', 'LUPIN', 'AUROPHARMA',
+      'DIXON', 'ASHOKLEY', 'FEDERALBNK', 'MRF', 'VOLTAS', 'OBEROIRLTY', 'COLPAL', 'GODREJPROP',
+      'DALBHARAT', 'CONCOR', 'ASTRAL', 'JUBLFOOD', 'MAXHEALTH', 'HINDPETRO', 'INDUSTOWER'
+    ],
+  },
+  'NSE:CNX100': {
+    id: 'largecap',
+    name: 'NIFTY LARGECAP',
+    symbol: 'NSE:CNX100',
+    constituents: [
+      'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'BHARTIARTL', 'SBIN', 'ITC',
+      'HINDUNILVR', 'LT', 'BAJFINANCE', 'HCLTECH', 'MARUTI', 'SUNPHARMA', 'TATAMOTORS', 'TMCV',
+      'KOTAKBANK', 'AXISBANK', 'NTPC', 'ONGC', 'TITAN', 'ADANIENT', 'ADANIPORTS', 'COALINDIA',
+      'POWERGRID', 'BAJAJFINSV', 'TATASTEEL', 'ULTRACEMCO', 'ASIANPAINT', 'JSWSTEEL', 'SIEMENS',
+      'ZOMATO', 'HAL', 'VEDL', 'DLF', 'IOC', 'BANKBARODA', 'PFC', 'RECLTD', 'CHOLAFIN'
+    ],
+  },
 };
 
 const NIFTY_50_TICKERS = [
   'NSE:RELIANCE', 'NSE:TCS', 'NSE:HDFCBANK', 'NSE:INFY', 'NSE:ICICIBANK',
   'NSE:BHARTIARTL', 'NSE:SBIN', 'NSE:ITC', 'NSE:HINDUNILVR', 'NSE:LT',
-  'NSE:BAJFINANCE', 'NSE:HCLTECH', 'NSE:MARUTI', 'NSE:SUNPHARMA', 'NSE:TATAMOTORS',
+  'NSE:BAJFINANCE', 'NSE:HCLTECH', 'NSE:MARUTI', 'NSE:SUNPHARMA', 'NSE:TMCV',
   'NSE:KOTAKBANK', 'NSE:AXISBANK', 'NSE:NTPC', 'NSE:ONGC', 'NSE:TITAN',
   'NSE:ADANIENT', 'NSE:ADANIPORTS', 'NSE:COALINDIA', 'NSE:POWERGRID', 'NSE:BAJAJFINSV',
   'NSE:TATASTEEL', 'NSE:ULTRACEMCO', 'NSE:ASIANPAINT', 'NSE:JSWSTEEL',
   'NSE:GRASIM', 'NSE:NESTLEIND', 'NSE:TECHM', 'NSE:WIPRO', 'NSE:HINDALCO',
   'NSE:CIPLA', 'NSE:SBILIFE', 'NSE:HDFCLIFE', 'NSE:DRREDDY', 'NSE:BRITANNIA',
-  'NSE:TATACONSUM', 'NSE:EICHERMOT', 'NSE:APOLLOHOSP', 'NSE:HEROMOTOCO', 'NSE:DIVISLAB',
+  'NSE:TATACONSUM', 'NSE:EICHERMOT', 'NSE:APOLLOHOSP', 'NSE:HEROMOTOCO',
   'NSE:BPCL', 'NSE:SHRIRAMFIN', 'NSE:BEL', 'NSE:TRENT', 'NSE:INDUSINDBK',
+  'NSE:M&M', 'NSE:BAJAJ_AUTO',
 ];
 
-const CACHE_TTL_MS = 60_000; // 60 seconds server cache for Pulse telemetry
-let cachedPulse: { expiresAt: number; data: PulseResponse } | null = null;
+const CACHE_TTL_PRO_MS = 60_000; // 60 seconds server cache for Pro (paid & trial) members
+const CACHE_TTL_FREE_MS = 900_000; // 15 minutes server cache for Guest & Free members
+let cachedPulsePro: { expiresAt: number; data: PulseResponse } | null = null;
+let cachedPulseFree: { expiresAt: number; data: PulseResponse } | null = null;
 let pendingPulseFetch: Promise<PulseResponse> | null = null;
 
 const FALLBACK_BREADTH: MarketBreadth = {
@@ -147,8 +196,8 @@ const FALLBACK_BREADTH: MarketBreadth = {
   sentimentLabel: 'Mild Bullish Breadth',
   nifty50: {
     advances: 27,
-    declines: 22,
-    unchanged: 1,
+    declines: 23,
+    unchanged: 0,
   },
   updatedAt: new Date().toISOString(),
 };
@@ -242,10 +291,15 @@ async function fetchNifty50Breadth(): Promise<{ advances: number; declines: numb
   }
 }
 
-export async function fetchMarketPulse(forceFresh = false): Promise<PulseResponse> {
+export async function fetchMarketPulse(forceFresh = false, isPro = false): Promise<PulseResponse> {
   const now = Date.now();
-  if (!forceFresh && cachedPulse && cachedPulse.expiresAt > now) {
-    return cachedPulse.data;
+  if (!forceFresh) {
+    if (isPro && cachedPulsePro && cachedPulsePro.expiresAt > now) {
+      return cachedPulsePro.data;
+    }
+    if (!isPro && cachedPulseFree && cachedPulseFree.expiresAt > now) {
+      return cachedPulseFree.data;
+    }
   }
   if (!forceFresh && pendingPulseFetch) return pendingPulseFetch;
 
@@ -293,7 +347,7 @@ export async function fetchMarketPulse(forceFresh = false): Promise<PulseRespons
 
       const tickerMap = new Map((tickerRes?.indices ?? []).map((idx) => [idx.symbol, idx]));
 
-      const sectors: SectorItem[] = Object.entries(SECTOR_DEFINITIONS).map(([sym, def]) => {
+      const allSectors: SectorItem[] = Object.entries(SECTOR_DEFINITIONS).map(([sym, def]) => {
         const item = tickerMap.get(sym);
         const price = item?.price ?? 0;
         const change = item?.change ?? 0;
@@ -318,8 +372,17 @@ export async function fetchMarketPulse(forceFresh = false): Promise<PulseRespons
         };
       });
 
-      // Sort sectors descending by performance percentage
-      sectors.sort((a, b) => b.percent - a.percent);
+      // Keep Nifty 50, Smallcap, Midcap, Largecap at the front (first 4) as requested
+      const BROAD_INDEX_ORDER = ['nifty50', 'smallcap', 'midcap', 'largecap'];
+      const broadItems = BROAD_INDEX_ORDER
+        .map((id) => allSectors.find((s) => s.id === id))
+        .filter((s): s is SectorItem => s !== undefined);
+
+      // Remaining sector indices sorted descending by performance percentage
+      const sectorItems = allSectors.filter((s) => !BROAD_INDEX_ORDER.includes(s.id));
+      sectorItems.sort((a, b) => b.percent - a.percent);
+
+      const sectors: SectorItem[] = [...broadItems, ...sectorItems];
 
       const result: PulseResponse = {
         breadth,
@@ -327,10 +390,15 @@ export async function fetchMarketPulse(forceFresh = false): Promise<PulseRespons
         updatedAt: new Date().toISOString(),
       };
 
-      cachedPulse = { expiresAt: Date.now() + CACHE_TTL_MS, data: result };
-      return result;
+      const currNow = Date.now();
+      cachedPulsePro = { expiresAt: currNow + CACHE_TTL_PRO_MS, data: result };
+      if (!cachedPulseFree || cachedPulseFree.expiresAt <= currNow) {
+        cachedPulseFree = { expiresAt: currNow + CACHE_TTL_FREE_MS, data: result };
+      }
+      return isPro ? cachedPulsePro.data : cachedPulseFree.data;
     } catch {
-      if (cachedPulse) return cachedPulse.data;
+      if (isPro && cachedPulsePro) return cachedPulsePro.data;
+      if (!isPro && cachedPulseFree) return cachedPulseFree.data;
       return {
         breadth: FALLBACK_BREADTH,
         sectors: [],
@@ -349,9 +417,10 @@ export async function fetchPulseStoriesBySector(
   sectorId: string | null,
   limit = 50
 ): Promise<StoryCard[]> {
+  const clampedLimit = Math.min(50, Math.max(1, limit));
   try {
     if (!sectorId) {
-      // Query top stories across the entire stream
+      // Query top stories across the entire stream (capped to 50 max)
       const rows = await streamPage(db, {
         view: 'latest',
         eventTypes: null,
@@ -360,7 +429,7 @@ export async function fetchPulseStoriesBySector(
         watchlistUserId: null,
         before: null,
         notBefore: null,
-        limit,
+        limit: clampedLimit,
       });
       const cards = await loadStoryCards(db, rows.map((r) => r.id));
       return rows.map((r) => cards.get(r.id)).filter((c): c is StoryCard => c !== undefined);
@@ -369,7 +438,7 @@ export async function fetchPulseStoriesBySector(
     const def = Object.values(SECTOR_DEFINITIONS).find((s) => s.id === sectorId);
     if (!def) return [];
 
-    // Query distinct story IDs matching any constituent symbol across the entire database
+    // Query distinct story IDs matching any constituent symbol across the entire database (capped to 50 max)
     const sql = `
       SELECT DISTINCT s.id, s.first_seen_at
       FROM story s
@@ -379,7 +448,7 @@ export async function fetchPulseStoriesBySector(
       ORDER BY s.first_seen_at DESC, s.id DESC
       LIMIT $2
     `;
-    const result = await db.query<{ id: string }>(sql, [def.constituents, limit]);
+    const result = await db.query<{ id: string }>(sql, [def.constituents, clampedLimit]);
     const storyIds = result.rows.map((r) => r.id);
     const cards = await loadStoryCards(db, storyIds);
     return storyIds.map((id) => cards.get(id)).filter((c): c is StoryCard => c !== undefined);
@@ -455,7 +524,7 @@ export async function recordPulseRefreshHit(
       };
     }
 
-    const row = rows[0];
+    const row = rows[0]!;
     const elapsedCooldown = (now.getTime() - new Date(row.last_hit_at).getTime()) / 1000;
     if (elapsedCooldown < 15) {
       await db.query('ROLLBACK');

@@ -12,6 +12,17 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const params = await searchParams;
   const next = safeNext(params['next']);
   const reset = params['mode'] === 'reset';
-  if (!reset && (await api('/v1/me')).status === 200) redirect(next);
-  return <SignIn next={next} initialMode={reset ? 'reset' : 'login'} googleClientId={process.env['GOOGLE_CLIENT_ID'] ?? null} />;
+  const initialMode = params['mode'] === 'signup' ? 'signup' : reset ? 'reset' : 'login';
+  const initialEmail = typeof params['email'] === 'string' ? params['email'] : undefined;
+  const initialCode = typeof params['code'] === 'string' ? params['code'] : undefined;
+  if (!reset && !initialCode && (await api('/v1/me')).status === 200) redirect(next);
+  return (
+    <SignIn
+      next={next}
+      initialMode={initialMode}
+      initialEmail={initialEmail}
+      initialCode={initialCode}
+      googleClientId={process.env['GOOGLE_CLIENT_ID'] ?? null}
+    />
+  );
 }

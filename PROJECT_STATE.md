@@ -1,5 +1,27 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Market Pulse Telemetry, Account Hardening & Database Audit Live — 2026-10-17 (D-093, D-094, D-095)
+
+[VERIFIED] Completed a major feature release, authentication hardening, and deep database integrity audit:
+
+1. **Market Pulse Surface (`/pulse`):**
+   - Real-time NSE advances/declines, sentiment indicator, A/D ratio, Nifty 50 breadth, and 12-sector performance rotation heatmap.
+   - Distinct tier experience: Free/Guest users poll every 15 minutes (`900_000ms`, `CACHE_TTL_FREE_MS = 900_000`), with clean sector tiles (no individual PRO badges) that open a conversion modal featuring 3-Day Free Trial activation and monthly/yearly subscription options. Pro members poll every 60s and enjoy rate-limited manual telemetry refresh (4/min, 100/day, 15s cooldown).
+   - Breadth visualization: Multi-segment bar showing clean percentage labels (`52.7%`, `44.7%`, `2.6%`) with colored legend indicators (`#10b981` Advances, `#ef4444` Declines, `#64748b` Unchanged), proper spacing, and monospace count metrics.
+
+2. **Account Hardening & Email Security:**
+   - Password policy bounds: Strictly 8–16 characters enforced across client UI validation and backend verification (`MIN_PASSWORD_LENGTH = 8`, `MAX_PASSWORD_LENGTH = 16`). Added complexity validation requiring uppercase, lowercase, special character, and restricting 3-digit numerical sequences.
+   - Anti-Abuse Email Canonicalization: Strips `+` alias extensions (`user+tag@domain.com` -> `user@domain.com`) to prevent duplicate trial creation and pirated signups.
+   - Branded Dark HTML Emails & 1-Click Magic Link: Upgraded transactional mailer with responsive card HTML, monospace OTP code box, and clickable verification link (`https://bazaarnews.duckdns.org/sign-in?mode=signup&email=...&code=...`) pre-populating fields in `SignIn.tsx`.
+   - UI polish: Form button text centered; mandatory fields flagged with standard red asterisks (`*`); age restriction notices removed.
+   - Instantaneous trial downgrade: 3-day trials automatically transition to Free tier access upon expiry via dynamic PostgreSQL view `user_tier` without requiring forced logouts.
+
+3. **Database Architecture & Integrity Audit (Migration 0021 Applied):**
+   - Executed full read-only audit across all 96 tables, 3 views, 674 columns, 8 sequences, and 87 foreign key constraints: confirmed 100% referential integrity with 0 orphaned records and healthy sequences.
+   - Identified latent HTTP 500 error on `POST /v1/market/pulse/refresh` due to missing `pulse_refresh_usage` table.
+   - Applied migration `0021_pulse_refresh_usage_and_entitlements.sql`: created `pulse_refresh_usage (user_id, day, daily_hits, window_start, window_hits, last_hit_at)` with index `idx_pulse_refresh_usage_user`, and updated alert budget ceilings (3 free / 25 paid).
+   - Terminated dangling inspection tasks and idle subagents; verified all 404 unit tests and TypeScript typecheck pass with 0 errors.
+
 ## Full mobile phone participation live — 2026-10-16 (D-092)
 
 [VERIFIED] On the owner's report of mobile issues where "Open on desktop to view/take part" was displayed for comments and articles, removed the historical desktop-only restrictions (D-013, D-016, D-067). Removed `.desktop-only` from comment composer and comment actions (reply, edit, delete, report) in `Comments.tsx`. Removed `.desktop-only` and `.panel-bar { display: none }` from `StoryView.tsx`, `StoryRow.tsx`, and `responsive.css` to enable full touch-friendly voting on mobile. Enabled `<FollowButton />` on company pages on mobile. Removed `<PhoneNote />` and global `<PhoneNotice />` warning banner across the application. Verified via `npm run typecheck` and automated Vitest suites (`phone.test.tsx`, `comments.test.tsx`, `panel.test.tsx`, `stream.test.tsx`, `a11y.test.tsx`) that all 43 tests pass.

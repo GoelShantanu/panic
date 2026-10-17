@@ -24,6 +24,7 @@ const mockTicker: TickerResponse = {
     { symbol: 'NSE:CNXMETAL', name: 'NIFTY METAL', price: 12133.2, change: 114.7, percent: 0.95 },
     { symbol: 'NSE:CNXREALTY', name: 'NIFTY REALTY', price: 825.95, change: -2.75, percent: -0.33 },
     { symbol: 'NSE:CNXENERGY', name: 'NIFTY ENERGY', price: 36190.85, change: -22.85, percent: -0.06 },
+    { symbol: 'NSE:CNXMIDCAP', name: 'NIFTY MIDCAP', price: 59129.75, change: -67.50, percent: -0.11, tag: 'NSE' },
   ],
   updatedAt: '2026-10-17T12:00:00.000Z',
 };
@@ -107,6 +108,8 @@ describe('MarketTicker component', () => {
     expect(screen.getAllByText('NIFTY METAL').length).toBeGreaterThan(0);
     expect(screen.getAllByText('NIFTY REALTY').length).toBeGreaterThan(0);
     expect(screen.getAllByText('NIFTY ENERGY').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY MIDCAP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NSE').length).toBeGreaterThan(0);
 
     // Verify USD/INR is NOT rendered
     expect(screen.queryByText('USD/INR')).toBeNull();

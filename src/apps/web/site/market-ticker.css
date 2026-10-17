@@ -137,20 +137,42 @@
   font-size: 8.5px;
   font-weight: 700;
   color: #ffffff;
+  background: #334155; /* Default dark slate background so tags are never invisible */
   padding: 1px 4px;
   border-radius: 2px;
   letter-spacing: 0.05em;
   line-height: 1.1;
   text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.ticker-tag-nse {
+  background: #1d4ed8; /* Vibrant Royal/NSE Blue */
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] .ticker-tag-nse,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .ticker-tag-nse {
+    background: #2563eb;
+    color: #ffffff;
+  }
+}
+
+.ticker-tag-bse {
+  background: #0284c7; /* Sky / cyan blue for BSE */
+  color: #ffffff;
 }
 
 .ticker-tag-gift,
 .ticker-futures-tag {
   background: #c2410c; /* Vermilion orange */
+  color: #ffffff;
 }
 
 .ticker-tag-mcx {
   background: #b45309; /* Warm gold/amber for MCX commodities */
+  color: #ffffff;
 }
 
 .ticker-name {

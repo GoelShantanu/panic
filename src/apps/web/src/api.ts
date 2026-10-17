@@ -66,7 +66,7 @@ import * as corrections from './corrections.ts';
 import { getSavedViews, postSavedView, removeSavedView } from './savedViews.ts';
 import { currentSubscription } from '@stockpanic/db';
 import { fetchMarketTicker } from './market.ts';
-import { fetchMarketPulse, fetchPulseStoriesBySector } from './pulse.ts';
+import { checkPulseRefreshUsage, fetchMarketPulse, fetchPulseStoriesBySector, recordPulseRefreshHit } from './pulse.ts';
 
 export interface ApiResponse {
   status: number;
@@ -416,12 +416,63 @@ export async function route(
     const target = await recordOutbound(db, id, url.searchParams.get('from') ?? 'other', now);
     return target ? { status: 302, body: null, headers: { location: target, 'referrer-policy': 'no-referrer' } } : notFound();
   }
+  // Manual market pulse refresh (paid subscribers only, 4 hits/min, 100 hits/day)
+  if (path === 'market/pulse/refresh' && method === 'POST') {
+    if (!user || (viewer.tier !== 'paid' && viewer.historyAccess !== 'trial' && viewer.historyAccess !== 'paid')) {
+      return { status: 402, body: { error: 'upgrade_required', message: 'Manual telemetry refresh is exclusive to Paid subscribers.' } };
+    }
+    const hitResult = await recordPulseRefreshHit(db, user.id, now);
+    if (!hitResult.allowed) {
+      return {
+        status: 429,
+        body: {
+          error: hitResult.error,
+          message: hitResult.message,
+          wait_seconds: hitResult.waitSeconds,
+          usage: {
+            daily_hits: hitResult.dailyHits,
+            hits_left: hitResult.hitsLeft,
+            max_daily: hitResult.maxDaily,
+          },
+        },
+      };
+    }
+    const freshPulse = await fetchMarketPulse(true);
+    return ok({
+      pulse: freshPulse,
+      usage: {
+        daily_hits: hitResult.dailyHits,
+        hits_left: hitResult.hitsLeft,
+        max_daily: hitResult.maxDaily,
+      },
+    });
+  }
+
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();
   if (path === 'market/ticker') return ok(await fetchMarketTicker());
-  if (path === 'market/pulse') return ok(await fetchMarketPulse());
+  if (path === 'market/pulse') {
+    const pulse = await fetchMarketPulse();
+    const usage = user && (viewer.tier === 'paid' || viewer.historyAccess === 'trial' || viewer.historyAccess === 'paid')
+      ? await checkPulseRefreshUsage(db, user.id, now)
+      : null;
+    return ok({
+      ...pulse,
+      usage: usage ? { daily_hits: usage.dailyHits, hits_left: usage.hitsLeft, max_daily: usage.maxDaily } : null,
+    });
+  }
   if (path === 'market/pulse/stories') {
     const sector = url.searchParams.get('sector');
+    if (sector && viewer.tier !== 'paid' && viewer.historyAccess !== 'trial' && viewer.historyAccess !== 'paid') {
+      return {
+        status: 402,
+        body: {
+          error: 'upgrade_required',
+          feature: 'sector_news',
+          message: 'Sector news filtering is exclusive to Paid members.',
+        },
+      };
+    }
     return ok({ stories: await fetchPulseStoriesBySector(db, sector, 50) });
   }
   // Page header state (PRD-001 US-001.7 AC-1, US-001.6): session and stale tier-1 sources (D-040).

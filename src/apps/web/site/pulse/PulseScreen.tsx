@@ -9,10 +9,18 @@ import type { PulseResponse, SectorItem } from '../../src/pulse.ts';
 import type { StoryCard } from '../types.ts';
 import './pulse.css';
 
+export interface UsageInfo {
+  dailyHits: number;
+  hitsLeft: number;
+  maxDaily: number;
+}
+
 export interface PulseScreenProps {
   initialPulse: PulseResponse;
   initialStories: StoryCard[];
   session?: SessionInfo | null;
+  userTier?: 'free' | 'paid';
+  initialUsage?: UsageInfo | null;
 }
 
 function formatIstTime(isoString: string): string {
@@ -31,40 +39,114 @@ function formatIstTime(isoString: string): string {
   }
 }
 
-export function PulseScreen({ initialPulse, initialStories, session }: PulseScreenProps) {
+export function PulseScreen({
+  initialPulse,
+  initialStories,
+  session,
+  userTier = 'free',
+  initialUsage = null,
+}: PulseScreenProps) {
   const [pulse, setPulse] = useState<PulseResponse>(initialPulse);
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
   const [stories, setStories] = useState<StoryCard[]>(initialStories);
   const [isLoadingStories, setIsLoadingStories] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Rate limiting & cooldown state
+  const [cooldown, setCooldown] = useState(0);
+  const [dailyHits, setDailyHits] = useState(initialUsage?.dailyHits ?? 0);
+  const [hitsLeft, setHitsLeft] = useState(initialUsage?.hitsLeft ?? 100);
+  const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
+
+  // Upgrade modal state
+  const [upgradeModal, setUpgradeModal] = useState<{ feature: 'refresh' | 'sector'; sectorName?: string } | null>(null);
+
   const isCashOpen = session?.state === 'open' || session?.state === 'special';
 
-  // Fetch telemetry updates
-  async function refreshPulse() {
+  // 15-second cooldown timer countdown
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  // Handle manual telemetry refresh (paid users only, rate-limited)
+  async function handleManualRefresh() {
+    if (userTier !== 'paid') {
+      setUpgradeModal({ feature: 'refresh' });
+      return;
+    }
+
+    if (cooldown > 0 || isRefreshing || hitsLeft === 0) return;
+
     setIsRefreshing(true);
+    setRefreshNotice(null);
+
     try {
-      const res = await fetch('/v1/market/pulse', { signal: AbortSignal.timeout(6_000) });
-      if (!res.ok) return;
-      const json = (await res.json()) as PulseResponse;
-      if (json && json.breadth) {
-        setPulse(json);
+      const res = await fetch('/v1/market/pulse/refresh', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (res.status === 402) {
+        setUpgradeModal({ feature: 'refresh' });
+        return;
+      }
+
+      const json = await res.json().catch(() => null);
+
+      if (res.status === 429) {
+        setRefreshNotice(json?.message || 'Rate limit reached. Please wait.');
+        if (json?.wait_seconds) setCooldown(json.wait_seconds);
+        if (json?.usage) {
+          setDailyHits(json.usage.daily_hits);
+          setHitsLeft(json.usage.hits_left);
+        }
+        return;
+      }
+
+      if (res.ok && json?.pulse) {
+        setPulse(json.pulse);
+        if (json.usage) {
+          setDailyHits(json.usage.daily_hits);
+          setHitsLeft(json.usage.hits_left);
+        }
+        // Start 15-second cooldown timer
+        setCooldown(15);
+      } else {
+        setRefreshNotice('Failed to refresh market data.');
       }
     } catch {
-      // Keep last known good telemetry
+      setRefreshNotice('Network error. Could not refresh.');
     } finally {
       setIsRefreshing(false);
     }
   }
 
-  // Auto-refresh pulse telemetry every 60 seconds during live market hours
+  // Passive auto-refresh pulse telemetry every 60 seconds during live market hours
   useEffect(() => {
-    if (!isCashOpen) return; // Paused while offline
+    if (!isCashOpen) return;
 
     let active = true;
     const timer = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      if (active) refreshPulse();
+      if (active) {
+        fetch('/v1/market/pulse', { signal: AbortSignal.timeout(6_000) })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((json) => {
+            if (active && json?.breadth) setPulse(json);
+          })
+          .catch(() => undefined);
+      }
     }, 60_000);
 
     return () => {
@@ -79,6 +161,10 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
     try {
       const url = sectorId ? `/v1/market/pulse/stories?sector=${encodeURIComponent(sectorId)}` : '/v1/market/pulse/stories';
       const res = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+      if (res.status === 402) {
+        setUpgradeModal({ feature: 'sector' });
+        return;
+      }
       if (res.ok) {
         const json = (await res.json()) as { stories?: StoryCard[] };
         if (json?.stories) {
@@ -93,6 +179,13 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
   }
 
   const toggleSector = (id: string) => {
+    // Restrict sector filtering to paid users
+    if (userTier !== 'paid') {
+      const sec = sectors.find((s) => s.id === id);
+      setUpgradeModal({ feature: 'sector', sectorName: sec?.name || id });
+      return;
+    }
+
     if (selectedSectorId === id) {
       setSelectedSectorId(null);
       loadSectorStories(null);
@@ -111,7 +204,7 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
 
   return (
     <div className="pulse-screen">
-      {/* Header with Offline/Live Status & Refresh Timestamps */}
+      {/* Header with Offline/Live Status & Refresh Controls */}
       <header className="pulse-header">
         <div className="pulse-title-group">
           <h1 className="pulse-title">
@@ -140,14 +233,54 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
             <span className="pulse-time-item">
               <b>Refresh:</b> Every 60s {isCashOpen ? '(Active)' : '(Paused while closed)'}
             </span>
-            <button
-              type="button"
-              className="pulse-refresh-btn"
-              onClick={refreshPulse}
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? '↻ Refreshing...' : '↻ Refresh Now'}
-            </button>
+
+            <div className="pulse-refresh-action-group">
+              {userTier === 'paid' ? (
+                <button
+                  type="button"
+                  className="pulse-refresh-btn"
+                  onClick={handleManualRefresh}
+                  disabled={cooldown > 0 || isRefreshing || hitsLeft === 0}
+                  title={hitsLeft === 0 ? 'Daily limit reached (100/100)' : 'Instant manual telemetry refresh'}
+                >
+                  {cooldown > 0
+                    ? `↻ Wait ${cooldown}s...`
+                    : isRefreshing
+                    ? '↻ Refreshing...'
+                    : hitsLeft === 0
+                    ? '↻ Daily Limit Reached'
+                    : '↻ Refresh Now'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="pulse-refresh-btn pulse-pro-btn"
+                  onClick={() => setUpgradeModal({ feature: 'refresh' })}
+                  title="Manual refresh is available on the Paid Plan"
+                >
+                  ↻ Refresh Now <span className="pulse-btn-pro-tag">PRO</span>
+                </button>
+              )}
+
+              {/* Warning when 10 or fewer hits left for the day */}
+              {userTier === 'paid' && dailyHits >= 90 && hitsLeft > 0 && (
+                <div className="pulse-hit-warning">
+                  ⚠️ Only {hitsLeft} hits left for the day
+                </div>
+              )}
+
+              {userTier === 'paid' && hitsLeft === 0 && (
+                <div className="pulse-hit-error">
+                  ⚠️ Daily refresh limit reached (100/100). Resets tomorrow.
+                </div>
+              )}
+
+              {refreshNotice && (
+                <div className="pulse-hit-notice">
+                  {refreshNotice}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -188,9 +321,14 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
               {decPct > 15 ? `${decPct}% Dec` : ''}
             </div>
           </div>
+          <div className="breadth-bar-legend">
+            <span className="legend-adv">● Advances ({breadth.advances.toLocaleString('en-IN')})</span>
+            <span className="legend-unch">● Unchanged ({breadth.unchanged.toLocaleString('en-IN')})</span>
+            <span className="legend-dec">● Declines ({breadth.declines.toLocaleString('en-IN')})</span>
+          </div>
         </div>
 
-        {/* Metrics Grid */}
+        {/* Breadth Numbers Grid */}
         <div className="breadth-metrics-grid">
           <div className="breadth-metric-box">
             <span className="breadth-metric-label">Advances</span>
@@ -235,7 +373,9 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
           <h2 className="pulse-section-title">
             Sector Heatmap
             <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)' }}>
-              (Click any sector tile to load all matching stories)
+              {userTier === 'paid'
+                ? '(Click any sector tile to load matching stories)'
+                : '(Sector intelligence is exclusive to Paid members)'}
             </span>
           </h2>
           {selectedSectorId && (
@@ -251,6 +391,22 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
             </button>
           )}
         </div>
+
+        {userTier !== 'paid' && (
+          <div className="pulse-pro-banner">
+            <span className="pulse-pro-banner-icon">🔒</span>
+            <div className="pulse-pro-banner-text">
+              <b>Sector News Intelligence (Paid Feature):</b> Click any sector below to upgrade and unlock real-time company filings, news, and institutional announcements filtered across 8 core sectors.
+            </div>
+            <button
+              type="button"
+              className="pulse-pro-banner-btn"
+              onClick={() => setUpgradeModal({ feature: 'sector' })}
+            >
+              Upgrade (₹149/mo)
+            </button>
+          </div>
+        )}
 
         <div className="pulse-sector-grid">
           {sectors.map((sec: SectorItem) => {
@@ -271,9 +427,12 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
               >
                 <div className="pulse-sector-top">
                   <h3 className="pulse-sector-name">{sec.name}</h3>
-                  <span className="pulse-sector-status-pill" data-status={sec.status}>
-                    {sec.status}
-                  </span>
+                  <div className="pulse-sector-badges">
+                    {userTier !== 'paid' && <span className="pulse-card-pro-tag">PRO 🔒</span>}
+                    <span className="pulse-sector-status-pill" data-status={sec.status}>
+                      {sec.status}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="pulse-sector-numbers mono">
@@ -370,6 +529,95 @@ export function PulseScreen({ initialPulse, initialStories, session }: PulseScre
           </ul>
         )}
       </section>
+
+      {/* Upgrade Modal for Non-Paid Users */}
+      {upgradeModal && (
+        <div
+          className="pulse-modal-backdrop"
+          onClick={() => setUpgradeModal(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="pulse-modal-panel" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="pulse-modal-close"
+              onClick={() => setUpgradeModal(null)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            <div className="pulse-modal-header">
+              <span className="pulse-modal-crown">⭐</span>
+              <h2 className="pulse-modal-title">
+                {upgradeModal.feature === 'refresh'
+                  ? 'Manual Telemetry Refresh is a Paid Feature'
+                  : 'Sector Intelligence is a Paid Feature'}
+              </h2>
+              <p className="pulse-modal-desc">
+                {upgradeModal.feature === 'refresh'
+                  ? 'Get instant on-demand market breadth, index tracking, and sector rotation updates (up to 100 hits/day).'
+                  : `Filter live corporate announcements, BSE/NSE filings, and expert commentary across all 8 core sectors.`}
+              </p>
+            </div>
+
+            <div className="pulse-modal-features">
+              <div className="pulse-modal-feature-item">
+                <span className="pulse-modal-check">✓</span>
+                <div>
+                  <b>Manual Telemetry Refresh:</b> 15s instant refresh timer &amp; up to 100 hits/day.
+                </div>
+              </div>
+              <div className="pulse-modal-feature-item">
+                <span className="pulse-modal-check">✓</span>
+                <div>
+                  <b>Sector Intelligence:</b> Deep filtering across 1,500+ stories for IT, Banking, Auto, Pharma, Energy, Metal, Realty &amp; FMCG.
+                </div>
+              </div>
+              <div className="pulse-modal-feature-item">
+                <span className="pulse-modal-check">✓</span>
+                <div>
+                  <b>25 Alerts/Day:</b> Up to 25 instant alerts per day (vs 3 on Free).
+                </div>
+              </div>
+              <div className="pulse-modal-feature-item">
+                <span className="pulse-modal-check">✓</span>
+                <div>
+                  <b>30-Day News Archive:</b> Full company filings history &amp; multi-event filters.
+                </div>
+              </div>
+            </div>
+
+            <div className="pulse-modal-pricing">
+              <div className="pulse-plan-box">
+                <div className="pulse-plan-name">Monthly</div>
+                <div className="pulse-plan-cost">₹149 <span>/ mo</span></div>
+                <div className="pulse-plan-tax">GST included · Cancel anytime</div>
+              </div>
+              <div className="pulse-plan-box featured">
+                <span className="pulse-plan-badge">SAVE 33%</span>
+                <div className="pulse-plan-name">Yearly</div>
+                <div className="pulse-plan-cost">₹1,199 <span>/ yr</span></div>
+                <div className="pulse-plan-tax">₹99/mo equivalent · GST included</div>
+              </div>
+            </div>
+
+            <div className="pulse-modal-actions">
+              <Link href="/plans" className="button button-primary pulse-modal-btn">
+                Upgrade to Paid (from ₹149/mo)
+              </Link>
+              <button
+                type="button"
+                className="button button-ghost"
+                onClick={() => setUpgradeModal(null)}
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

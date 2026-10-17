@@ -159,7 +159,7 @@ describe('settings (US-007.3, US-007.8)', () => {
 
 describe('plans (US-007.7)', () => {
   it('visitors are sent to sign in; billing closed is explained; Razorpay opens with the subscription', async () => {
-    const { unmount } = render(<Plans plans={[{ id: 'monthly', price_inr: 299 }, { id: 'yearly', price_inr: 2999 }]} signedIn={false} tier={null} trialUsed={false} subscribed={false} />);
+    const { unmount } = render(<Plans plans={[{ id: 'monthly', price_inr: 149 }, { id: 'yearly', price_inr: 1199 }]} signedIn={false} tier={null} trialUsed={false} subscribed={false} />);
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe monthly' })));
     expect(push).toHaveBeenCalledWith('/sign-in?next=/plans');
     unmount();
@@ -171,7 +171,7 @@ describe('plans (US-007.7)', () => {
       this.on = vi.fn();
     });
     (window as any).Razorpay = ctor;
-    render(<Plans plans={[{ id: 'yearly', price_inr: 2999 }]} signedIn tier="free" trialUsed subscribed={false} />);
+    render(<Plans plans={[{ id: 'yearly', price_inr: 1199 }]} signedIn tier="free" trialUsed subscribed={false} />);
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe yearly' })));
     expect(screen.getByRole('status').textContent).toContain('not open yet');
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe yearly' })));

@@ -1034,8 +1034,8 @@ INSERT INTO event_type (code, label, alert_default, taxonomy_version) VALUES
   ('other',               'Other',                   false, 1);
 
 INSERT INTO plan_entitlement VALUES
-  ('free', 20,  5,  5, 30,   30,  false, false, 0),          -- PRD-007 §2.1 (history 30 days, D-023)
-  ('paid', 200, 30, 10, NULL, 365, true,  true,  10);
+  ('free', 20,  3,  3, 30,   30,  false, false, 0),          -- PRD-007 §2.1 (history 30 days, D-023)
+  ('paid', 200, 25, 10, NULL, 365, true,  true,  10);
 
 INSERT INTO setting (key, value) VALUES
   ('tag_display_threshold',       '0.95'),                    -- PRD-002 OQ-002.3

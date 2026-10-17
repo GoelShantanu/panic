@@ -19,8 +19,8 @@ export interface Entitlements {
 export const ENTITLEMENTS: Readonly<Record<Tier, Entitlements>> = {
   free: {
     watchlistLimit: 20,
-    alertBudgetCeiling: 5,
-    defaultAlertBudget: 5,
+    alertBudgetCeiling: 3,
+    defaultAlertBudget: 3,
     historyDays: 3,
     alertHistoryDays: 30,
     multiEventFilter: false,
@@ -29,7 +29,7 @@ export const ENTITLEMENTS: Readonly<Record<Tier, Entitlements>> = {
   },
   paid: {
     watchlistLimit: 200,
-    alertBudgetCeiling: 30,
+    alertBudgetCeiling: 25,
     defaultAlertBudget: 10,
     historyDays: 30,
     alertHistoryDays: 365,

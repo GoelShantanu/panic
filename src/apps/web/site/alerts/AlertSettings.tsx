@@ -132,7 +132,7 @@ export function AlertSettings({ initial, eventTypes, vapidKey, tier }: { initial
           {tier === 'free' && (
             <>
               {' '}
-              (<Link href="/plans">paid allows 30</Link>)
+              (<Link href="/plans">paid allows 25</Link>)
             </>
           )}
           . Anything beyond goes into your daily digest, never dropped.

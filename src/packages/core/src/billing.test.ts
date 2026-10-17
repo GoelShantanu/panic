@@ -4,13 +4,13 @@ import { financialYear, gstFromInclusive, invoiceNumber, invoiceTax, razorpaySig
 const seller = { name: 'Example Media Private Limited', address: 'Bengaluru, Karnataka', gstin: '29ABCDE1234F1Z5', sac: null };
 
 describe('GST on inclusive prices', () => {
-  it('splits ₹299 and ₹2,999 into taxable value and 9% + 9%', () => {
-    expect(gstFromInclusive(299)).toEqual({ taxable: 253.39, gst: 45.61, cgst: 22.8, sgst: 22.81 });
-    expect(gstFromInclusive(2999)).toEqual({ taxable: 2541.53, gst: 457.47, cgst: 228.73, sgst: 228.74 });
+  it('splits ₹149 and ₹1,199 into taxable value and 9% + 9%', () => {
+    expect(gstFromInclusive(149)).toEqual({ taxable: 126.27, gst: 22.73, cgst: 11.36, sgst: 11.37 });
+    expect(gstFromInclusive(1199)).toEqual({ taxable: 1016.1, gst: 182.9, cgst: 91.45, sgst: 91.45 });
   });
   it('charges no GST when the seller is not registered', () => {
-    expect(invoiceTax(299, { ...seller, gstin: null })).toEqual({ gst: 0, cgst: 0, sgst: 0 });
-    expect(invoiceTax(299, seller).gst).toBe(45.61);
+    expect(invoiceTax(149, { ...seller, gstin: null })).toEqual({ gst: 0, cgst: 0, sgst: 0 });
+    expect(invoiceTax(149, seller).gst).toBe(22.73);
   });
 });
 
@@ -21,11 +21,11 @@ describe('invoice numbering', () => {
     expect(invoiceNumber('2026-27', 42)).toBe('SP/2026-27/000042');
   });
   it('renders a tax invoice, or a bill of supply when unregistered', () => {
-    const base = { number: 'SP/2026-27/000001', issuedAt: new Date('2026-10-03T06:00:00Z'), buyerEmail: 'buyer@example.invalid', plan: 'monthly' as const, amountInr: 299, periodEnd: null };
+    const base = { number: 'SP/2026-27/000001', issuedAt: new Date('2026-10-03T06:00:00Z'), buyerEmail: 'buyer@example.invalid', plan: 'monthly' as const, amountInr: 149, periodEnd: null };
     const t = renderInvoice({ ...base, seller });
     expect(t).toContain('TAX INVOICE');
     expect(t).toContain('GSTIN: 29ABCDE1234F1Z5');
-    expect(t).toContain('CGST 9%: ₹22.80');
+    expect(t).toContain('CGST 9%: ₹11.36');
     const b = renderInvoice({ ...base, seller: { ...seller, gstin: null } });
     expect(b).toContain('BILL OF SUPPLY');
     expect(b).not.toContain('CGST');

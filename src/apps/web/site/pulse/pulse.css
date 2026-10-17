@@ -113,25 +113,81 @@
   font-weight: 600;
 }
 
+.pulse-refresh-action-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+
 .pulse-refresh-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--accent);
-  background: transparent;
+  background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 3px 8px;
-  margin-top: 2px;
+  padding: 4px 10px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.pulse-refresh-btn:hover {
-  background: var(--surface-2);
+.pulse-refresh-btn:hover:not(:disabled) {
+  background: var(--surface);
   border-color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pulse-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: var(--border-soft);
+}
+
+.pulse-btn-pro-tag {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.pulse-hit-warning {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 4px;
+  padding: 2px 7px;
+  animation: pulse-warn 2s infinite ease-in-out;
+}
+
+.pulse-hit-error {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+.pulse-hit-notice {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+@keyframes pulse-warn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* ---------- Breadth Hero Card ---------- */
@@ -586,6 +642,244 @@
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   font-size: 13px;
+}
+
+/* ---------- PRO Banner & Sector PRO Badges ---------- */
+.pulse-pro-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.pulse-pro-banner-icon {
+  font-size: 18px;
+}
+
+.pulse-pro-banner-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.pulse-pro-banner-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pulse-pro-banner-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.pulse-sector-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-card-pro-tag {
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #3b82f6;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Upgrade Modal ---------- */
+.pulse-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+.pulse-modal-panel {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  padding: 24px 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: modal-scale-in 0.2s ease-out;
+}
+
+.pulse-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.pulse-modal-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.pulse-modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pulse-modal-crown {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.pulse-modal-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.pulse-modal-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.pulse-modal-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.pulse-modal-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.pulse-modal-check {
+  color: #10b981;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.pulse-modal-pricing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pulse-plan-box {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  background: var(--surface-2);
+}
+
+.pulse-plan-box.featured {
+  border: 1.5px solid #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.pulse-plan-badge {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.pulse-plan-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.pulse-plan-cost {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pulse-plan-cost span {
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--muted);
+}
+
+.pulse-plan-tax {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.pulse-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pulse-modal-btn {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  padding: 10px 16px;
+  font-weight: 700;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @media (max-width: 768px) {

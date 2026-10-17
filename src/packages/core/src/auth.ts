@@ -18,8 +18,8 @@ export const DELETION_DEADLINE_DAYS = 30; // PRD-007 US-007.3 AC-2
 
 // PRD-007 OQ-007.1: GST-inclusive prices.
 export const PLANS = [
-  { id: 'monthly', price_inr: 299, gst_inclusive: true },
-  { id: 'yearly', price_inr: 2999, gst_inclusive: true },
+  { id: 'monthly', price_inr: 149, gst_inclusive: true },
+  { id: 'yearly', price_inr: 1199, gst_inclusive: true },
 ] as const;
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

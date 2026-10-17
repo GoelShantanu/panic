@@ -242,12 +242,12 @@ async function fetchNifty50Breadth(): Promise<{ advances: number; declines: numb
   }
 }
 
-export async function fetchMarketPulse(): Promise<PulseResponse> {
+export async function fetchMarketPulse(forceFresh = false): Promise<PulseResponse> {
   const now = Date.now();
-  if (cachedPulse && cachedPulse.expiresAt > now) {
+  if (!forceFresh && cachedPulse && cachedPulse.expiresAt > now) {
     return cachedPulse.data;
   }
-  if (pendingPulseFetch) return pendingPulseFetch;
+  if (!forceFresh && pendingPulseFetch) return pendingPulseFetch;
 
   pendingPulseFetch = (async () => {
     try {
@@ -387,4 +387,144 @@ export async function fetchPulseStoriesBySector(
     return [];
   }
 }
+
+export interface PulseRefreshHitResult {
+  allowed: boolean;
+  error?: 'cooldown_active' | 'minute_limit_exceeded' | 'daily_limit_exceeded';
+  message?: string;
+  waitSeconds?: number;
+  dailyHits: number;
+  hitsLeft: number;
+  maxDaily: number;
+}
+
+export async function checkPulseRefreshUsage(
+  db: pg.ClientBase,
+  userId: string,
+  now: Date = new Date()
+): Promise<{ dailyHits: number; hitsLeft: number; maxDaily: number }> {
+  try {
+    const istDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    const { rows } = await db.query<{ daily_hits: number }>(
+      'SELECT daily_hits FROM pulse_refresh_usage WHERE user_id = $1 AND day = $2',
+      [userId, istDate]
+    );
+    const dailyHits = rows[0]?.daily_hits ?? 0;
+    return {
+      dailyHits,
+      hitsLeft: Math.max(0, 100 - dailyHits),
+      maxDaily: 100,
+    };
+  } catch {
+    return { dailyHits: 0, hitsLeft: 100, maxDaily: 100 };
+  }
+}
+
+export async function recordPulseRefreshHit(
+  db: pg.ClientBase,
+  userId: string,
+  now: Date = new Date()
+): Promise<PulseRefreshHitResult> {
+  const istDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+
+  await db.query('BEGIN');
+  try {
+    const { rows } = await db.query<{
+      daily_hits: number;
+      window_start: Date;
+      window_hits: number;
+      last_hit_at: Date;
+    }>(
+      'SELECT daily_hits, window_start, window_hits, last_hit_at FROM pulse_refresh_usage WHERE user_id = $1 AND day = $2 FOR UPDATE',
+      [userId, istDate]
+    );
+
+    if (rows.length === 0) {
+      // First hit of the day for this user: initialize counters
+      await db.query(
+        `INSERT INTO pulse_refresh_usage (user_id, day, daily_hits, window_start, window_hits, last_hit_at)
+         VALUES ($1, $2, 1, $3, 1, $3)`,
+        [userId, istDate, now]
+      );
+      await db.query('COMMIT');
+      return {
+        allowed: true,
+        dailyHits: 1,
+        hitsLeft: 99,
+        maxDaily: 100,
+      };
+    }
+
+    const row = rows[0];
+    const elapsedCooldown = (now.getTime() - new Date(row.last_hit_at).getTime()) / 1000;
+    if (elapsedCooldown < 15) {
+      await db.query('ROLLBACK');
+      const waitSeconds = Math.ceil(15 - elapsedCooldown);
+      return {
+        allowed: false,
+        error: 'cooldown_active',
+        message: `Please wait ${waitSeconds}s before refreshing again.`,
+        waitSeconds,
+        dailyHits: row.daily_hits,
+        hitsLeft: Math.max(0, 100 - row.daily_hits),
+        maxDaily: 100,
+      };
+    }
+
+    if (row.daily_hits >= 100) {
+      await db.query('ROLLBACK');
+      return {
+        allowed: false,
+        error: 'daily_limit_exceeded',
+        message: 'Daily refresh limit reached (100/100). Resets tomorrow.',
+        dailyHits: row.daily_hits,
+        hitsLeft: 0,
+        maxDaily: 100,
+      };
+    }
+
+    const elapsedMinute = (now.getTime() - new Date(row.window_start).getTime()) / 1000;
+    let newWindowHits = 1;
+    let newWindowStart = now;
+
+    if (elapsedMinute < 60) {
+      if (row.window_hits >= 4) {
+        await db.query('ROLLBACK');
+        const waitSeconds = Math.ceil(60 - elapsedMinute);
+        return {
+          allowed: false,
+          error: 'minute_limit_exceeded',
+          message: `Rate limit: Maximum 4 refreshes per minute. Please wait ${waitSeconds}s.`,
+          waitSeconds,
+          dailyHits: row.daily_hits,
+          hitsLeft: Math.max(0, 100 - row.daily_hits),
+          maxDaily: 100,
+        };
+      }
+      newWindowHits = row.window_hits + 1;
+      newWindowStart = row.window_start;
+    }
+
+    const newDailyHits = row.daily_hits + 1;
+    await db.query(
+      `UPDATE pulse_refresh_usage
+       SET daily_hits = $3, window_start = $4, window_hits = $5, last_hit_at = $6
+       WHERE user_id = $1 AND day = $2`,
+      [userId, istDate, newDailyHits, newWindowStart, newWindowHits, now]
+    );
+
+    await db.query('COMMIT');
+
+    return {
+      allowed: true,
+      dailyHits: newDailyHits,
+      hitsLeft: Math.max(0, 100 - newDailyHits),
+      maxDaily: 100,
+    };
+  } catch (err) {
+    await db.query('ROLLBACK').catch(() => undefined);
+    throw err;
+  }
+}
+
 

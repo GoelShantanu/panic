@@ -103,7 +103,7 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
         {sub && (
           <dl className="kv">
             <dt>Subscription</dt>
-            <dd>{sub.plan === 'yearly' ? 'Yearly, ₹2,999' : 'Monthly, ₹299'} (GST included)</dd>
+            <dd>{sub.plan === 'yearly' ? 'Yearly, ₹1,199' : 'Monthly, ₹149'} (GST included)</dd>
             <dt>{sub.cancel_at_period_end ? 'Paid access until' : 'Renews on'}</dt>
             <dd>{day(sub.cancel_at_period_end ? sub.access_until : (sub.renews_at ?? sub.access_until))}</dd>
             {sub.pending_plan && (

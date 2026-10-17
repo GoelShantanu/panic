@@ -14,7 +14,8 @@ declare global {
 const ROWS: [string, string, string][] = [
   ['Live stream, story and company pages', 'Included', 'Included'],
   ['Watchlist size', '20 companies', '200 companies'],
-  ['Individual alerts per day', 'Up to 5', 'Up to 30'],
+  ['Individual alerts per day', 'Up to 3', 'Up to 25'],
+  ['Market Pulse intelligence', 'Market breadth overview', 'Manual refresh & sector news filtering'],
   ['Daily digest', 'Included', 'Included'],
   ['Stream and company history', 'Last 3 days', 'Last 30 days'],
   ['Event-type filter', 'One type at a time', 'Combine several'],

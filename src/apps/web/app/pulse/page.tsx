@@ -27,15 +27,32 @@ const FALLBACK_PULSE: PulseResponse = {
 };
 
 export default async function PulsePage() {
-  const [pulseRes, storiesRes, sessionRes] = await Promise.all([
-    api<PulseResponse>('/v1/market/pulse').catch(() => null),
+  const [pulseRes, storiesRes, sessionRes, meRes] = await Promise.all([
+    api<PulseResponse & { usage?: { daily_hits: number; hits_left: number; max_daily: number } | null }>('/v1/market/pulse').catch(() => null),
     api<{ stories: StoryCard[] }>('/v1/market/pulse/stories').catch(() => null),
     api<{ session: SessionInfo }>('/v1/session').catch(() => null),
+    api<{ tier?: 'free' | 'paid' }>('/v1/me').catch(() => null),
   ]);
 
   const pulseData = pulseRes && pulseRes.status === 200 && pulseRes.body ? pulseRes.body : FALLBACK_PULSE;
   const stories = storiesRes && storiesRes.status === 200 && storiesRes.body?.stories ? storiesRes.body.stories : [];
   const session = sessionRes && sessionRes.status === 200 && sessionRes.body?.session ? sessionRes.body.session : null;
+  const userTier = meRes && meRes.status === 200 && meRes.body?.tier === 'paid' ? 'paid' : 'free';
+  const initialUsage = pulseRes && pulseRes.status === 200 && pulseRes.body?.usage
+    ? {
+        dailyHits: pulseRes.body.usage.daily_hits,
+        hitsLeft: pulseRes.body.usage.hits_left,
+        maxDaily: pulseRes.body.usage.max_daily,
+      }
+    : null;
 
-  return <PulseScreen initialPulse={pulseData} initialStories={stories} session={session} />;
+  return (
+    <PulseScreen
+      initialPulse={pulseData}
+      initialStories={stories}
+      session={session}
+      userTier={userTier}
+      initialUsage={initialUsage}
+    />
+  );
 }

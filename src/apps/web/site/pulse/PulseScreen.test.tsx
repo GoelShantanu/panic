@@ -13,6 +13,15 @@ beforeEach(() => {
         json: async () => ({ stories: [mockStories[0]] }),
       };
     }
+    if (url.includes('/market/pulse/refresh')) {
+      return {
+        ok: true,
+        json: async () => ({
+          pulse: { ...mockPulse, updatedAt: '2026-10-17T12:01:00.000Z' },
+          usage: { daily_hits: 1, hits_left: 99, max_daily: 100 },
+        }),
+      };
+    }
     return {
       ok: true,
       json: async () => ({ stories: mockStories }),
@@ -104,7 +113,7 @@ const mockStories: StoryCard[] = [
     primary_item: {
       item_id: 'item-2',
       kind: 'article',
-      source: { source_id: 'et', name: 'Economic Times', tier: 1 },
+      source: { source_id: 'bse', name: 'BSE Announcements', tier: 1 },
       url: 'https://example.com/2',
       published_at: '2026-10-17T10:30:00Z',
     },
@@ -119,14 +128,14 @@ const mockStories: StoryCard[] = [
       },
     ],
     unresolved_mentions: [],
-    event_types: ['corporate_action'],
+    event_types: ['capex'],
     votes: { important_count: 0 },
     comment_count: 0,
   },
 ];
 
 describe('PulseScreen component', () => {
-  it('renders market breadth metrics, ratio and OFFLINE badge when market is closed', () => {
+  it('renders market breadth and offline market badge when session is closed', () => {
     render(
       <PulseScreen
         initialPulse={mockPulse}
@@ -162,8 +171,20 @@ describe('PulseScreen component', () => {
     expect(screen.getByText('LIVE TELEMETRY')).toBeTruthy();
   });
 
-  it('renders sector heatmap cards and filters stories on click', async () => {
-    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} />);
+  it('free user clicking sector card opens upgrade modal', () => {
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
+
+    // Click NIFTY IT sector card
+    const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
+    fireEvent.click(itCard);
+
+    // Modal appears
+    expect(screen.getByText(/Sector Intelligence is a Paid Feature/i)).toBeTruthy();
+    expect(screen.getByText(/Upgrade to Paid \(from ₹149\/mo\)/i)).toBeTruthy();
+  });
+
+  it('paid user can click sector heatmap cards and filter stories', async () => {
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="paid" />);
 
     // Both stories initially shown
     expect(screen.getByText('TCS signs major enterprise deal')).toBeTruthy();
@@ -188,5 +209,39 @@ describe('PulseScreen component', () => {
       expect(screen.getByText('TCS signs major enterprise deal')).toBeTruthy();
       expect(screen.getByText('Tata Motors expands EV production capacity')).toBeTruthy();
     });
+  });
+
+  it('free user clicking refresh opens upgrade modal', () => {
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
+
+    const refreshBtn = screen.getByRole('button', { name: /Refresh Now/i });
+    fireEvent.click(refreshBtn);
+
+    expect(screen.getByText(/Manual Telemetry Refresh is a Paid Feature/i)).toBeTruthy();
+  });
+
+  it('paid user clicking refresh triggers rate limit and runs cooldown timer', async () => {
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="paid" />);
+
+    const refreshBtn = screen.getByRole('button', { name: /Refresh Now/i });
+    fireEvent.click(refreshBtn);
+
+    // Button updates to countdown timer: Wait 15s...
+    await waitFor(() => {
+      expect(screen.getByText(/Wait 15s\.\.\./i)).toBeTruthy();
+    });
+  });
+
+  it('shows warning message when paid user reaches 90 hits for the day', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        userTier="paid"
+        initialUsage={{ dailyHits: 92, hitsLeft: 8, maxDaily: 100 }}
+      />
+    );
+
+    expect(screen.getByText(/Only 8 hits left for the day/i)).toBeTruthy();
   });
 });

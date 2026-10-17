@@ -288,8 +288,8 @@ describe.skipIf(!adminUrl)('accounts (PRD-007) against PostgreSQL', () => {
   it('GET /v1/plans lists GST-inclusive prices and the trial', async () => {
     expect((await call('GET', '/v1/plans')).body).toEqual({
       plans: [
-        { id: 'monthly', price_inr: 299, gst_inclusive: true },
-        { id: 'yearly', price_inr: 2999, gst_inclusive: true },
+        { id: 'monthly', price_inr: 149, gst_inclusive: true },
+        { id: 'yearly', price_inr: 1199, gst_inclusive: true },
       ],
       trial_days: 14,
     });

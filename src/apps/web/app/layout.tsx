@@ -5,11 +5,14 @@ import { api } from '../site/api.ts';
 import type { SessionInfo } from '../site/format.ts';
 import { Header } from '../site/Header.tsx';
 import type { Viewer } from '../site/Header.tsx';
+import { MarketTicker } from '../site/MarketTicker.tsx';
+import type { TickerResponse } from '../src/market.ts';
 import { LiveProvider } from '../site/live.tsx';
 import { ScrollReset } from '../site/ScrollReset.tsx';
 import { THEME_BOOT } from '../site/ThemeToggle.tsx';
 import { DENSITY_BOOT } from '../site/DensityToggle.tsx';
 import './globals.css';
+import '../site/market-ticker.css';
 import '../site/stream/stream.css';
 import '../site/story/story.css';
 import '../site/account/account.css';
@@ -29,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const [session, me] = await Promise.all([
+  const [session, me, tickerRes] = await Promise.all([
     api<{ session: SessionInfo }>('/v1/session').catch(() => null),
     api<{
       username: string | null;
@@ -37,6 +40,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       trial?: { used: boolean; ends_at: string | null };
       subscription?: { status: string } | null;
     }>('/v1/me').catch(() => null),
+    api<TickerResponse>('/v1/market/ticker').catch(() => null),
   ]);
   const notes = me && me.status === 200 ? await api<{ unread_replies: boolean; notices: unknown[] }>('/v1/me/notifications').catch(() => null) : null;
   // PRD-006 US-006.5 AC-1: a dot, never a number.
@@ -64,6 +68,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <Header session={session && session.status === 200 ? session.body.session : null} viewer={viewer} />
             <main id="main" className="main">
               <ScrollReset />
+              <MarketTicker initial={tickerRes && tickerRes.status === 200 ? tickerRes.body : null} />
               {children}
             </main>
             <footer className="footer">

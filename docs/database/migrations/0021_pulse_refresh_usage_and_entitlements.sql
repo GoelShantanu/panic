@@ -22,7 +22,12 @@ CREATE TABLE IF NOT EXISTS pulse_refresh_usage (
 
 CREATE INDEX IF NOT EXISTS idx_pulse_refresh_usage_user ON pulse_refresh_usage (user_id);
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON pulse_refresh_usage TO stockpanic_app;
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'stockpanic_app') THEN
+    GRANT SELECT, INSERT, UPDATE, DELETE ON pulse_refresh_usage TO stockpanic_app;
+  END IF;
+END $$;
 
 INSERT INTO schema_migrations (version) VALUES ('0021_pulse_refresh_usage_and_entitlements');
 

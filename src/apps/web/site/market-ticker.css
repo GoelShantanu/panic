@@ -151,7 +151,11 @@
   color: #ffffff;
 }
 
-:root[data-theme='dark'] .ticker-tag-nse,
+:root[data-theme='dark'] .ticker-tag-nse {
+  background: #2563eb;
+  color: #ffffff;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .ticker-tag-nse {
     background: #2563eb;

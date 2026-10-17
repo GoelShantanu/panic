@@ -8,6 +8,7 @@ export interface TickerItem {
   price: number;
   change: number;
   percent: number;
+  tag?: string | undefined;
   isFutures?: boolean | undefined;
 }
 
@@ -18,22 +19,26 @@ export interface TickerResponse {
 
 const CACHE_TTL_MS = 30_000; // 30 seconds server-side cache
 
-const SYMBOLS_MAP: Record<string, { name: string; isFutures?: boolean }> = {
-  'NSEIX:NIFTY1!': { name: 'GIFT NIFTY', isFutures: true },
+const SYMBOLS_MAP: Record<string, { name: string; tag?: string; isFutures?: boolean }> = {
+  'NSEIX:NIFTY1!': { name: 'GIFT NIFTY', tag: 'GIFT', isFutures: true },
   'NSE:NIFTY': { name: 'NIFTY 50' },
   'BSE:SENSEX': { name: 'SENSEX' },
   'NSE:BANKNIFTY': { name: 'BANK NIFTY' },
   'NSE:INDIAVIX': { name: 'INDIA VIX' },
-  'FX_IDC:USDINR': { name: 'USD/INR' },
+  'MCX:CRUDEOIL1!': { name: 'CRUDE OIL', tag: 'MCX' },
+  'MCX:GOLD1!': { name: 'GOLD', tag: 'MCX' },
+  'MCX:SILVER1!': { name: 'SILVER', tag: 'MCX' },
 };
 
 const FALLBACK_TICKER: TickerItem[] = [
-  { symbol: 'NSEIX:NIFTY1!', name: 'GIFT NIFTY', price: 23094.50, change: 106.50, percent: 0.46, isFutures: true },
+  { symbol: 'NSEIX:NIFTY1!', name: 'GIFT NIFTY', price: 23094.50, change: 106.50, percent: 0.46, tag: 'GIFT', isFutures: true },
   { symbol: 'NSE:NIFTY', name: 'NIFTY 50', price: 23146.15, change: 148.80, percent: 0.65 },
   { symbol: 'BSE:SENSEX', name: 'SENSEX', price: 74729.27, change: 413.66, percent: 0.56 },
   { symbol: 'NSE:BANKNIFTY', name: 'BANK NIFTY', price: 55844.00, change: 33.50, percent: 0.06 },
   { symbol: 'NSE:INDIAVIX', name: 'INDIA VIX', price: 14.02, change: 0, percent: 0 },
-  { symbol: 'FX_IDC:USDINR', name: 'USD/INR', price: 84.95, change: -0.09, percent: -0.10 },
+  { symbol: 'MCX:CRUDEOIL1!', name: 'CRUDE OIL', price: 9573.00, change: 288.00, percent: 3.10, tag: 'MCX' },
+  { symbol: 'MCX:GOLD1!', name: 'GOLD', price: 147918.00, change: 429.00, percent: 0.29, tag: 'MCX' },
+  { symbol: 'MCX:SILVER1!', name: 'SILVER', price: 211187.00, change: 527.00, percent: 0.25, tag: 'MCX' },
 ];
 
 let cachedTicker: { expiresAt: number; data: TickerResponse } | null = null;
@@ -81,6 +86,7 @@ export async function fetchMarketTicker(): Promise<TickerResponse> {
           price: Number(close.toFixed(2)),
           change: Number((absChange ?? 0).toFixed(2)),
           percent: Number((pctChange ?? 0).toFixed(2)),
+          tag: meta.tag,
           isFutures: meta.isFutures,
         };
       });

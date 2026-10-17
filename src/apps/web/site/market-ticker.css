@@ -90,7 +90,8 @@
   flex-shrink: 0;
 }
 
-.ticker-item[data-futures] {
+.ticker-item[data-futures],
+.ticker-item[data-tag] {
   padding: 2px 6px;
   background: var(--surface-2);
   border-radius: var(--radius);
@@ -103,14 +104,25 @@
   gap: 4px;
 }
 
+.ticker-tag,
 .ticker-futures-tag {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   color: #ffffff;
-  background: #c2410c;
   padding: 1px 4px;
   border-radius: 2px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.ticker-tag-gift,
+.ticker-futures-tag {
+  background: #c2410c; /* Vermilion orange */
+}
+
+.ticker-tag-mcx {
+  background: #b45309; /* Warm gold/amber for MCX commodities */
 }
 
 .ticker-name {

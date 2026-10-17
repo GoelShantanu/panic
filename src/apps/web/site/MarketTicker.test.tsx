@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isGiftNiftyActive, MarketTicker } from './MarketTicker.tsx';
+import { isGiftNiftyActive, isMcxActive, MarketTicker } from './MarketTicker.tsx';
 import type { TickerResponse } from '../src/market.ts';
 
 afterEach(() => {
@@ -11,9 +11,12 @@ afterEach(() => {
 
 const mockTicker: TickerResponse = {
   indices: [
-    { symbol: 'NSEIX:NIFTY1!', name: 'GIFT NIFTY', price: 23094.5, change: 106.5, percent: 0.46, isFutures: true },
+    { symbol: 'NSEIX:NIFTY1!', name: 'GIFT NIFTY', price: 23094.5, change: 106.5, percent: 0.46, tag: 'GIFT', isFutures: true },
     { symbol: 'NSE:NIFTY', name: 'NIFTY 50', price: 23146.15, change: 148.8, percent: 0.65 },
     { symbol: 'BSE:SENSEX', name: 'SENSEX', price: 74729.27, change: -413.66, percent: -0.56 },
+    { symbol: 'MCX:CRUDEOIL1!', name: 'CRUDE OIL', price: 9573.0, change: 288.0, percent: 3.10, tag: 'MCX' },
+    { symbol: 'MCX:GOLD1!', name: 'GOLD', price: 147918.0, change: 429.0, percent: 0.29, tag: 'MCX' },
+    { symbol: 'MCX:SILVER1!', name: 'SILVER', price: 211187.0, change: 527.0, percent: 0.25, tag: 'MCX' },
   ],
   updatedAt: '2026-10-17T12:00:00.000Z',
 };
@@ -40,6 +43,23 @@ describe('isGiftNiftyActive schedule helper', () => {
   });
 });
 
+describe('isMcxActive schedule helper', () => {
+  it('returns false on weekends', () => {
+    expect(isMcxActive(new Date('2026-10-17T12:30:00Z'))).toBe(false);
+    expect(isMcxActive(new Date('2026-10-18T10:00:00Z'))).toBe(false);
+  });
+
+  it('returns true on Monday at 20:00 IST (evening session)', () => {
+    // 2026-10-19 20:00 IST = 14:30 UTC
+    expect(isMcxActive(new Date('2026-10-19T14:30:00Z'))).toBe(true);
+  });
+
+  it('returns false late night after 23:30 IST', () => {
+    // 2026-10-19 23:45 IST = 18:15 UTC
+    expect(isMcxActive(new Date('2026-10-19T18:15:00Z'))).toBe(false);
+  });
+});
+
 describe('MarketTicker component', () => {
   it('renders OFFLINE when session is closed on weekends', () => {
     render(
@@ -54,11 +74,20 @@ describe('MarketTicker component', () => {
     expect(header?.getAttribute('data-status')).toBe('offline');
     expect(screen.getByText('OFFLINE')).toBeTruthy();
 
-    // Verify index names & formatted prices
+    // Verify index names
     expect(screen.getByText('GIFT NIFTY')).toBeTruthy();
     expect(screen.getByText('NIFTY 50')).toBeTruthy();
     expect(screen.getByText('SENSEX')).toBeTruthy();
     expect(screen.getByText('GIFT')).toBeTruthy();
+
+    // Verify MCX commodities
+    expect(screen.getByText('CRUDE OIL')).toBeTruthy();
+    expect(screen.getByText('GOLD')).toBeTruthy();
+    expect(screen.getByText('SILVER')).toBeTruthy();
+    expect(screen.getAllByText('MCX')).toHaveLength(3);
+
+    // Verify USD/INR is NOT rendered
+    expect(screen.queryByText('USD/INR')).toBeNull();
   });
 
   it('renders LIVE when session is open', () => {

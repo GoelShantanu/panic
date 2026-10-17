@@ -55,6 +55,32 @@ export function isGiftNiftyActive(now: Date = new Date()): boolean {
   return true;
 }
 
+/**
+ * Checks if MCX commodities market session is active.
+ * Trading days: Monday to Friday (excl. holidays)
+ * - Morning & Evening sessions: 09:00 AM to 11:30 PM IST (23:30)
+ * Weekends (Saturday & Sunday): CLOSED
+ */
+export function isMcxActive(now: Date = new Date()): boolean {
+  const istFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hourCycle: 'h23',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+  });
+  const parts = istFormatter.formatToParts(now);
+  const weekday = parts.find((p) => p.type === 'weekday')?.value;
+  const hour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  const minute = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+  const mins = hour * 60 + minute;
+
+  if (weekday === 'Sat' || weekday === 'Sun') {
+    return false;
+  }
+  return mins >= 9 * 60 && mins < 23 * 60 + 30;
+}
+
 export function MarketTicker({ initial, session: initialSession }: MarketTickerProps) {
   const [data, setData] = useState<TickerResponse | null>(initial ?? null);
   const [session, setSession] = useState<SessionInfo | null>(initialSession ?? null);
@@ -114,7 +140,8 @@ export function MarketTicker({ initial, session: initialSession }: MarketTickerP
 
   const isCashOpen = session?.state === 'open' || session?.state === 'special';
   const isPreOpen = session?.state === 'pre_open';
-  const isFuturesLive = isGiftNiftyActive();
+  const isGiftLive = isGiftNiftyActive();
+  const isMcxLive = isMcxActive();
 
   let statusKind: 'live' | 'gift-live' | 'offline' = 'offline';
   let statusLabel = 'OFFLINE';
@@ -128,10 +155,18 @@ export function MarketTicker({ initial, session: initialSession }: MarketTickerP
     statusKind = 'live';
     statusLabel = 'PRE-OPEN';
     statusTooltip = 'NSE/BSE pre-market session active';
-  } else if (isFuturesLive) {
+  } else if (isGiftLive && isMcxLive) {
+    statusKind = 'gift-live';
+    statusLabel = 'EXTENDED LIVE';
+    statusTooltip = 'GIFT Nifty futures & MCX commodities sessions are ACTIVE';
+  } else if (isGiftLive) {
     statusKind = 'gift-live';
     statusLabel = 'GIFT LIVE';
     statusTooltip = 'NSE IX GIFT Nifty futures session is ACTIVE';
+  } else if (isMcxLive) {
+    statusKind = 'gift-live';
+    statusLabel = 'MCX LIVE';
+    statusTooltip = 'MCX Commodity market session is ACTIVE';
   } else {
     statusKind = 'offline';
     statusLabel = 'OFFLINE';
@@ -153,9 +188,18 @@ export function MarketTicker({ initial, session: initialSession }: MarketTickerP
           const sentimentClass = isBull ? 'bull' : isBear ? 'bear' : 'neu';
 
           return (
-            <div key={idx.symbol} className="ticker-item" data-futures={idx.isFutures || undefined}>
+            <div
+              key={idx.symbol}
+              className="ticker-item"
+              data-futures={idx.isFutures || undefined}
+              data-tag={idx.tag || undefined}
+            >
               <div className="ticker-label-group">
-                {idx.isFutures && <span className="ticker-futures-tag">GIFT</span>}
+                {idx.tag && (
+                  <span className={`ticker-tag ticker-tag-${idx.tag.toLowerCase()}`}>
+                    {idx.tag}
+                  </span>
+                )}
                 <span className="ticker-name">{idx.name}</span>
               </div>
               <span className="ticker-price mono">

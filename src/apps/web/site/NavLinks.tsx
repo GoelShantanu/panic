@@ -7,6 +7,7 @@ import type { IconName } from './Icon.tsx';
 
 const ITEMS: { href: string; label: string; icon: IconName; match: (p: string) => boolean; signedIn?: boolean }[] = [
   { href: '/', label: 'News', icon: 'news', match: (p) => p === '/' || p.startsWith('/s/') },
+  { href: '/pulse', label: 'Pulse', icon: 'pulse', match: (p) => p.startsWith('/pulse') },
   { href: '/watchlist', label: 'Watchlist', icon: 'star', match: (p) => p.startsWith('/watchlist') },
   { href: '/alerts', label: 'Alerts', icon: 'bell', match: (p) => p.startsWith('/alerts') || p.startsWith('/settings/alerts'), signedIn: true },
   { href: '/plans', label: 'Plans', icon: 'crown', match: (p) => p.startsWith('/plans') },

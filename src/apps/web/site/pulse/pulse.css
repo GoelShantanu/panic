@@ -1,0 +1,496 @@
+/* ---------- Market Pulse & Breadth Dashboard ---------- */
+.pulse-screen {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 16px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pulse-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 16px;
+}
+
+.pulse-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pulse-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.pulse-title .icon {
+  color: var(--bull);
+}
+
+.pulse-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.pulse-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pulse-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bull);
+  box-shadow: 0 0 6px var(--bull);
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+/* ---------- Breadth Hero Card ---------- */
+.pulse-breadth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.breadth-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.breadth-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0;
+}
+
+.breadth-sentiment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.breadth-sentiment-pill[data-sentiment="strong_bullish"],
+.breadth-sentiment-pill[data-sentiment="bullish"] {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--bull);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.breadth-sentiment-pill[data-sentiment="neutral"] {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--muted);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.breadth-sentiment-pill[data-sentiment="bearish"],
+.breadth-sentiment-pill[data-sentiment="strong_bearish"] {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--bear);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Multi-segment Advance/Decline Bar */
+.breadth-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breadth-bar {
+  display: flex;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+}
+
+.breadth-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  transition: width 0.4s ease;
+  min-width: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.breadth-segment-adv {
+  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+}
+
+.breadth-segment-unch {
+  background: #475569;
+}
+
+.breadth-segment-dec {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* Breadth Metrics Grid */
+.breadth-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.breadth-metric-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.breadth-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.breadth-metric-val {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.breadth-metric-val.bull {
+  color: var(--bull);
+}
+
+.breadth-metric-val.bear {
+  color: var(--bear);
+}
+
+.breadth-metric-val.neu {
+  color: var(--muted);
+}
+
+/* ---------- Sector Heatmap Grid ---------- */
+.pulse-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pulse-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pulse-clear-filter-btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pulse-clear-filter-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.pulse-sector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.pulse-sector-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  text-align: left;
+}
+
+.pulse-sector-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover, #64748b);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pulse-sector-card[data-selected="true"] {
+  border-color: var(--bull);
+  box-shadow: 0 0 0 1px var(--bull), 0 4px 14px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--surface) 100%);
+}
+
+.pulse-sector-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pulse-sector-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.pulse-sector-status-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pulse-sector-status-pill[data-status="leading"] {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--bull);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.pulse-sector-status-pill[data-status="bullish"] {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--bull);
+}
+
+.pulse-sector-status-pill[data-status="neutral"] {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.pulse-sector-status-pill[data-status="lagging"] {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--bear);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.pulse-sector-numbers {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pulse-sector-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pulse-sector-change {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pulse-sector-change.bull {
+  color: var(--bull);
+}
+
+.pulse-sector-change.bear {
+  color: var(--bear);
+}
+
+.pulse-sector-change.neu {
+  color: var(--muted);
+}
+
+.pulse-sector-constituents {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* ---------- Sector News Section ---------- */
+.pulse-news-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pulse-active-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.pulse-active-filter-banner b {
+  color: var(--bull);
+}
+
+.pulse-news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pulse-news-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.pulse-news-card:hover {
+  border-color: var(--border-hover, #64748b);
+}
+
+.pulse-news-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.pulse-news-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.pulse-news-source {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pulse-news-symbols {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pulse-news-ticker-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+.pulse-news-headline {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+  text-decoration: none;
+  margin: 0;
+}
+
+.pulse-news-headline:hover {
+  color: var(--accent);
+}
+
+.pulse-news-empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .pulse-screen {
+    padding: 12px 12px 36px;
+    gap: 18px;
+  }
+  .pulse-title {
+    font-size: 20px;
+  }
+  .pulse-breadth-card {
+    padding: 14px;
+  }
+  .breadth-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pulse-sector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .pulse-sector-grid {
+    grid-template-columns: 1fr;
+  }
+}

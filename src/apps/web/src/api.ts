@@ -66,6 +66,7 @@ import * as corrections from './corrections.ts';
 import { getSavedViews, postSavedView, removeSavedView } from './savedViews.ts';
 import { currentSubscription } from '@stockpanic/db';
 import { fetchMarketTicker } from './market.ts';
+import { fetchMarketPulse } from './pulse.ts';
 
 export interface ApiResponse {
   status: number;
@@ -418,6 +419,7 @@ export async function route(
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();
   if (path === 'market/ticker') return ok(await fetchMarketTicker());
+  if (path === 'market/pulse') return ok(await fetchMarketPulse());
   // Page header state (PRD-001 US-001.7 AC-1, US-001.6): session and stale tier-1 sources (D-040).
   if (path === 'session') {
     return ok({ session: await sessionInfo(db, now), stale_sources: await staleTier1Sources(db), directional_voting_enabled: await directionalVotingEnabled(db) });

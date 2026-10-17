@@ -1,5 +1,16 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Production Deployment to AWS EC2 Live — 2026-10-17 (Commit `b41d7ce`)
+
+[VERIFIED] Successfully deployed the latest release to the AWS EC2 production instance (`3.27.24.82` / `bazaarnews.duckdns.org`):
+- **Code & Assets Deployed:** Synced release commit `b41d7ce` to `/opt/stockpanic/current`. Built updated production container image `bazaarnews-app:current` (`Next.js 16.3.8 Turbopack`) in 118s with zero errors.
+- **Services Restarted & Healthy:** Recreated all Docker Compose services (`web`, `live`, `ingest`, `pipeline`, `account`, `alerts`, `db`). All reporting status `Up` and `healthy`.
+- **UI Enhancements Live:**
+  - High-contrast royal/cobalt blue pill badges for `NSE` indices in the live market ticker bar across both light and dark themes.
+  - Market Pulse breadth bar cleanup: clean percentage-only labels on bar segments with dedicated, color-coded legend indicators for Advances (`#10b981`), Declines (`#ef4444`), and Unchanged (`#64748b`).
+  - Auth hardening: 8–16 char password bounds with complexity checks, anti-alias email canonicalization, 1-click magic link HTML emails, centered form buttons, and standard red asterisks on mandatory inputs.
+- **Verification:** Verified live HTTPS on `https://bazaarnews.duckdns.org/`, `/pulse`, `/v1/market/ticker`, `/v1/market/pulse`, and verified `.ticker-tag-nse` in the production static CSS chunk (`2ywqqawmz--lt.css`). All endpoints return HTTP 200 OK.
+
 ## Market Pulse Telemetry, Account Hardening & Database Audit Live — 2026-10-17 (D-093, D-094, D-095)
 
 [VERIFIED] Completed a major feature release, authentication hardening, and deep database integrity audit:

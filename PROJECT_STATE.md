@@ -9,6 +9,7 @@
   - High-contrast royal/cobalt blue pill badges for `NSE` indices in the live market ticker bar across both light and dark themes.
   - Market Pulse breadth bar cleanup: clean percentage-only labels on bar segments with dedicated, color-coded legend indicators for Advances (`#10b981`), Declines (`#ef4444`), and Unchanged (`#64748b`).
   - Auth hardening: 8–16 char password bounds with complexity checks, anti-alias email canonicalization, 1-click magic link HTML emails, centered form buttons, and standard red asterisks on mandatory inputs.
+- **Post-Deployment Cleanup & Host Hygiene:** Executed mandatory host cleanup (`docker container prune`, `docker image prune -a`, `docker builder prune -a`, and `apt-get clean`), reclaiming ~13.9 GB and reducing root disk utilization from 79% (23 GB) down to 33% (9.1 GB) with 19 GB free headroom. Documented mandatory post-deployment cleanup in [release-runbook.md](docs/ops/release-runbook.md) and [WORKFLOW.md](WORKFLOW.md) Phase 10 DoD.
 - **Verification:** Verified live HTTPS on `https://bazaarnews.duckdns.org/`, `/pulse`, `/v1/market/ticker`, `/v1/market/pulse`, and verified `.ticker-tag-nse` in the production static CSS chunk (`2ywqqawmz--lt.css`). All endpoints return HTTP 200 OK.
 
 ## Market Pulse Telemetry, Account Hardening & Database Audit Live — 2026-10-17 (D-093, D-094, D-095)

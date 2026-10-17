@@ -384,6 +384,36 @@ sudo journalctl -u stockpanic-health.service -u stockpanic-backup.service -u sto
 
 Account/alerts services are defined but **not started** without SMTP. Public web uses SMTP transport with a sender identifier but no authentication; email-dependent signup/recovery cannot complete, and receipt is unverified. Verification codes are not logged. Configure the founder-selected sender and credentials privately in `app.env`, verify receipt in a controlled mailbox, review cloned queued jobs before enabling workers, then recreate web/account/alerts. Google and VAPID configuration are also absent. A page returning 200 does not establish these workflows.
 
+### Mandatory post-deployment host cleanup (Free Tier EC2 hygiene)
+
+Every production deployment rebuilds the Next.js production image with Turbopack, generating 5–14 GB of intermediate Docker layer snapshots, build caches, and untagged images. On an AWS Free Tier `t3.micro` instance with a 30 GB root volume, skipping cleanup exhausts available disk space within two to three deployments.
+
+**Always execute the following cleanup commands immediately after any deployment or container rebuild:**
+
+```bash
+# 1. Prune dead or stopped builder containers
+sudo docker container prune -f
+
+# 2. Prune all dangling and untagged intermediate images (never affects running containers)
+sudo docker image prune -a -f
+
+# 3. Purge BuildKit build caches
+sudo docker builder prune -a -f
+
+# 4. Clean APT package manager caches
+sudo apt-get clean
+
+# 5. Verify host disk headroom and memory state
+df -h /
+free -h
+```
+
+**Safety Guarantees:**
+- Running production containers (`bazaarnews-web-1`, `bazaarnews-live-1`, `bazaarnews-ingest-1`, `bazaarnews-pipeline-1`, `bazaarnews-account-1`, `bazaarnews-alerts-1`, `bazaarnews-db-1`) are never touched.
+- Active images (`bazaarnews-app:current` and `postgres:17`) are locked by running containers and are strictly preserved.
+- The PostgreSQL database volume (`pgdata`) is external and unaffected by image/builder pruning.
+- Disk usage should return to ~30–35% (~9 GB used out of 28 GB), leaving ~19 GB free headroom.
+
 ### Backup, restoration and maintenance
 
 Daily `stockpanic-backup.timer` encrypts a PostgreSQL custom dump and protected configuration archive to the existing SSH public key using age, retaining about seven days in `/var/backups/stockpanic`. The private key is required for decryption and was **never uploaded to Oracle**. Daily VM backups are not automatically off-host. Encrypted dump/configuration copies were downloaded into protected, ignored `scratch/oracle/` on this computer; repeat transfers or configure a continuing external destination for disaster recovery.

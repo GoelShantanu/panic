@@ -186,7 +186,7 @@ A phase is done when **all** hold. No exceptions, no partial credit.
 | **Entry** | All prior gates passed |
 | **Exit** | Deployed; rollback tested; monitoring live; **per-source staleness alarms active** `[Research R11]` |
 | **Reviewer** | CTO |
-| **DoD** | Universal + rollback **exercised, not documented** + on-call knows what broke last time |
+| **DoD** | Universal + rollback **exercised, not documented** + on-call knows what broke last time + **mandatory post-deployment host cleanup (Docker container, untagged image, and build cache pruning) executed** per [release-runbook](docs/ops/release-runbook.md) |
 
 ---
 

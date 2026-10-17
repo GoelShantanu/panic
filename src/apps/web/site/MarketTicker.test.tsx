@@ -17,6 +17,13 @@ const mockTicker: TickerResponse = {
     { symbol: 'MCX:CRUDEOIL1!', name: 'CRUDE OIL', price: 9573.0, change: 288.0, percent: 3.10, tag: 'MCX' },
     { symbol: 'MCX:GOLD1!', name: 'GOLD', price: 147918.0, change: 429.0, percent: 0.29, tag: 'MCX' },
     { symbol: 'MCX:SILVER1!', name: 'SILVER', price: 211187.0, change: 527.0, percent: 0.25, tag: 'MCX' },
+    { symbol: 'NSE:CNXIT', name: 'NIFTY IT', price: 31924.1, change: 1204.3, percent: 3.92 },
+    { symbol: 'NSE:CNXAUTO', name: 'NIFTY AUTO', price: 25768.5, change: 192.1, percent: 0.75 },
+    { symbol: 'NSE:CNXPHARMA', name: 'NIFTY PHARMA', price: 25781.65, change: -36.15, percent: -0.14 },
+    { symbol: 'NSE:CNXFMCG', name: 'NIFTY FMCG', price: 44616.15, change: -175.45, percent: -0.39 },
+    { symbol: 'NSE:CNXMETAL', name: 'NIFTY METAL', price: 12133.2, change: 114.7, percent: 0.95 },
+    { symbol: 'NSE:CNXREALTY', name: 'NIFTY REALTY', price: 825.95, change: -2.75, percent: -0.33 },
+    { symbol: 'NSE:CNXENERGY', name: 'NIFTY ENERGY', price: 36190.85, change: -22.85, percent: -0.06 },
   ],
   updatedAt: '2026-10-17T12:00:00.000Z',
 };
@@ -91,6 +98,15 @@ describe('MarketTicker component', () => {
     expect(screen.getAllByText('GOLD').length).toBeGreaterThan(0);
     expect(screen.getAllByText('SILVER').length).toBeGreaterThan(0);
     expect(screen.getAllByText('MCX').length).toBeGreaterThan(0);
+
+    // Verify Sectoral indices
+    expect(screen.getAllByText('NIFTY IT').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY AUTO').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY PHARMA').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY FMCG').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY METAL').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY REALTY').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NIFTY ENERGY').length).toBeGreaterThan(0);
 
     // Verify USD/INR is NOT rendered
     expect(screen.queryByText('USD/INR')).toBeNull();

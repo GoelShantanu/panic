@@ -83,7 +83,7 @@
   width: max-content;
   white-space: nowrap;
   will-change: transform;
-  animation: ticker-marquee 38s linear infinite;
+  animation: ticker-marquee 65s linear infinite;
 }
 
 .ticker-viewport:hover .ticker-track,

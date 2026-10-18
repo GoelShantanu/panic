@@ -1,5 +1,13 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Custom Domain Live: bazaarpanic.com — 2026-10-18 (D-100)
+
+[VERIFIED] Production domain `bazaarpanic.com` is live with automated SSL/TLS via Let's Encrypt:
+- **Global DNS Propagated:** Hostinger DNS A record `@` pointing to AWS EC2 (`3.27.24.82`) and CNAME `www` pointing to `bazaarpanic.com`.
+- **Caddy Edge Proxy:** Automated TLS certificates obtained for `bazaarpanic.com` and `www.bazaarpanic.com`. Clean 301 redirection from `www` to apex.
+- **Application URL Updated:** Set `PUBLIC_BASE_URL=https://bazaarpanic.com` in `/etc/stockpanic/app.env` and restarted web container.
+- **Live Verification:** Verified `https://bazaarpanic.com/` (HTTP 200), `/pulse` (HTTP 200), `/sign-in` (HTTP 200), and `/plans` (HTTP 200).
+
 ## Production Deployment to AWS EC2 Live — 2026-10-18 (Commit `fea1f27`, D-099)
 
 [VERIFIED] Successfully deployed Instant 1-Click Signup mode and deployed to AWS EC2 production (`3.27.24.82` / `bazaarnews.duckdns.org`):

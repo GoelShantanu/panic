@@ -2638,3 +2638,22 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
    - Executed host cleanup (docker image prune -f, docker builder prune -f, log truncation), reclaiming 335.6 MB and maintaining 19 GB free disk space (33% used).
 
 **Verification:** Vitest unit test suite passes (409 passed). Live endpoint test verified with HTTP 200 OK.
+---
+
+## D-100 — Custom Domain Launch: bazaarpanic.com & HTTPS Activation (2026-10-18)
+
+**Authority:** Founder purchased official production domains azaarpanic.com and azaarpanic.in on Hostinger and directed linking them to the AWS EC2 production instance (3.27.24.82).
+
+**Decision:**
+1. **DNS Architecture:**
+   - User configured DNS A record @ pointing to 3.27.24.82 (TTL: 300) and CNAME www pointing to azaarpanic.com on Hostinger.
+   - Global DNS propagation verified within 5 minutes.
+2. **Edge Proxy & Automated SSL (Caddy):**
+   - Updated /etc/caddy/Caddyfile on EC2 to bind azaarpanic.com and www.bazaarpanic.com alongside DuckDNS legacy origin.
+   - Configured automatic HTTP $\rightarrow$ HTTPS 301 redirection and www $\rightarrow$ apex apex redirection (https://bazaarpanic.com{uri}).
+   - Caddy automatically negotiated and obtained valid Let's Encrypt TLS certificates via ACME HTTP-01 challenge.
+3. **Application Configuration:**
+   - Updated PUBLIC_BASE_URL=https://bazaarpanic.com in /etc/stockpanic/app.env and restarted azaarnews-web-1.
+   - Verified live HTTPS status on https://bazaarpanic.com/ (HTTP 200), /pulse (HTTP 200), /sign-in (HTTP 200), and /plans (HTTP 200).
+
+**Verification:** Verified via live curl and DNS lookups. HTTPS certificates valid and active.

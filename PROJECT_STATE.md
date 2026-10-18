@@ -1,5 +1,48 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Executive Status & Context for New Sessions (Updated: 2026-10-19 00:05 IST)
+
+### ✅ What Has Been Completed & Verified Live in Production:
+1. **Strict Entertainment Noise Exclusion (D-106):**
+   - Discard rules for "Box Office Collection" and "Bollywood" implemented across `relevance.ts`, `rss.ts` (`toCandidates`), and `read.ts` (`PRIMARY_ARTICLE_RELEVANT_SQL`).
+   - Cleaned 38 legacy entertainment records in the production database. Verified `https://bazaarpanic.com/v1/stream?view=latest` returns exactly 0 entertainment stories out of 50 active items.
+2. **Ops Monitoring via Telegram Bot (Verified Live):**
+   - Configured and tested real-time Telegram bot alerts (`@shantanu_stockapp_news_bot` via `/etc/stockpanic/telegram.env`) reporting CPU %, RAM %, Disk %, Uptime, and Container health.
+3. **Source Status Cloaking & Legal Cleanup (D-105):**
+   - Source status relocated to uncatchable URL `/status404` (`robots: noindex`).
+   - Public footer link removed; old `/status` returns 404.
+   - Settings page audited: data download, username edit, account deletion fully operational.
+   - Privacy Notice cleaned of placeholder text.
+4. **Database Performance Optimization & NPE Defense (D-104):**
+   - Migration 0022 applied: Partial index `idx_article_relevance_discarded` sped up stream queries by 11.4x (2.11ms -> 0.185ms).
+   - Brand favicon suite (`favicon.ico`, `favicon-32x32.png`, `apple-touch-icon.png`, `icon.svg`) and tab title `"BazaarPanic - Live Indian Market News"` live.
+5. **Business Mail Integration (Zoho 5 Free Users):**
+   - DNS configured with Hostinger MX, SPF, and DKIM for `bazaarpanic.com`. Tested and verified.
+6. **DuckDNS Retirement & Single Apex Domain (D-103):**
+   - Caddy bound solely to `bazaarpanic.com` with Let's Encrypt TLS. DuckDNS references purged.
+7. **Brand Identity & Dual-Tone News Signal Logo (D-101, D-102):**
+   - Rebranded to BazaarPanic with custom News Signal bull/bear emblem and dual-tone wordmark.
+
+### ⏳ Pending & Upcoming Tasks for Future Sessions:
+1. **Automated EC2 Telegram Monitor Cron:**
+   - Install a recurring cron on EC2 (`/opt/stockpanic/scripts/ec2_monitor_alert.sh`) to automatically fire a high-priority Telegram alert whenever RAM > 85% or CPU > 85%, plus a daily market-open health summary (08:45 AM IST).
+2. **Zoho SMTP Transactional Mail Integration:**
+   - Configure Zoho credentials (`MAIL_USER`, `MAIL_PASSWORD`, `MAIL_HOST=smtp.zoho.in`, `MAIL_PORT=465`, `MAIL_SECURE=true`) in `/etc/stockpanic/app.env` to transition from Instant 1-Click Signup to verified transactional OTP emails whenever desired.
+3. **Razorpay Live Key Switch:**
+   - Replace test keys (`rzp_test_...`) with production Razorpay keys in `/etc/stockpanic/app.env` before accepting real user payments.
+4. **Appointed Grievance Officer Details:**
+   - Add `GRIEVANCE_OFFICER_NAME` and `GRIEVANCE_OFFICER_EMAIL` in `/etc/stockpanic/app.env` before public marketing/launch.
+
+---
+
+## Box Office & Bollywood Noise Filtering Live — 2026-10-18 (D-106)
+
+[VERIFIED] Completed strict exclusion of Box Office Collection and Bollywood news:
+- **Classifier Gate (`relevance.ts`):** `STRICT_ENTERTAINMENT_EXCLUDE = /\b(?:bollywood|box[\s-]*office(?:\s+collections?)?)\b/i` unconditionally drops matching headlines at entry point, ignoring syndicated financial keywords.
+- **Candidate Parsing (`rss.ts`):** Checked both headline and description/excerpt in `toCandidates` to drop entertainment items at ingestion boundary.
+- **Query Filter (`read.ts`):** Enforced `AND p.headline !~* '(box office|bollywood)'` in `PRIMARY_ARTICLE_RELEVANT_SQL` across stream, unread counts, story cards, and SSE stream.
+- **Database Scrubbing:** Updated 38 legacy candidate records in EC2 database to `classification = 'discard'`. Verified 0 entertainment stories out of 50 active items on `https://bazaarpanic.com/v1/stream?view=latest`.
+
 ## Source Status Cloaking (/status404) & Legal Notice Hardening — 2026-10-18 (D-105)
 
 [VERIFIED] Completed privacy text cleanup, footer cloaking, and settings verification:

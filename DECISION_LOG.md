@@ -2776,3 +2776,29 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Verification:**
 - Verified with `npm run typecheck` and `npx vitest run src/apps/web/site/pages.test.tsx` (all passed).
 - Working tree staged for local commit.
+
+---
+
+## D-106 — Strict Drop of Box Office Collection & Bollywood Entertainment News (2026-10-18)
+
+**Authority:** Founder directed adding a strict check where stories/news with words "Box Office Collection" or "Bollywood" are unconditionally dropped and never added to the live feed, cleaning existing database entries and deploying changes to production.
+
+**Decision & Implementation:**
+1. **Relevance Classifier Hard Drop (`src/packages/core/src/relevance.ts`):**
+   - Introduced `STRICT_ENTERTAINMENT_EXCLUDE = /\b(?:bollywood|box[\s-]*office(?:\s+collections?)?)\b/i`.
+   - Placed an early guard at the top of `classifyMarketRelevance`: headlines matching this pattern return `{ decision: 'discard', confidence: 0.97, reason: 'excluded entertainment topic (bollywood/box office)' }`.
+   - Prevents syndication keywords ("earnings", "net profit", "revenue", "Rs 200 crore net") from tricking the classifier into treating entertainment takings as listed corporate results.
+2. **RSS Ingestion Pipeline (`src/apps/worker/src/ingestion/rss.ts`):**
+   - In `toCandidates`, checks both headline and cleaned excerpt/description against `STRICT_ENTERTAINMENT_EXCLUDE`.
+   - Any matching candidate is marked as `discard` before hitting database candidate storage and is never enqueued into the story pipeline.
+3. **Stream Query Defense-in-Depth (`src/packages/db/src/read.ts`):**
+   - Updated `PRIMARY_ARTICLE_RELEVANT_SQL` to enforce `AND p.headline !~* '(box office|bollywood)'`, guaranteeing exclusion across the main stream (`streamPage`), unread counters (`streamUnreadCount`), story cards (`cards`), trending stories, and the live SSE stream.
+4. **Database Cleanup & Production Rollout:**
+   - Updated 38 legacy candidate records on the EC2 database (`bazaarnews-db-1`) matching `box office|bollywood` to `classification = 'discard'`.
+   - Built and deployed updated Docker image on EC2 (`3.27.24.82`).
+   - Cleaned builder cache (reclaimed 1.217 GB).
+   - Verified live production stream API (`https://bazaarpanic.com/v1/stream?view=latest`): confirmed exactly 0 entertainment stories out of 50 active stories.
+
+**Verification:**
+- Verified with `npm run typecheck` and full Vitest suite (412 tests passing).
+- Verified live HTTPS API responses on `https://bazaarpanic.com/`.

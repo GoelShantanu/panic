@@ -362,7 +362,7 @@ Restart ingestion with the new code, verify at most ten initial fallback items a
 
 To revert, stop ingestion, transactionally disable `src_mc_google_news` and re-enable the same three legacy sources using the existing audited source-enable command or owner SQL, then restart the retained previous worker image. Retain all imported articles and audit history; the original feeds will still report their actual delayed condition. No schema migration, paid service or API key is required by this fallback. Public coverage remains incomplete and delayed by Google indexing.
 
-Testing URL: **https://bazaarnews.duckdns.org/**. On October 11 (D-082), the owner logged in and the existing DuckDNS record was updated to **130.210.56.102**. Public DNS and valid HTTPS passed; no DuckDNS token was transferred. Tracked/installed Caddy configuration serves this hostname, while the initial `https://bazaarnews.130-210-56-102.sslip.io/` link permanently redirects to it. Protected `PUBLIC_BASE_URL` matches DuckDNS; running web/live/news services were recreated. If the VM's public IP changes, update the DuckDNS record before checking HTTPS. Automatic DNS updates are not configured.
+Testing URL: **https://bazaarpanic.com/**. On October 18 (D-100), the platform cut over from the temporary DuckDNS hostname to the official custom domain **bazaarpanic.com** with automated Let's Encrypt TLS. Protected `PUBLIC_BASE_URL` is configured to `https://bazaarpanic.com`.
 
 ### Services and protected configuration
 
@@ -392,14 +392,14 @@ Following the lack of free tier ARM capacity on Oracle Cloud (D-088), the produc
 - **Provider & Region:** AWS EC2, Sydney (`ap-southeast-2`).
 - **Instance Type:** `t3.micro` (1 vCPU, 1 GB RAM, 30 GB gp3 EBS root volume).
 - **Memory Tuning:** Configured 4 GB swap file (`/swapfile`) with `swappiness=20` to prevent OOM errors during Next.js Turbopack container builds and simultaneous worker operations on 1 GB physical memory.
-- **Public IPv4:** `3.27.24.82` (mapped canonically to `bazaarnews.duckdns.org`).
+- **Public IPv4:** `3.27.24.82` (mapped canonically to `bazaarpanic.com` and `www.bazaarpanic.com`).
 - **User:** `ubuntu`.
 - **SSH Private Key (Local Windows Path):** `C:\Users\Shantanu Goel\Downloads\bazaarnews-key.pem`
 - **Application Path:** `/opt/stockpanic/current`
 - **Secrets & Protected Config:**
   - `/etc/stockpanic/app.env` (environment variables: `DATABASE_URL`, `AUTH_SECRET`, `PUBLIC_BASE_URL`, `RAZORPAY_*`, etc., mode 600).
   - `/etc/stockpanic/pg-password` (PostgreSQL root secret, mode 600).
-- **Reverse Proxy:** Caddy v2 listening on 80/443 with automatic Let's Encrypt TLS for `bazaarnews.duckdns.org`. Configured to strip tech stack signature headers (`Server`, `X-Powered-By`) and block automated AI scrapers (`GPTBot`, `ClaudeBot`, etc.) with 403 Forbidden. Passes SSE (`/v1/live`) unbuffered to port 3003.
+- **Reverse Proxy:** Caddy v2 listening on 80/443 with automatic Let's Encrypt TLS for `bazaarpanic.com` and `www.bazaarpanic.com`. Configured to strip tech stack signature headers (`Server`, `X-Powered-By`) and block automated AI scrapers (`GPTBot`, `ClaudeBot`, etc.) with 403 Forbidden. Passes SSE (`/v1/live`) unbuffered to port 3003.
 
 ### 2. SSH Connection
 From Windows PowerShell:
@@ -437,7 +437,7 @@ ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd
 ### 4. Verification & Health Checks
 Verify that all 7 containers are active, healthy, and serving endpoints:
 ```bash
-ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && sudo docker compose -f docs/ops/oracle/compose.yaml ps && curl -fsS -o /dev/null -w 'web 3002: %{http_code}\n' http://127.0.0.1:3002/pulse && curl -fsS -o /dev/null -w 'public pulse: %{http_code}\n' https://bazaarnews.duckdns.org/pulse && curl -fsS -o /dev/null -w 'public plans: %{http_code}\n' https://bazaarnews.duckdns.org/plans"
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && sudo docker compose -f docs/ops/oracle/compose.yaml ps && curl -fsS -o /dev/null -w 'web 3002: %{http_code}\n' http://127.0.0.1:3002/pulse && curl -fsS -o /dev/null -w 'public pulse: %{http_code}\n' https://bazaarpanic.com/pulse && curl -fsS -o /dev/null -w 'public plans: %{http_code}\n' https://bazaarpanic.com/plans"
 ```
 
 ### 5. Mandatory post-deployment host cleanup (Free Tier EC2 hygiene)
@@ -482,7 +482,7 @@ Daily `stockpanic-maintenance.timer` runs `repair-live-partitions.sql` first. A 
 
 ### Razorpay routing and future releases
 
-[VERIFIED — D-082] Existing **Test Mode** webhook `Tm86X8qeuzXqXi` is enabled at `https://bazaarnews.duckdns.org/v1/billing/webhook`, retaining its signing secret and nine subscription events. The temporary local relay/tunnel were stopped after a new provider cancellation event was retained by Oracle. The isolated probe had no customer, zero payments and was immediately cancelled; `unknown_subscription` is the expected outcome, proving signed provider receipt without granting access. This is distinct from a successful paid checkout through the cloud site, which remains pending. Local and Oracle billing databases are now independent; provider events target Oracle. Keep all payment settings in Test Mode until live activation is separately authorised. Updated encrypted backups include the new hostname configuration.
+[VERIFIED — D-082] Existing **Test Mode** webhook `Tm86X8qeuzXqXi` is enabled at `https://bazaarpanic.com/v1/billing/webhook`, retaining its signing secret and nine subscription events. The temporary local relay/tunnel were stopped after a new provider cancellation event was retained by Oracle. The isolated probe had no customer, zero payments and was immediately cancelled; `unknown_subscription` is the expected outcome, proving signed provider receipt without granting access. This is distinct from a successful paid checkout through the cloud site, which remains pending. Local and Oracle billing databases are now independent; provider events target Oracle. Keep all payment settings in Test Mode until live activation is separately authorised. Updated encrypted backups include the new hostname configuration.
 
 Image `bazaarnews-app:20261011-verified` retains the working deployment. Future updates should use another release directory/image, retain the old directory/tag, back up before migrations, validate the candidate, then change the symlink/image and recreate services. Compose selects retained images through `RELEASE_TAG=<tag>`. Reverting an image cannot reverse a forward-only database migration; restoration/schema compatibility need review. Full rollback/cutover acceptance remains pending.
 

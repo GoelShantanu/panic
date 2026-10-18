@@ -1,4 +1,8 @@
-bazaarnews.duckdns.org {
+www.bazaarpanic.com {
+    redir https://bazaarpanic.com{uri} permanent
+}
+
+bazaarpanic.com {
     # Remove revealing server & framework signature headers
     header {
         -Server

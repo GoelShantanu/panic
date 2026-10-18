@@ -2702,3 +2702,25 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
    - Reclaimed Docker build cache and executed host hygiene.
 
 **Verification:** Verified locally and in production on `https://bazaarpanic.com/`. All test suites pass.
+
+---
+
+## D-103 — Complete Retirement of Temporary DuckDNS Domain & Single Production Origin (2026-10-18)
+
+**Authority:** Founder directed removing all references to `duckdns.org` across both the production EC2 host and the repository codebase following the launch of the official custom domain `bazaarpanic.com`.
+
+**Decision:**
+1. **Edge Proxy Hardening (`/etc/caddy/Caddyfile` & `docs/ops/oracle/Caddyfile`):**
+   - Removed `bazaarnews.duckdns.org` from Caddy listeners entirely.
+   - Bound Caddy solely to `bazaarpanic.com` with automated Let's Encrypt TLS and 301 apex redirection from `www.bazaarpanic.com`.
+   - Validated configuration with `caddy validate` and restarted Caddy (`systemctl restart caddy`).
+2. **Application Environment (`/etc/stockpanic/app.env`):**
+   - Updated `MAIL_FROM=updates@bazaarpanic.com` (replacing legacy `updates@bazaarnews.duckdns.org`).
+   - Restarted `bazaarnews-web-1` container to apply configuration.
+3. **Repository Cleanliness (`docs/ops/release-runbook.md`, `PROJECT_STATE.md`):**
+   - Replaced all operational and testing references to `bazaarnews.duckdns.org` with `bazaarpanic.com`.
+4. **Verification:**
+   - Probed live endpoints: `https://bazaarpanic.com/` (HTTP 200), `https://bazaarpanic.com/pulse` (HTTP 200).
+   - Confirmed Caddy certificate maintenance active exclusively for `bazaarpanic.com` and `www.bazaarpanic.com`.
+
+**Verification:** Verified via live SSH and curl. Caddy and web service are active, HTTPS 200 OK.

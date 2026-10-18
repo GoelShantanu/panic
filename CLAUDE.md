@@ -65,45 +65,81 @@ The repository now has populated `docs/` and `src/` trees. [KNOWLEDGE_MAP.md](KN
 
 In order. Do not skip.
 
-1. **Release verification and source readiness** — see [PROJECT_STATE.md](PROJECT_STATE.md); no real publisher RSS source is enabled locally yet.
-2. **Procure the exchange announcements feed (OQ-6)** — the stream depends on it.
-3. **Complete the CryptoPanic reference study** — Parts IV+ pending. See [PROJECT_STATE.md](PROJECT_STATE.md).
+1. **Production Availability & Host Hygiene** — Maintain AWS EC2 (`3.27.24.82` / `bazaarnews.duckdns.org`), ensure background news workers are running healthy, and execute mandatory post-deployment Docker cleanup to protect the 30 GB Free Tier EBS volume.
+2. **Market Pulse & F&O Telemetry** — Support live Market Breadth and Put/Call Ratio (PCR) sentiment telemetry (`/pulse`), Pro gating with full-tile locking, and tier-differentiated polling intervals (60s Pro vs 15m Free).
+3. **User Growth & Conversion** — Support 3-day trials, Razorpay subscription checkout, and responsive mobile phone participation.
 
 ---
 
-## Important Commands
+## Local Development & Editing Code
 
 Node ≥ 24 (TypeScript runs natively; no build step). npm workspaces under `src/` (ADR-002).
 
-```bash
-npm install                      # install workspace dependencies
-npm run typecheck                # tsc, strict
-npm test                         # unit tests; DB integration tests skip without TEST_DATABASE_URL
-TEST_DATABASE_URL=postgres://postgres:test@127.0.0.1:55432/postgres npm test   # + integration (PostgreSQL 17+)
-DATABASE_URL=postgres://… npm run db:migrate                                 # apply pending migrations
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/ingest.ts [--once]     # run ingestion (loop, or one pass)
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/pipeline.ts [--once]   # process items into stories
-DATABASE_URL=postgres://… AUTH_SECRET=<32+ chars> MAILER=log PORT=3000 node src/apps/web/src/cli/serve.ts   # API (GOOGLE_CLIENT_ID enables Google sign-in; MAILER=smtp + SMTP_USER/SMTP_PASS/MAIL_FROM for Gmail; billing: RAZORPAY_KEY_ID/KEY_SECRET/PLAN_MONTHLY/PLAN_YEARLY/WEBHOOK_SECRET + SELLER_NAME/ADDRESS/GSTIN/SAC, D-036)
-DATABASE_URL=postgres://… PORT=3001 node src/apps/live/src/cli/serve.ts      # SSE live channel (/v1/live)
-npm run web:build && NODE_ENV=production … node src/apps/web/src/cli/serve.ts   # pages + API in one process (D-040); without NODE_ENV=production it runs Next.js in dev mode; LIVE_ORIGIN=http://127.0.0.1:3001 passes /v1/live through
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/seed-demo.ts           # fictional demo data for frontend work (refuses non-demo databases)
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/account.ts [--once]    # data export and account deletion jobs
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/registry.ts load-nse <EQUITY_L.csv> <SME_EQUITY_L.csv>   # daily instrument registry (D-049); load-aliases docs/qa/curated-aliases.csv (D-051)
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/audit-tags.ts sample|score <file>   # weekly tag audit; below 99.5% switches article tags off (D-051)
-DATABASE_URL=postgres://… AUTH_SECRET=… PUBLIC_BASE_URL=… node src/apps/worker/src/cli/alerts.ts [--once]   # alerts + digests (PUSH=web + VAPID_* for browser push)
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/maintenance.ts        # daily, owner role: partitions ahead, drops expired ip_log/live_event/ai_call, purges
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts grant-role <username> operator   # after the user enrols TOTP (/v1/me/totp/enrol, /confirm)
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-setting ai_enabled true      # once Anthropic credentials exist (D-034)
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts set-source-excerpt <source_id> on "<terms>"   # publisher blurbs once terms permit (D-055); list-sources shows state
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts relevance-list [limit]                 # held RSS headlines
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts relevance-review <id> keep|discard [reviewer] # resolve one held headline
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts add-source <id> <tier> <https-url> <markets|business|general> <name> -- <terms reference> # register after terms review
-DATABASE_URL=postgres://… node src/apps/worker/src/cli/admin.ts add-holiday|set-muhurat|record-halt|show-day …   # trading calendar (D-038); run without args for usage
-DATABASE_URL=postgres://… ANTHROPIC_API_KEY=… OPS_EMAIL=… node src/apps/worker/src/cli/ai.ts [--once]   # AI classify + summarise jobs (Haiku 4.5)
-DATABASE_URL=postgres://… OPS_EMAIL=… node src/apps/worker/src/cli/reconcile.ts [--date YYYY-MM-DD]  # filings reconciliation, 23:30 + 07:30 IST (D-035)
+### Running Services Locally:
+```powershell
+# 1. Start local PostgreSQL 17 (Docker container)
+docker start stockpanic-db
+
+# 2. Run database migrations
+npm run db:migrate
+
+# 3. Start web server (port 3002)
+# Development mode (Next.js Turbopack):
+npm run web:dev
+# Or production build & serve:
+npm run web:build
+node --env-file-if-exists=.env.local src/apps/web/src/cli/serve.ts
+
+# 4. Start live SSE broadcast service (port 3003)
+$env:PORT="3003"; node --env-file-if-exists=.env.local src/apps/live/src/cli/serve.ts
+
+# 5. Start background news ingestion & pipeline daemons
+powershell -File start-ingest.ps1
+powershell -File start-pipeline.ps1
 ```
 
-Throwaway test database: `docker run -d --name sp-dbtest -e POSTGRES_PASSWORD=test -p 127.0.0.1:55432:5432 postgres:17`. Schema constraint tests: run `docs/database/tests/0001_constraints_test.sql` with `psql` inside that container.
+### Verification & Testing:
+```bash
+npm run typecheck                # tsc, strict across all workspaces
+npm test                         # unit tests (Vitest)
+TEST_DATABASE_URL=postgres://postgres:test@127.0.0.1:55432/postgres npm test   # + database integration tests
+npx playwright test              # browser workflows (desktop & mobile)
+```
+
+---
+
+## AWS EC2 Production Deployment (`bazaarnews.duckdns.org`)
+
+The production application runs on AWS EC2 in Sydney (`ap-southeast-2`):
+- **Host:** `ubuntu@3.27.24.82` (`t3.micro`, 1 vCPU, 1 GB RAM, 4 GB swap, 30 GB gp3 EBS).
+- **Domain:** `https://bazaarnews.duckdns.org` (Caddy reverse proxy with automatic SSL).
+- **SSH Key:** `C:\Users\Shantanu Goel\Downloads\bazaarnews-key.pem`
+- **App Location on Host:** `/opt/stockpanic/current`
+
+### SSH Connection:
+```powershell
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82
+```
+
+### Deploying Changes:
+```powershell
+# 1. Create deployment archive (excluding build artifacts and scratch logs)
+tar.exe --exclude="node_modules" --exclude=".git" --exclude="scratch" --exclude=".next*" -czf /tmp/deploy.tar.gz src docs package.json package-lock.json tsconfig.json
+
+# 2. Upload to EC2 and extract into release folder
+scp.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" /tmp/deploy.tar.gz ubuntu@3.27.24.82:/tmp/
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "tar -xzf /tmp/deploy.tar.gz -C /opt/stockpanic/current && rm -f /tmp/deploy.tar.gz"
+Remove-Item -Force /tmp/deploy.tar.gz
+
+# 3. Build container and restart services on EC2
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && sudo docker build -t bazaarnews-app:current -f docs/ops/oracle/Dockerfile . && sudo docker compose -f docs/ops/oracle/compose.yaml up -d"
+
+# 4. Verify endpoints
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && sudo docker compose -f docs/ops/oracle/compose.yaml ps && curl -fsS https://bazaarnews.duckdns.org/pulse -o /dev/null -w 'Status: %{http_code}\n'"
+
+# 5. MANDATORY Post-Deployment Host Cleanup (Free Tier EBS Hygiene)
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "sudo docker image prune -f && sudo docker builder prune -f && sudo find /var/lib/docker/containers/ -name '*-json.log' -exec truncate -s 0 {} + && sudo rm -rf /tmp/*.tar.gz /tmp/npm-* && sudo apt-get clean && df -h /"
+```
 
 ---
 

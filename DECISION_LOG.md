@@ -2537,4 +2537,55 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 
 **Verification:** Verified table creation, row locking, and rollback in PostgreSQL. All 404 vitest unit tests pass and TypeScript typecheck passes with 0 errors.
 
+---
+
+## D-096 — Put/Call Ratio (PCR) Telemetry, Pro Tier Full-Tile Locking & Mobile Responsiveness (2026-10-18)
+
+**Authority:** Founder requested integrating F&O derivatives sentiment (Put/Call Ratio - PCR) into Market Pulse (`/pulse`), distinguishing Pro members vs Free/Guest users, refining gauge presentation and colors, making the lock overlay cover the whole card, updating the Plans comparison matrix, and ensuring full mobile responsiveness.
+
+**Decision:**
+1. **F&O Derivatives Sentiment (Put/Call Ratio - PCR) Card:**
+   - Added second hero command deck card alongside Market Breadth on `/pulse`.
+   - Displays real-time NIFTY 50 PCR (1.18, Bullish Support / Put Writing) and BANK NIFTY PCR (0.84, Neutral / Resistance) with active Open Interest (OI) metrics (14.2M Put OI vs 12.0M Call OI).
+   - Visual continuous horizontal sentiment gauge with color-coded sentiment zones: Oversold (<0.7), Bearish (0.7–0.9), Neutral (0.9–1.1), Bullish (1.1–1.4), and Overbought (>1.4). Needle pointer is positioned dynamically with boundary clamps `[3%, 97%]` and an elevated badge displaying the current value in eye-catching emerald green (`#10b981`) instead of dull bluish accents.
+2. **Pro Full-Tile Locking & Gating:**
+   - Free and guest users view a full-tile lock overlay (`.pulse-pcr-lock-overlay`) that spans the entire card seamlessly without nested inner borders or card-in-card artifacts.
+   - Highlights that Pro refresh interval is 1 minute (vs 15 minutes for Free), includes "Unlock Live PCR" CTA, and triggers the conversion modal offering a 3-Day Free Trial.
+   - Standardized the conversion modal across all trigger points to unconditionally showcase the complete 5-feature Pro intelligence suite with dynamic trigger-specific headings ("Unlock F&O Sentiment Telemetry", "Unlock Sector Intelligence", "Unlock Real-Time Market Pulse").
+3. **Plans Page Matrix Update (`/plans`):**
+   - Explicitly added row items to the subscription comparison table in `Plans.tsx`:
+     - **Market Breadth & Participation:** 15-min cached (Free) vs 1-min live auto-poll (Pro).
+     - **F&O Derivatives Sentiment (PCR):** Locked preview (Free) vs Real-time Nifty/BankNifty PCR gauge & OI metrics (Pro).
+     - **Sector Rotation Intelligence:** 12-sector heatmaps with deep ticker drilldown.
+   - Made plans table horizontally scrollable on mobile screens (`@media (max-width: 640px) { .plans-table { display: block; overflow-x: auto; } }`).
+4. **Mobile Responsiveness Polish (`pulse.css`, `responsive.css`):**
+   - Single-column metrics layout (`pcr-metrics-row`) on screens $\le 600$px.
+   - Gauge zone text wraps in `.pcr-zone-word` to gracefully hide secondary words on screens $\le 480$px while preserving zone readability.
+   - Compact Open Interest grid and flex wrapping below 380px.
+   - Modal dialogs given `max-height: calc(100vh - 32px)` with `-webkit-overflow-scrolling: touch` to ensure seamless scrolling on short mobile viewports.
+
+**Verification:** Verified locally and in Vitest. All 404 tests pass. Verified mobile compliance across viewport sizes (360px, 480px, 600px, 768px, 1024px, 1440px).
+
+---
+
+## D-097 — Production EC2 Deployment of PCR Release & Post-Deployment Host Hygiene (2026-10-18)
+
+**Authority:** Founder directed deploying the PCR and mobile-responsiveness changes to the live AWS EC2 production instance and performing thorough host cleanup (deleting old images, caches, temp files, and logs) to keep the instance pristine.
+
+**Decision:**
+1. **Production Deployment (`3.27.24.82`):**
+   - Packaged local workspace release, transferred to `/opt/stockpanic/current` on EC2, and built production Docker image `bazaarnews-app:current` (`dfe74ec2060f`) with Next.js 16.3.8 Turbopack.
+   - Recreated all application containers (`bazaarnews-web-1`, `bazaarnews-live-1`, `bazaarnews-ingest-1`, `bazaarnews-pipeline-1`, `bazaarnews-account-1`, `bazaarnews-alerts-1`) to run on the latest image. Retained PostgreSQL 17 (`bazaarnews-db-1`) and `pgdata` volume intact.
+   - Verified live routes: `https://bazaarnews.duckdns.org/pulse` (HTTP 200), `https://bazaarnews.duckdns.org/plans` (HTTP 200), internal loopback web port 3002 (HTTP 200).
+2. **Host Hygiene & Space Reclaim:**
+   - Pruned dangling/untagged Docker images (`docker image prune -f`), reclaiming 335+ MB of layer storage.
+   - Pruned Docker build cache (`docker builder prune -f`, 0B remaining).
+   - Truncated all container JSON logs (`find /var/lib/docker/containers/ -name "*-json.log" -exec truncate -s 0 {} +`).
+   - Cleaned APT cache (`apt-get clean`) and vacuumed systemd journal logs (`journalctl --vacuum-time=1d`).
+   - Cleaned all deployment tarballs and temp files from `/tmp`.
+   - Host filesystem verified at 33% disk utilization (9.1 GB used out of 28 GB, 19 GB available headroom).
+
+**Verification:** Verified via live SSH and curl. All containers report healthy/up, public HTTPS returns 200 OK.
+
+
 

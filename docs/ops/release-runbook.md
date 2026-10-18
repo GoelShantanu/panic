@@ -384,7 +384,63 @@ sudo journalctl -u stockpanic-health.service -u stockpanic-backup.service -u sto
 
 Account/alerts services are defined but **not started** without SMTP. Public web uses SMTP transport with a sender identifier but no authentication; email-dependent signup/recovery cannot complete, and receipt is unverified. Verification codes are not logged. Configure the founder-selected sender and credentials privately in `app.env`, verify receipt in a controlled mailbox, review cloned queued jobs before enabling workers, then recreate web/account/alerts. Google and VAPID configuration are also absent. A page returning 200 does not establish these workflows.
 
-### Mandatory post-deployment host cleanup (Free Tier EC2 hygiene)
+## AWS EC2 Production Deployment & Operations Guide (2026-10-16+, D-090, D-097)
+
+Following the lack of free tier ARM capacity on Oracle Cloud (D-088), the production deployment was permanently migrated to AWS EC2 under D-090.
+
+### 1. Host Architecture & Inventory
+- **Provider & Region:** AWS EC2, Sydney (`ap-southeast-2`).
+- **Instance Type:** `t3.micro` (1 vCPU, 1 GB RAM, 30 GB gp3 EBS root volume).
+- **Memory Tuning:** Configured 4 GB swap file (`/swapfile`) with `swappiness=20` to prevent OOM errors during Next.js Turbopack container builds and simultaneous worker operations on 1 GB physical memory.
+- **Public IPv4:** `3.27.24.82` (mapped canonically to `bazaarnews.duckdns.org`).
+- **User:** `ubuntu`.
+- **SSH Private Key (Local Windows Path):** `C:\Users\Shantanu Goel\Downloads\bazaarnews-key.pem`
+- **Application Path:** `/opt/stockpanic/current`
+- **Secrets & Protected Config:**
+  - `/etc/stockpanic/app.env` (environment variables: `DATABASE_URL`, `AUTH_SECRET`, `PUBLIC_BASE_URL`, `RAZORPAY_*`, etc., mode 600).
+  - `/etc/stockpanic/pg-password` (PostgreSQL root secret, mode 600).
+- **Reverse Proxy:** Caddy v2 listening on 80/443 with automatic Let's Encrypt TLS for `bazaarnews.duckdns.org`. Configured to strip tech stack signature headers (`Server`, `X-Powered-By`) and block automated AI scrapers (`GPTBot`, `ClaudeBot`, etc.) with 403 Forbidden. Passes SSE (`/v1/live`) unbuffered to port 3003.
+
+### 2. SSH Connection
+From Windows PowerShell:
+```powershell
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82
+```
+
+### 3. Deploying Code Changes to EC2
+To deploy updates from the local workspace to the production EC2 host:
+
+**Option A — Direct Tarball Sync (Fastest & guarantees exact local state):**
+```powershell
+# 1. Package source code excluding node_modules, git, and local scratch files
+tar.exe --exclude="node_modules" --exclude=".git" --exclude="scratch" --exclude=".next*" -czf /tmp/pulse_deploy.tar.gz src docs package.json package-lock.json tsconfig.json
+
+# 2. Upload archive to EC2
+scp.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" /tmp/pulse_deploy.tar.gz ubuntu@3.27.24.82:/tmp/
+
+# 3. Extract to /opt/stockpanic/current and clean up archive
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "tar -xzf /tmp/pulse_deploy.tar.gz -C /opt/stockpanic/current && rm -f /tmp/pulse_deploy.tar.gz"
+Remove-Item -Force /tmp/pulse_deploy.tar.gz
+```
+
+**Option B — Git Sync:**
+If commits are pushed to `origin/main`:
+```bash
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && git pull origin main"
+```
+
+**Rebuild Container & Restart Services:**
+```bash
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && sudo docker build -t bazaarnews-app:current -f docs/ops/oracle/Dockerfile . && sudo docker compose -f docs/ops/oracle/compose.yaml up -d"
+```
+
+### 4. Verification & Health Checks
+Verify that all 7 containers are active, healthy, and serving endpoints:
+```bash
+ssh.exe -i "$env:USERPROFILE\Downloads\bazaarnews-key.pem" ubuntu@3.27.24.82 "cd /opt/stockpanic/current && sudo docker compose -f docs/ops/oracle/compose.yaml ps && curl -fsS -o /dev/null -w 'web 3002: %{http_code}\n' http://127.0.0.1:3002/pulse && curl -fsS -o /dev/null -w 'public pulse: %{http_code}\n' https://bazaarnews.duckdns.org/pulse && curl -fsS -o /dev/null -w 'public plans: %{http_code}\n' https://bazaarnews.duckdns.org/plans"
+```
+
+### 5. Mandatory post-deployment host cleanup (Free Tier EC2 hygiene)
 
 Every production deployment rebuilds the Next.js production image with Turbopack, generating 5–14 GB of intermediate Docker layer snapshots, build caches, and untagged images. On an AWS Free Tier `t3.micro` instance with a 30 GB root volume, skipping cleanup exhausts available disk space within two to three deployments.
 

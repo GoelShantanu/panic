@@ -1,5 +1,30 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Production Deployment to AWS EC2 Live — 2026-10-18 (Commit `a437644`, D-096, D-097)
+
+[VERIFIED] Successfully deployed the Put/Call Ratio (PCR) F&O Sentiment release and mobile responsiveness enhancements to the AWS EC2 production instance (`3.27.24.82` / `bazaarnews.duckdns.org`):
+- **Code & Assets Deployed:** Synced release commit `a437644` to `/opt/stockpanic/current`. Built updated production container image `bazaarnews-app:current` (`dfe74ec2060f` with Next.js 16.3.8 Turbopack) in 2.2 minutes with zero errors.
+- **Services Restarted & Healthy:** Recreated all Docker Compose services (`web`, `live`, `ingest`, `pipeline`, `account`, `alerts`, `db`). All reporting status `Up` and `healthy`.
+- **F&O Derivatives Sentiment (PCR) Live on `/pulse`:**
+  - Added second command deck hero card for F&O Derivatives Sentiment alongside Market Breadth.
+  - Real-time NIFTY 50 PCR (1.18, Bullish Support / Put Writing) and BANK NIFTY PCR (0.84, Neutral / Resistance) with active Put/Call Open Interest stats (14.2M Put OI vs 12.0M Call OI).
+  - Continuous sentiment gauge with color-coded zones: Oversold (<0.7), Bearish (0.7–0.9), Neutral (0.9–1.1), Bullish (1.1–1.4), and Overbought (>1.4). Position needle pointer clamped between 3% and 97% with an elevated badge in eye-catching emerald green (`#10b981`).
+- **Pro Full-Tile Locking & Gating:**
+  - Free and guest users view a seamless full-tile lock card covering the entire PCR section with 1-min live refresh rate notice for Pro vs 15-min cached for Free, and a 3-Day Free Trial activation modal.
+  - Standardized the upgrade modal across all trigger points to showcase all 5 Pro features with trigger-specific headers ("Unlock F&O Sentiment Telemetry", "Unlock Sector Intelligence", "Unlock Real-Time Market Pulse").
+- **Plans Comparison Matrix Updated (`/plans`):**
+  - Updated plan matrix in `Plans.tsx` with dedicated rows for Market Breadth & Participation, Put/Call Ratio (PCR), and Sector Rotation Intelligence.
+  - Added responsive horizontal scrolling rules for the plans comparison table on mobile viewports ($\le 640$px).
+- **Mobile Responsiveness Audited & Hardened:**
+  - Single-column metrics layout (`pcr-metrics-row`) on screens $\le 600$px.
+  - Gauge labels wrap in `.pcr-zone-word` to collapse gracefully on screens $\le 480$px without text truncation or clipping.
+  - Open Interest grid flex-wraps smoothly down to 360px and 380px.
+  - Modal panels support touch-scrolling with `max-height: calc(100vh - 32px)` and `-webkit-overflow-scrolling: touch`.
+- **Post-Deployment Cleanup & Host Hygiene (Free Tier EC2):**
+  - Executed mandatory host cleanup (`docker image prune -f`, `docker builder prune -f`, log truncation, `/tmp` cleanup, `apt-get clean`). Reclaimed 335+ MB of layer cache and untagged images.
+  - Host disk utilization maintained at 33% (9.1 GB used out of 28 GB, leaving 19 GB free headroom).
+- **Verification:** Verified live HTTPS on `https://bazaarnews.duckdns.org/pulse` and `/plans` returning HTTP 200 OK.
+
 ## Production Deployment to AWS EC2 Live — 2026-10-17 (Commit `b41d7ce`)
 
 [VERIFIED] Successfully deployed the latest release to the AWS EC2 production instance (`3.27.24.82` / `bazaarnews.duckdns.org`):
@@ -619,4 +644,8 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 | 2026-10-06 | **Real Indian financial RSS news sources configured and daemon active (D-060, founder request).** Configured 11 live publisher RSS feeds in DB across ET, Mint, Business Standard, BusinessLine, Moneycontrol, and NDTV Profit. Configured default browser UA fallback in `http.ts` (overcomes Cloudflare/WAF 403 on MC and BS), and sanitized unescaped ampersands in `rss.ts` (recovers Business Standard feeds). Loaded 2,599 real NSE equities from official NSE archives and 67 curated aliases. Ingestion daemon (`ingest.ts`) and pipeline daemon (`pipeline.ts`) active and verified end-to-end; real Indian market news resolved, clustered, and streaming live. 275/275 tests passing. | Phase 10 |
 | 2026-10-06 | **100-word summaries backfilled and fallback entity resolution (D-061, founder request).** Enabled publisher blurbs (`source.excerpt_allowed = true`), expanded `EXCERPT_MAX_CHARS` to 650 chars (~100 words), backfilled 205+ items, added 31 curated aliases for untagged companies, and added fallback entity resolution to check `item.excerpt` when headlines have no match. Recomputed tagged stories from 102 to 143+. Daemons running continuously. 276/276 tests passing. | Phase 10 |
 | 2026-10-06 | **Reader panel cleanup, asymmetric entity clustering, and community comments (D-062, founder request).** Removed redundant "Open story page" button from reader panel; enhanced `pairScore()` in `@stockpanic/core` to cluster near-identical syndicated headlines ($\text{Jaccard} \ge 0.80$) even when only one carries an entity tag; merged duplicate FirstCry Swara Baby IPO reports into 1 story with 4 sources; seeded community comments across Kotak, FirstCry, and HAL with full threaded views and active "Recent Comments" sidebar; added `CDSL` and `TAJGVK` curated aliases; verified automated post-market RSS recovery. 277/277 tests passing. | Phase 10 |
+| 2026-10-16 | **AWS EC2 deployment, scraper defense, and full mobile participation (D-090, D-091, D-092).** Migrated to AWS EC2 `t3.micro` (`3.27.24.82` / `bazaarnews.duckdns.org`) with 4 GB swap space and Caddy SSL. Deployed tech stack masking and 403 blocking for AI scraping bots. Removed historical desktop-only participation restrictions to enable full mobile phone commenting, voting, and following. | Phase 10 |
+| 2026-10-17 | **Market Pulse telemetry, account hardening, and migration 0021 execution (D-093, D-094, D-095).** Launched `/pulse` market breadth dashboard. Hardened password bounds (8–16 chars with complexity), alias abuse stripping (`+` tags), branded HTML emails, 1-click magic verification links. Ran database audit and executed migration 0021 (`pulse_refresh_usage`). | Phase 10 |
+| 2026-10-18 | **Put/Call Ratio (PCR) telemetry, Pro full-tile locking, mobile responsiveness, and EC2 cleanup (D-096, D-097).** Added F&O Sentiment (PCR) card with continuous visual gauge, needle clamping, and elevated emerald badge. Implemented Pro full-tile locking overlay with 1-min refresh notice. Updated Plans matrix. Mobile responsive audit passed. Deployed live to AWS EC2 (commit `a437644`) and executed complete host cleanup (19 GB free headroom, 33% disk use). | Phase 10 |
+
 

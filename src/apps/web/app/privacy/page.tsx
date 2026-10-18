@@ -11,7 +11,7 @@ const DATA: [string, string, string][] = [
   ['Votes', 'Vote counts and abuse prevention. Votes are not shown publicly with your name', 'Until you delete your account; then kept only as anonymous counts'],
   ['Comments', 'Showing your comments under your username', 'Your choice on deletion: kept as "[deleted user]" or deleted. Removed content is kept 180 days for legal requests'],
   ['IP address and device data', 'Preventing abuse such as vote manipulation', '180 days'],
-  ['Payment status and invoices', 'Billing and tax records. Card and bank details are held by Razorpay, never by Bazaar Updates', 'As required for tax records (GST: 72 months), with restricted access'],
+  ['Payment status and invoices', 'Billing and tax records. Card and bank details are held by Razorpay, never by BazaarPanic', 'As required for tax records (GST: 72 months), with restricted access'],
 ];
 
 // PRD-007 US-007.4 AC-1 (DPDP Act 2023 notice, [INFERRED]); plain English.
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
     <article className="legal">
       <h1>Privacy Notice</h1>
       <p className="faint">Last updated {UPDATED}</p>
-      <p>Bazaar Updates collects only what it needs to run the service. This notice says what we collect, why, and for how long.</p>
+      <p>BazaarPanic collects only what it needs to run the service. This notice says what we collect, why, and for how long.</p>
       <h2>What we collect and why</h2>
       <table className="panel legal-table">
         <thead>

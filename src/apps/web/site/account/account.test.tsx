@@ -188,7 +188,7 @@ describe('plans (US-007.7)', () => {
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe yearly' })));
     expect(screen.getByRole('status').textContent).toContain('not open yet');
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe yearly' })));
-    expect((ctor.mock.calls as unknown as unknown[][])[0]![0]).toMatchObject({ key: 'rzp_test', subscription_id: 'sub_1', name: 'Bazaar Updates' });
+    expect((ctor.mock.calls as unknown as unknown[][])[0]![0]).toMatchObject({ key: 'rzp_test', subscription_id: 'sub_1', name: 'BazaarPanic' });
     expect(open).toHaveBeenCalled();
     delete (window as any).Razorpay;
   });

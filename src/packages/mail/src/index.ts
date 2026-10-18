@@ -108,7 +108,7 @@ function emailShell(title: string, bodyContent: string): string {
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">Bazaar Updates</span>
+                    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">BazaarPanic</span>
                     <span style="display: inline-block; width: 7px; height: 7px; background-color: #10b981; border-radius: 50%; margin-left: 6px; vertical-align: middle;"></span>
                     <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Real-Time Indian Market Intelligence (NSE & BSE)</div>
                   </td>
@@ -125,7 +125,7 @@ function emailShell(title: string, bodyContent: string): string {
           <!-- Footer -->
           <tr>
             <td style="padding: 20px 32px; background-color: #0d131f; border-top: 1px solid #1e293b; font-size: 12px; color: #64748b; text-align: center; line-height: 1.5;">
-              &copy; 2026 Bazaar Updates. All rights reserved.<br>
+              &copy; 2026 BazaarPanic. All rights reserved.<br>
               Indian Stock Market Intelligence & Deduplicated News Telemetry
             </td>
           </tr>
@@ -147,7 +147,7 @@ export function signInCodeEmail(code: string): { subject: string; text: string; 
   ].join('\n');
 
   const html = emailShell(
-    'Your Bazaar Updates sign-in code',
+    'Your BazaarPanic sign-in code',
     `
     <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #f8fafc;">Your sign-in code</h2>
     <p style="margin: 0 0 20px; color: #94a3b8;">Use the sign-in code below to access your account:</p>
@@ -164,7 +164,7 @@ export function signInCodeEmail(code: string): { subject: string; text: string; 
   );
 
   return {
-    subject: 'Your Bazaar Updates sign-in code',
+    subject: 'Your BazaarPanic sign-in code',
     text,
     html,
   };
@@ -187,10 +187,10 @@ export function verificationCodeEmail(code: string, link?: string): { subject: s
   ` : '';
 
   const html = emailShell(
-    'Verify your Bazaar Updates email',
+    'Verify your BazaarPanic email',
     `
     <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #f8fafc;">Verify your email address</h2>
-    <p style="margin: 0 0 20px; color: #94a3b8;">Welcome to Bazaar Updates! Use the code below to verify your email and activate your <strong>3-day free Pro trial</strong>:</p>
+    <p style="margin: 0 0 20px; color: #94a3b8;">Welcome to BazaarPanic! Use the code below to verify your email and activate your <strong>3-day free Pro trial</strong>:</p>
     
     <div style="background-color: #0b0f17; border: 1px solid #293548; border-radius: 8px; padding: 18px; text-align: center; margin: 20px 0;">
       <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #38bdf8;">${code}</span>
@@ -205,7 +205,7 @@ export function verificationCodeEmail(code: string, link?: string): { subject: s
     `
   );
 
-  return { subject: 'Verify your Bazaar Updates email', text, html };
+  return { subject: 'Verify your BazaarPanic email', text, html };
 }
 
 export function passwordResetEmail(code: string, link?: string): { subject: string; text: string; html: string } {
@@ -225,10 +225,10 @@ export function passwordResetEmail(code: string, link?: string): { subject: stri
   ` : '';
 
   const html = emailShell(
-    'Reset your Bazaar Updates password',
+    'Reset your BazaarPanic password',
     `
     <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #f8fafc;">Reset your password</h2>
-    <p style="margin: 0 0 20px; color: #94a3b8;">We received a request to reset your Bazaar Updates password. Use the reset code below:</p>
+    <p style="margin: 0 0 20px; color: #94a3b8;">We received a request to reset your BazaarPanic password. Use the reset code below:</p>
     
     <div style="background-color: #0b0f17; border: 1px solid #293548; border-radius: 8px; padding: 18px; text-align: center; margin: 20px 0;">
       <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #38bdf8;">${code}</span>
@@ -243,5 +243,5 @@ export function passwordResetEmail(code: string, link?: string): { subject: stri
     `
   );
 
-  return { subject: 'Reset your Bazaar Updates password', text, html };
+  return { subject: 'Reset your BazaarPanic password', text, html };
 }

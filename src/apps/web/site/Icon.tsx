@@ -36,12 +36,14 @@ export function Icon({ name, size = 18, strokeWidth = 1.7 }: { name: IconName; s
   );
 }
 
-// The brand mark: a rising line inside a rounded square.
+// The brand mark: BP terminal monogram with market pulse candlestick mark.
 export function BrandMark({ size = 30 }: { size?: number }) {
   return (
     <svg className="brand-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <rect width="32" height="32" rx="7" fill="var(--accent)" />
-      <path d="M7 21.5l5.5-5.5 4 3.5L25 10.5 M19.5 10.5H25V16" fill="none" stroke="var(--accent-text)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <rect width="32" height="32" rx="7" fill="var(--surface-2, #161a1f)" stroke="var(--border, #2a3038)" strokeWidth="1.2" />
+      <text x="4.5" y="21.5" fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fontWeight="900" fontSize="13.5" fill="var(--text)" letterSpacing="-0.5px">BP</text>
+      <path d="M23.5 19V8 M23.5 8l2 2 M23.5 8l-2 2" stroke="var(--bull, #10b981)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="22.25" y="10.5" width="2.5" height="5" rx="0.5" fill="var(--bull, #10b981)" />
     </svg>
   );
 }

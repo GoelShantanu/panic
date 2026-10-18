@@ -202,7 +202,7 @@ describe.skipIf(!adminUrl)('AI layer jobs (PostgreSQL, fake model)', () => {
     const { item_id } = await article('cap-1', 'Halcyon secures order from port trust');
     fake.classifyReplies.push(ok({ event_types: ['order_contract'], instruments: [] }));
     expect((await drain()).counts).toEqual({ accepted: 1 });
-    expect(mailer.sent.map((m) => m.subject)).toContain('[Bazaar Updates] AI spend passed 80% of the monthly cap');
+    expect(mailer.sent.map((m) => m.subject)).toContain('[BazaarPanic] AI spend passed 80% of the monthly cap');
 
     await db.query(`UPDATE setting SET value = to_jsonb($1::numeric) WHERE key = 'ai_monthly_cap_inr'`, [spent / 2]);
     await article('cap-2', 'Halcyon wins order from airport authority');

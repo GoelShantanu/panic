@@ -120,7 +120,7 @@ describe.skipIf(!adminUrl)('billing on Razorpay (PostgreSQL, fake provider)', ()
     expect(detail.text).toContain('TAX INVOICE');
     expect(detail).toMatchObject({ cgst_inr: 22.8, sgst_inr: 22.81 });
     const queuedMail = await db.query(`SELECT payload->>'subject' AS subject FROM job WHERE queue = 'account' AND payload->>'kind' = 'email'`);
-    expect(queuedMail.rows.map((r) => r.subject)).toContain(`Bazaar Updates invoice ${inv[0].invoice_id}`);
+    expect(queuedMail.rows.map((r) => r.subject)).toContain(`BazaarPanic invoice ${inv[0].invoice_id}`);
     expect((await call('other', 'GET', `/v1/billing/invoices/${encodeURIComponent(inv[0].invoice_id)}`)).status).toBe(404);
 
     expect(b(await hook('subscription.charged', 'sub_TEST1', { payment: { id: 'pay_1', amount: 29900 }, eventId: 'evt_charge_1' }))).toEqual({ duplicate: true });

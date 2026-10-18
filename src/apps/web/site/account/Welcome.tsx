@@ -66,7 +66,7 @@ export function Welcome({ next }: { next: string }) {
         <label className="check">
           <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} required />
           <span>
-            I agree to Bazaar Updates processing my data as described in the <Link href="/privacy" target="_blank">Privacy Notice</Link>.
+            I agree to BazaarPanic processing my data as described in the <Link href="/privacy" target="_blank">Privacy Notice</Link>.
           </span>
         </label>
         <label className="check">

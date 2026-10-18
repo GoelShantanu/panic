@@ -19,9 +19,9 @@ export interface Viewer {
 export function Header({ session, viewer }: { session: SessionInfo | null; viewer: Viewer | null }) {
   return (
     <header className="header">
-      <a href="/" className="brand" aria-label="Bazaar Updates home">
+      <a href="/" className="brand" aria-label="BazaarPanic home">
         <BrandMark />
-        <span className="brand-name">Bazaar Updates</span>
+        <span className="brand-name">BazaarPanic</span>
       </a>
       <NavLinks signedIn={!!viewer} />
       <Search />

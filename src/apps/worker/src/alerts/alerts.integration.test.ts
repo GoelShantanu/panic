@@ -154,7 +154,7 @@ describe.skipIf(!adminUrl)('alerts end-to-end (PostgreSQL)', () => {
     expect(await runDigests(db, deps, IST(day, '10:05'))).toBe(3);
     const digest = mailsTo('alice').at(-1)!;
     expect(mailsTo('alice').length).toBe(digestsBefore + 1);
-    expect(digest.subject).toBe('Your Bazaar Updates digest');
+    expect(digest.subject).toBe('Your BazaarPanic digest');
     expect(digest.text).toMatch(/^2 stories about your watchlist/);
     expect((await alertsOf('alice')).every((r) => r.sent)).toBe(true);
     expect(await runDigests(db, deps, IST(day, '10:06'))).toBe(0); // once per day

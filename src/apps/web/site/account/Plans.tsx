@@ -79,7 +79,7 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
     const rzp = new window.Razorpay({
       key: body.key_id,
       subscription_id: body.subscription_id,
-      name: 'Bazaar Updates',
+      name: 'BazaarPanic',
       description: plan === 'yearly' ? 'Paid plan, yearly' : 'Paid plan, monthly',
       handler: () => void waitForPaid(),
       modal: { ondismiss: () => { setBusy(false); setMsg('Checkout closed. Nothing was charged.'); } },
@@ -130,7 +130,7 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
           Or <Link href="/settings">start a 3-day free trial</Link> from settings, including 10 days of news history, with no payment details needed.
         </p>
       )}
-      <p className="faint">UPI AutoPay, cards and net banking through Razorpay. Bazaar Updates never sees your card or bank details. Cancel any time from settings in one step; paid features last until the end of the period you paid for.</p>
+      <p className="faint">UPI AutoPay, cards and net banking through Razorpay. BazaarPanic never sees your card or bank details. Cancel any time from settings in one step; paid features last until the end of the period you paid for.</p>
       {msg && (
         <p className="notice notice-warn" role="status">
           {msg}

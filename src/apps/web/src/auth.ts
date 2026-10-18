@@ -90,7 +90,7 @@ export async function requestAuthChallenge(db: pg.ClientBase, email: string, pur
   if (await recentCodeCount(db, email, new Date(now.getTime() - 3600_000)) >= OTP_MAX_PER_HOUR) return;
   const code = newOtp();
   await createAuthChallenge(db, email, purpose, hashChallenge(deps.authSecret, email, code, purpose), now, new Date(now.getTime() + OTP_TTL_MS), data);
-  const baseUrl = (process.env['PUBLIC_BASE_URL'] ?? 'https://bazaarnews.duckdns.org').replace(/\/$/, '');
+  const baseUrl = (process.env['PUBLIC_BASE_URL'] ?? 'https://bazaarpanic.com').replace(/\/$/, '');
   const verifyLink = `${baseUrl}/sign-in?mode=${purpose === 'reset' ? 'reset' : 'signup'}&email=${encodeURIComponent(email)}&code=${code}`;
   await deps.mailer.send({ to: email, ...(purpose === 'reset' ? passwordResetEmail(code, verifyLink) : verificationCodeEmail(code, verifyLink)) });
 }

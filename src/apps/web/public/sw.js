@@ -8,7 +8,7 @@ self.addEventListener('push', (event) => {
     a = {};
   }
   const symbols = (a.instruments || []).map((i) => i.display_symbol || i.isin).join(', ');
-  const title = a.kind === 'correction' ? `Correction: ${a.headline || 'Bazaar Updates alert'}` : `${symbols ? symbols + ': ' : ''}${a.headline || 'Bazaar Updates alert'}`;
+  const title = a.kind === 'correction' ? `Correction: ${a.headline || 'BazaarPanic alert'}` : `${symbols ? symbols + ': ' : ''}${a.headline || 'BazaarPanic alert'}`;
   const body = a.kind === 'correction' ? `The earlier alert was not about ${a.removed_isin || 'that company'}.` : a.source_name || '';
   event.waitUntil(self.registration.showNotification(title, { body, tag: a.alert_id || undefined, data: { url: a.url || '/' } }));
 });

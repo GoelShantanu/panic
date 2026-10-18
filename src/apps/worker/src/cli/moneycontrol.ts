@@ -7,7 +7,7 @@ import { parseFeed, toCandidates } from '../ingestion/rss.ts';
 const args = process.argv.slice(2);
 if (args.length > 1 || (args.length && args[0] !== '--activate')) throw new Error('usage: moneycontrol.ts [--activate]');
 const response = await conditionalGet(MONEYCONTROL_GOOGLE_FEED, {
-  etag: null, lastModified: null, headers: { 'user-agent': 'Bazaar Updates RSS reader (+https://bazaarnews.duckdns.org/)' },
+  etag: null, lastModified: null, headers: { 'user-agent': 'BazaarPanic RSS reader (+https://bazaarpanic.com/)' },
 });
 if (response.status !== 'ok') throw new Error(`Moneycontrol fallback check failed: ${response.status === 'error' ? response.message : response.status}`);
 const feed = moneycontrolGoogleEntries(parseFeed(response.body), MONEYCONTROL_GOOGLE_FEED, new Date());

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const primary = s.items.find((i) => i.item_id === s.primary_item_id);
   return {
     title: s.headline,
-    description: primary?.excerpt ?? `${s.headline} — ${s.items.length} source${s.items.length === 1 ? '' : 's'} on Bazaar Updates.`,
+    description: primary?.excerpt ?? `${s.headline} — ${s.items.length} source${s.items.length === 1 ? '' : 's'} on BazaarPanic.`,
     alternates: { canonical: `/s/${s.story_id}` },
     openGraph: { title: s.headline, type: 'article' },
   };

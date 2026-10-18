@@ -64,7 +64,7 @@ async function notify(db: pg.ClientBase, deps: AiDeps, action: string, key: stri
   if (!(await alertOnce(db, action, key, { subject }, now))) return;
   deps.log(`ALERT ${subject}`);
   if (deps.mailer && deps.opsEmail) {
-    await deps.mailer.send({ to: deps.opsEmail, subject: `[Bazaar Updates] ${subject}`, text: body }).catch((e: Error) => deps.log(`alert email failed: ${e.message}`));
+    await deps.mailer.send({ to: deps.opsEmail, subject: `[BazaarPanic] ${subject}`, text: body }).catch((e: Error) => deps.log(`alert email failed: ${e.message}`));
   }
 }
 

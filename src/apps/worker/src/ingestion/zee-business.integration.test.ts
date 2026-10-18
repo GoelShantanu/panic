@@ -26,7 +26,7 @@ describe.skipIf(!adminUrl)('Zee Business ingestion (PostgreSQL)',()=>{
     const source=(await listEnabledSources(db)).find(s=>s.sourceId==='src_zee_markets')!;
     const deps={jitter:()=>1,fetchImpl:async(input:string,init?:RequestInit)=>{
       expect(input).toBe(ZEE_BUSINESS_FEED);
-      expect(new Headers(init?.headers).get('user-agent')).toContain('Bazaar Updates RSS reader');
+      expect(new Headers(init?.headers).get('user-agent')).toContain('BazaarPanic RSS reader');
       return new Response(xml,{headers:{'content-type':'application/rss+xml',etag:'"zee-v1"'}});
     }};
     expect(await fetchSourceOnce(db,source,'open',now,deps)).toMatchObject({inserted:10,duplicates:0,heldForReview:0});

@@ -240,7 +240,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
         const { created, invoice } = await createInvoice(db, { userId, subscriptionId: saved?.id ?? null, paymentRef: pay.id, amountInr, ...tax, plan, periodEnd, at: eventAt });
         if (created) {
           const text = renderInvoice({ number: invoice.number, issuedAt: invoice.issuedAt, seller: deps.seller, buyerEmail: (await userEmailOf(db, userId)) ?? '', plan, amountInr, periodEnd });
-          await tell(db, deps, userId, `Bazaar Updates invoice ${invoice.number}`, text); // sent by the account worker after this transaction commits
+          await tell(db, deps, userId, `BazaarPanic invoice ${invoice.number}`, text); // sent by the account worker after this transaction commits
         }
       }
       return 'active';
@@ -253,7 +253,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
       if (r === 'stale') return 'stale';
       if (!existing?.pastDueSince) {
         await addUserNotice(db, userId, 'payment_retrying', { access_until: graceEnd });
-        await tell(db, deps, userId, 'Bazaar Updates: payment failed, retrying', `We couldn't take your Bazaar Updates payment. Your bank or UPI app will be retried over the next ${RETRY_GRACE_DAYS} days, and paid features stay on meanwhile. You can update your payment method from your Razorpay mandate.`);
+        await tell(db, deps, userId, 'BazaarPanic: payment failed, retrying', `We couldn't take your BazaarPanic payment. Your bank or UPI app will be retried over the next ${RETRY_GRACE_DAYS} days, and paid features stay on meanwhile. You can update your payment method from your Razorpay mandate.`);
       }
       return 'past_due';
     }
@@ -261,7 +261,7 @@ async function applyEvent(db: pg.ClientBase, evt: any, deps: BillingDeps, now: D
       const r = await applySubscription(db, { ...base, status: 'expired', currentPeriodEnd: eventAt });
       if (r === 'stale') return 'stale';
       await addUserNotice(db, userId, 'downgraded', { reason: 'payment_failed' });
-      await tell(db, deps, userId, 'Bazaar Updates: your account is now on Free', 'All payment retries failed, so your account has moved to the Free plan. Your watchlist and saved views are kept; subscribe again any time to restore paid features.');
+      await tell(db, deps, userId, 'BazaarPanic: your account is now on Free', 'All payment retries failed, so your account has moved to the Free plan. Your watchlist and saved views are kept; subscribe again any time to restore paid features.');
       return 'expired';
     }
     case 'subscription.cancelled':

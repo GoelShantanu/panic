@@ -2657,3 +2657,26 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
    - Verified live HTTPS status on https://bazaarpanic.com/ (HTTP 200), /pulse (HTTP 200), /sign-in (HTTP 200), and /plans (HTTP 200).
 
 **Verification:** Verified via live curl and DNS lookups. HTTPS certificates valid and active.
+
+---
+
+## D-101 — Rebrand to BazaarPanic & BP Emblem Brand Mark (2026-10-18)
+
+**Authority:** Founder directed rebranding the platform from "Bazaar Updates" to **BazaarPanic** across the entire web application, logos, email templates, worker user-agents, legal texts, and tests, adopting a sleek "BP" emblem brand mark.
+
+**Decision:**
+1. **Brand Mark Modernization (`BrandMark` in `Icon.tsx`):**
+   - Replaced generic arrow with an elevated "BP" terminal badge (`rx="7"`, `fill="var(--surface-2)"`, `stroke="var(--border)"`).
+   - Integrated bold tabular monospace monogram `BP` beside an emerald green candlestick surge mark (`#10b981`), symbolizing real-time financial market intelligence and volatility tracking.
+2. **Comprehensive Brand Text Cutover:**
+   - Updated header brand name, aria labels, metadata titles (`BazaarPanic — Indian market news, deduplicated`), and footer disclaimers.
+   - Updated legal documents: Terms of Use (`What BazaarPanic is`) and Privacy Notice (`BazaarPanic collects only what it needs`).
+   - Updated subscription checkout modal (`name: 'BazaarPanic'`), welcome consents, and user-facing comments notices.
+   - Updated transactional email templates (sign-in codes, welcome verification, password reset, and GST invoices) and worker RSS reader user agents (`BazaarPanic RSS reader (+https://bazaarpanic.com/)`).
+3. **Local Verification:**
+   - Ran complete TypeScript typechecking (`tsc -p tsconfig.json && tsc -p src/apps/web/tsconfig.json`) — passed with 0 errors.
+   - Ran web unit tests (`comments.test.tsx`, `account.test.tsx`) — 25/25 passed.
+   - Ran packages test suites (`src/packages/`) — 231/231 passed.
+   - Ran Next.js production build (`next build src/apps/web`) — all 26 routes compiled cleanly with zero build errors.
+
+**Verification:** Verified locally via `npm run typecheck`, vitest test suites, and `next build`. Ready for EC2 deployment.

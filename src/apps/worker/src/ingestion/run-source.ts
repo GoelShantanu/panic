@@ -68,7 +68,7 @@ export async function fetchSourceOnce(
 
   const res = await conditionalGet(url, {
     ...(source.adapter['format'] === 'zee_business_markets' ? {
-      headers: { 'user-agent': 'Bazaar Updates RSS reader (+https://bazaarnews.duckdns.org/)' },
+      headers: { 'user-agent': 'BazaarPanic RSS reader (+https://bazaarpanic.com/)' },
     } : {}),
     // Pre-upgrade validators cannot establish the age of content we have not inspected.
     etag: source.fetch.publicationObservedAt ? source.fetch.etag : null,

@@ -326,7 +326,7 @@ export function Comments({ storyId, initial, me }: { storyId: string; initial: C
       <h2 id="comments-h" className="section-h">
         {hidden ? 'Comments' : n === 1 ? '1 comment' : `${n} comments`}
       </h2>
-      <p className="faint">Comments are posted by users and are not reviewed by Bazaar Updates.</p>
+      <p className="faint">Comments are posted by users and are not reviewed by BazaarPanic.</p>
       {hidden ? (
         <p className="state">Comments are temporarily unavailable.</p>
       ) : (

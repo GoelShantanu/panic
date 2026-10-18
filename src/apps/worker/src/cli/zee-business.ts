@@ -7,7 +7,7 @@ import { ZEE_BUSINESS_FEED, ZEE_BUSINESS_MAX_ITEMS, zeeBusinessEntries } from '.
 const args = process.argv.slice(2);
 if (args.length > 1 || (args.length && args[0] !== '--activate')) throw new Error('usage: zee-business.ts [--activate]');
 const response = await conditionalGet(ZEE_BUSINESS_FEED, {
-  etag: null, lastModified: null, headers: { 'user-agent': 'Bazaar Updates RSS reader (+https://bazaarnews.duckdns.org/)' },
+  etag: null, lastModified: null, headers: { 'user-agent': 'BazaarPanic RSS reader (+https://bazaarpanic.com/)' },
 });
 if (response.status !== 'ok') throw new Error(`Zee Business check failed: ${response.status === 'error' ? response.message : response.status}`);
 const feed = zeeBusinessEntries(parseFeed(response.body), ZEE_BUSINESS_FEED, new Date());

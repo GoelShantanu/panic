@@ -109,7 +109,7 @@ export function digestEmail(items: readonly AlertContent[], links: EmailLinks): 
   }
   lines.push(...footer(links));
   return {
-    subject: 'Your Bazaar Updates digest',
+    subject: 'Your BazaarPanic digest',
     text: lines.join('\n'),
     headers: { 'List-Unsubscribe': `<${links.oneClick}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
   };

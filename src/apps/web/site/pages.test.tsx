@@ -5,7 +5,7 @@ import { FollowButton } from './FollowButton.tsx';
 import { Search } from './Search.tsx';
 import { StoryVotes } from './story/StoryVotes.tsx';
 import { CommunityOpinion } from './votes/VoteControls.tsx';
-import StatusPage from '../app/status/page.tsx';
+import StatusPage from '../app/status404/page.tsx';
 import { api } from './api.ts';
 
 const push = vi.fn();

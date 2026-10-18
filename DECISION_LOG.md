@@ -2747,3 +2747,32 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 - Migration 0022 verified on production database (`bazaarnews-db-1`) on EC2.
 - `EXPLAIN ANALYZE` confirmed index-only scan execution plan.
 - All assets verified locally and in git.
+
+---
+
+## D-105 — Footer Source Status Cloaking (/status404) and Privacy Notice Legal Cleanup (2026-10-18)
+
+**Authority:** Founder directed:
+1. Confirming whether the Settings page actually handles data export, username changes, and account deletion as stated in the Privacy Notice.
+2. Removing the placeholder text "The Grievance Officer's name and contact details will be published here before launch." from the Privacy Notice.
+3. Removing the "Source status" link from the public footer and relocating the source status page to an uncatchable URL (`https://bazaarpanic.com/status404`) to prevent public inspection of data scrapers while preserving operator access.
+
+**Decision & Implementation:**
+1. **Settings Page Capabilities Confirmed:**
+   - Audited `src/apps/web/site/account/Settings.tsx` and backend routes:
+     - "Download my data" triggers `POST /v1/me/export` (enqueuing a full JSON data export job).
+     - Username updates trigger `PATCH /v1/me` (enforcing reservation, character limits, and 30-day throttle).
+     - "Delete my account" triggers `POST /v1/me/delete` with user option to delete comments or preserve as `[deleted user]`.
+     - Everything stated in the Privacy Notice is genuinely handled and operational.
+2. **Privacy Notice Legal Text Cleaned (`src/apps/web/site/legal.tsx`):**
+   - Removed the yellow warning box containing "The Grievance Officer's name and contact details will be published here before launch."
+   - `GrievanceOfficer` now returns `null` unless environment variables `GRIEVANCE_OFFICER_NAME` and `GRIEVANCE_OFFICER_EMAIL` are explicitly configured.
+3. **Source Status Cloaking (`/status404`):**
+   - Removed the `<Link href="/status">Source status</Link>` element from the public footer in `src/apps/web/app/layout.tsx`.
+   - Moved the page component to `src/apps/web/app/status404/page.tsx` and added `robots: { index: false, follow: false }` metadata.
+   - Removed the legacy `src/apps/web/app/status/page.tsx` route, causing `/status` to return a 404 for public visitors.
+   - Updated test imports in `src/apps/web/site/pages.test.tsx` (all 11 tests pass).
+
+**Verification:**
+- Verified with `npm run typecheck` and `npx vitest run src/apps/web/site/pages.test.tsx` (all passed).
+- Working tree staged for local commit.

@@ -94,7 +94,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <Link href="/plans">Plans</Link>
                 <Link href="/terms">Terms</Link>
                 <Link href="/privacy">Privacy</Link>
-                <Link href="/status">Source status</Link>
                 <Link href="/grievance">Grievances</Link>
               </nav>
             </footer>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { api } from '../../site/api.ts';
 import { istDateTime } from '../../site/format.ts';
 
-export const metadata: Metadata = { title: 'Source status', alternates: { canonical: '/status' } };
+export const metadata: Metadata = { title: 'Source status', robots: { index: false, follow: false } };
 
 interface Source {
   source_id: string;
@@ -18,7 +18,6 @@ interface Source {
 const HEALTH: Record<Source['health'], string> = { healthy: 'Reachable', stale: 'Delayed', down: 'Unavailable' };
 const publicationDate = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 
-// PRD-001 US-001.6 AC-4: every source's state; tier-1 problems also get the stream banner (AC-3).
 export default async function StatusPage() {
   const r = await api<{ sources: Source[] }>('/v1/sources/status');
   const sources = r.status === 200 ? r.body.sources : [];

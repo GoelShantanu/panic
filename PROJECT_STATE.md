@@ -1,5 +1,12 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Source Status Cloaking (/status404) & Legal Notice Hardening — 2026-10-18 (D-105)
+
+[VERIFIED] Completed privacy text cleanup, footer cloaking, and settings verification:
+- **Settings Features Verified:** Confirmed that data download (`POST /v1/me/export`), username updates (`PATCH /v1/me`), and permanent account deletion (`POST /v1/me/delete`) are fully implemented and functional in `Settings.tsx`.
+- **Privacy Notice Placeholder Removed:** Cleaned `src/apps/web/site/legal.tsx` to return `null` when Grievance Officer environment variables are not set, removing the yellow placeholder warning from the live Privacy Notice.
+- **Source Status Cloaked:** Removed "Source status" from public footer in `layout.tsx`, relocated page to uncatchable route `/status404` (`src/apps/web/app/status404/page.tsx`) with `robots: { index: false }`, and eliminated legacy `/status` (renders 404 for visitors). All 11 web test suites pass.
+
 ## Database Optimization (Migration 0022), Null-Safety & Brand Favicon/Title Live — 2026-10-18 (D-104)
 
 [VERIFIED] Completed database profiling, query indexing, NPE defense hardening, and production favicon/title rollout:

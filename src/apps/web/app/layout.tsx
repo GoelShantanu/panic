@@ -40,6 +40,12 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'BazaarPanic',
+  },
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

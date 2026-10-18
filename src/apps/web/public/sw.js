@@ -13,6 +13,14 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, { body, tag: a.alert_id || undefined, data: { url: a.url || '/' } }));
 });
 
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || '/';

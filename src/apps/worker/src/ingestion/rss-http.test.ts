@@ -78,6 +78,37 @@ describe('toCandidates', () => {
     expect(r.discardedNonEnglish).toBe(1);
     expect(r.discardedInvalid).toBe(2);
   });
+
+  it('discards entries with Box Office Collection or Bollywood in title or description', () => {
+    const feed = parseFeed(`
+      <rss version="2.0">
+        <channel>
+          <item>
+            <title>Jailer 2 Box Office Collection Day 4: Rajinikanth Starrer Holds Strong, Check Earnings</title>
+            <link>https://news.example.in/jailer-2</link>
+            <guid>ex-j2</guid>
+          </item>
+          <item>
+            <title>Bollywood actor buys penthouse in Bandra</title>
+            <link>https://news.example.in/bolly-penthouse</link>
+            <guid>ex-bp</guid>
+          </item>
+          <item>
+            <title>Film premiere garners huge crowds in Mumbai</title>
+            <description>The latest Bollywood box office collection numbers are expected to beat all records.</description>
+            <link>https://news.example.in/film-desc</link>
+            <guid>ex-fd</guid>
+          </item>
+        </channel>
+      </rss>
+    `);
+    const r = toCandidates(feed, 'markets');
+    expect(r.candidates).toHaveLength(3);
+    for (const c of r.candidates) {
+      expect(c.relevance?.decision).toBe('discard');
+    }
+    expect(r.discardedIrrelevant).toBe(3);
+  });
 });
 
 describe('conditionalGet', () => {

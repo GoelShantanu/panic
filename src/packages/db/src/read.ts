@@ -10,9 +10,12 @@ const TAXONOMY_ORDER = new Map<string, number>(EVENT_TYPES.map((t, i) => [t.code
 
 // Use the same eligibility rule for pagination, unread counts, cards and trending.
 // Records stay available for audit; an explicit off-topic primary item is not news.
-export const PRIMARY_ARTICLE_RELEVANT_SQL = `NOT EXISTS (
-  SELECT 1 FROM article_relevance_candidate rc WHERE rc.item_id = p.id
-    AND coalesce(rc.reviewed_decision, rc.classification) = 'discard'
+export const PRIMARY_ARTICLE_RELEVANT_SQL = `(
+  NOT EXISTS (
+    SELECT 1 FROM article_relevance_candidate rc WHERE rc.item_id = p.id
+      AND coalesce(rc.reviewed_decision, rc.classification) = 'discard'
+  )
+  AND p.headline !~* '(box office|bollywood)'
 )`;
 
 export async function directionalVotingEnabled(db: pg.ClientBase): Promise<boolean> {

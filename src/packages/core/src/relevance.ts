@@ -17,11 +17,19 @@ const ISSUER_EVENT = /\b(?:stocks?|shares?|ipo|earnings|revenue|net profit|divid
 const PERSONAL_INCOME = /\b(?:he|she|this (?:\w+ ){0,2}(?:engineer|farmer|student))\b.{0,160}\b(?:earns?|income)\b/i;
 const PERSONAL_PROFILE = /\bhere['’]s (?:her|his|their) story\b/i;
 
+export const STRICT_ENTERTAINMENT_EXCLUDE = /\b(?:bollywood|box[\s-]*office(?:\s+collections?)?)\b/i;
+
 /**
  * High-recall first-pass gate for article headlines. Only strong off-topic signals are discarded;
  * unfamiliar headlines go to human review so a new market topic is not silently lost.
  */
 export function classifyMarketRelevance(headline: string, scope: ArticleScope = 'general'): RelevanceResult {
+  // Stories mentioning "Box Office" or "Bollywood" are strictly entertainment noise
+  // and must always be dropped, even if syndicated with financial keywords ("earnings", "net profit", "Rs 200 crore", etc.).
+  if (STRICT_ENTERTAINMENT_EXCLUDE.test(headline)) {
+    return { decision: 'discard', confidence: 0.97, reason: 'excluded entertainment topic (bollywood/box office)', rulesVersion: 'market-v2' };
+  }
+
   const market = MARKET_SIGNAL.test(headline) || FINANCIAL_TOPIC.test(headline);
   const corporate = CORPORATE_EVENT.test(headline);
 

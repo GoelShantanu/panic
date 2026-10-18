@@ -1,5 +1,5 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
-import { canonicalUrl, classifyMarketRelevance, cleanExcerpt, isProbablyEnglish, isSponsoredUrl, normaliseHeadline } from '@stockpanic/core';
+import { canonicalUrl, classifyMarketRelevance, cleanExcerpt, isProbablyEnglish, isSponsoredUrl, normaliseHeadline, STRICT_ENTERTAINMENT_EXCLUDE } from '@stockpanic/core';
 import type { ArticleScope } from '@stockpanic/core';
 import type { CandidateRow } from '@stockpanic/db';
 
@@ -137,16 +137,26 @@ export function toCandidates(entries: readonly FeedEntry[], scope: ArticleScope 
     seen.add(dedupKey);
     const ms = e.published ? Date.parse(e.published) : Number.NaN;
     const relevance = classifyMarketRelevance(headline, scope);
-    if (relevance.decision === 'review') heldForReview++;
-    if (relevance.decision === 'discard') discardedIrrelevant++;
+    const excerpt = cleanExcerpt(e.description, headline); // kept only where the source permits (storeCandidates)
+    let finalRelevance = relevance;
+    if (finalRelevance.decision !== 'discard' && excerpt && STRICT_ENTERTAINMENT_EXCLUDE.test(excerpt)) {
+      finalRelevance = {
+        decision: 'discard',
+        confidence: 0.97,
+        reason: 'excerpt matches excluded entertainment topic (bollywood/box office)',
+        rulesVersion: 'market-v2',
+      };
+    }
+    if (finalRelevance.decision === 'review') heldForReview++;
+    if (finalRelevance.decision === 'discard') discardedIrrelevant++;
     candidates.push({
       kind: 'article',
       dedupKey,
       headline,
       url,
       publishedAt: Number.isNaN(ms) ? null : new Date(ms),
-      excerpt: cleanExcerpt(e.description, headline), // kept only where the source permits (storeCandidates)
-      relevance,
+      excerpt,
+      relevance: finalRelevance,
     });
   }
   return { candidates, discardedNonEnglish, discardedInvalid, discardedSponsored, heldForReview, discardedIrrelevant };

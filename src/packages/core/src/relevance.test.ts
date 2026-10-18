@@ -31,6 +31,25 @@ describe('market relevance gate', () => {
     expect(classifyMarketRelevance('Fantasy film box office collection crosses Rs 200 crore', 'markets').decision).toBe('discard');
     expect(classifyMarketRelevance('Listed studio reports quarterly revenue after film release', 'general').decision).toBe('keep');
   });
+
+  it('strictly discards stories with Box Office Collection or Bollywood regardless of financial keywords', () => {
+    const headlines = [
+      'Drishyam 3: The Conclusion Box Office Collection: Film Marks Ajay Devgn’s Best Yet, Nears Rs 200 Crore Net',
+      'Meesaya Murukku 2 Box Office Collection Day 11: Hiphop Tamizha Starrer Sees Sharp Slide — Check Earnings',
+      'Drishyam 3 Box Office Collection Day 5: Ajay Devgn Starrer Crosses Rs 200 Crore In India',
+      'Jailer 2 Box Office Collection Day 4: Rajinikanth Starrer Holds Strong As Weekend Continues, Check Earnings',
+      'Prahaar Box Office Collection Day 3: Rajkummar Rao Starrer Sees A Rise In Weekend Collections, Check Earnings',
+      'Hema Malini’s Bollywood Journey Was Not Easy, She Was Fired Before Her First Film',
+      'When Wait Staff Touched Bollywood Actress’ Feet: Hotmail Co-Founder Recalls Moment That Left American Friends Bewildered',
+      'Bollywood actor buys Rs 50 crore apartment in Mumbai',
+      'Bollywood studio announces IPO plans after box office record',
+    ];
+    for (const headline of headlines) {
+      expect(classifyMarketRelevance(headline, 'markets').decision).toBe('discard');
+      expect(classifyMarketRelevance(headline, 'business').decision).toBe('discard');
+      expect(classifyMarketRelevance(headline, 'general').decision).toBe('discard');
+    }
+  });
   it.each([
     'He left an overseas job to grow vegetables, now earns Rs 3 lakh a month',
     'This Pune Engineer Earns Rs 6 Lakh From Growing Orchids',

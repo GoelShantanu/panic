@@ -2587,5 +2587,31 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 
 **Verification:** Verified via live SSH and curl. All containers report healthy/up, public HTTPS returns 200 OK.
 
+---
+
+## D-098 — Telegram Bot Alert Migration & 24-Hour Telemetry Reporting (2026-10-18)
+
+**Authority:** Founder directed retiring the `ntfy` notification mechanism due to missed mobile delivery, deleting all `ntfy` configuration, configuring a dedicated Telegram alert bot, sending a live test alert, and enriching daily backup alerts with 24-hour CPU/memory telemetry and system health.
+
+**Decision:**
+1. **Removed `ntfy` Configuration:** Completely scrubbed all references to `ntfy` and `webapp_back_alert` from `/usr/local/bin/stockpanic-backup.sh` and EC2 environment configurations.
+2. **Telegram Bot Integration:**
+   - Configured dedicated bot `webapp_alerts_bot` (`@shantanu_stockapp_news_bot`) targeting founder chat `8986987619`.
+   - Credentials stored securely in root-only protected file `/etc/stockpanic/telegram.env` (`chmod 600`).
+3. **24-Hour System & Performance Telemetry Integration:**
+   - Enriched daily backup report to extract and deliver 24-hour historical statistics via `sar` (`sysstat`):
+     - 24h CPU average and peak utilization percentage.
+     - 24h RAM average and peak utilization percentage.
+     - Real-time RAM and Swap allocation.
+     - 1m, 5m, 15m CPU load average.
+     - EBS Root disk space (used, free headroom, percentage).
+     - Running container health status (verifying all 7 production Docker services).
+     - Live database counts (news items, stories clustered, monitored NSE instruments).
+4. **Immediate Test Execution:**
+   - Executed live connection probe and ran `stockpanic-backup.service` end-to-end. Verified successful database dump creation (2.2 MB), 7-day retention verification, and rich HTML alert delivery to the user's Telegram app.
+
+**Verification:** Verified via Telegram Bot API response (`{"ok":true}`) and systemd journal logs (`stockpanic-backup.service: Finished successfully`).
+
+
 
 

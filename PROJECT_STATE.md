@@ -23,6 +23,7 @@
 - **Post-Deployment Cleanup & Host Hygiene (Free Tier EC2):**
   - Executed mandatory host cleanup (`docker image prune -f`, `docker builder prune -f`, log truncation, `/tmp` cleanup, `apt-get clean`). Reclaimed 335+ MB of layer cache and untagged images.
   - Host disk utilization maintained at 33% (9.1 GB used out of 28 GB, leaving 19 GB free headroom).
+- **Telegram Bot Alert Migration & 24h Telemetry Active (D-098):** Retired `ntfy` completely. Integrated dedicated Telegram Bot (`@shantanu_stockapp_news_bot`) with credentials protected in `/etc/stockpanic/telegram.env` (`chmod 600`). Enriched daily midnight IST backup reports to include 24-hour CPU/RAM averages and peaks from `sar`, live resource usage, container health (7/7 running), disk headroom, and platform statistics. Verified live alert delivery.
 - **Verification:** Verified live HTTPS on `https://bazaarnews.duckdns.org/pulse` and `/plans` returning HTTP 200 OK.
 
 ## Production Deployment to AWS EC2 Live — 2026-10-17 (Commit `b41d7ce`)

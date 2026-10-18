@@ -27,8 +27,19 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   // Absolute canonical and Open Graph URLs (PRD-004 AC-8 indexability). PUBLIC_BASE_URL in production.
   metadataBase: new URL(process.env['PUBLIC_BASE_URL'] ?? 'http://localhost:3000'),
-  title: { default: 'BazaarPanic — Indian market news, deduplicated', template: '%s · BazaarPanic' },
+  title: { default: 'BazaarPanic - Live Indian Market News', template: '%s · BazaarPanic' },
   description: 'Indian financial news, one row per event, tagged to the right company.',
+  icons: {
+    icon: [
+      { url: '/bazaarpanic-signal-emblem.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+    ],
+    shortcut: '/bazaarpanic-signal-emblem.svg',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -55,6 +66,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/bazaarpanic-signal-emblem.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         <script dangerouslySetInnerHTML={{ __html: DENSITY_BOOT }} />
       </head>

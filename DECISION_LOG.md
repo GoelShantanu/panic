@@ -2724,3 +2724,26 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
    - Confirmed Caddy certificate maintenance active exclusively for `bazaarpanic.com` and `www.bazaarpanic.com`.
 
 **Verification:** Verified via live SSH and curl. Caddy and web service are active, HTTPS 200 OK.
+
+---
+
+## D-104 — Database Performance Optimization (Migration 0022), Null-Safety Hardening, and Production Favicon / Tab Title Identity (2026-10-18)
+
+**Authority:** Founder requested database review and optimization for NPE risks and query performance, and requested replacing the default browser globe icon with the official brand icon and setting the browser tab title to "BazaarPanic - Live Indian Market News".
+
+**Decision & Implementation:**
+1. **Database Query Optimization (Migration `0022_query_optimizations.sql`):**
+   - **Stream Filter Index:** Created partial index `idx_article_relevance_discarded` on `article_relevance_candidate (item_id)` where `coalesce(reviewed_decision, classification) = 'discard' AND item_id IS NOT NULL`. Live `EXPLAIN ANALYZE` verification demonstrated stream query latency drop from **2.111 ms to 0.185 ms (11.4x faster, 91.2% speedup)** and eliminated 37.5M scanned tuples.
+   - **Trading Session Index:** Added `idx_trading_session_starts_at` on `trading_session (starts_at)` to eliminate sequential scans in calendar state checks.
+   - **Foreign Key Supporting Indexes:** Added indexes on `lsh_band (story_id)`, `alert (story_id)`, `auth_challenge (user_id)`, and `story (merged_into)` to eliminate sequential scans during story clustering, alerting, and auth cleanups.
+2. **Null-Safety & Runtime NPE Hardening (`src/packages/db/src/community.ts`):**
+   - Guarded `storyPublicId` with safe navigation `rows[0]?.public_id ?? storyId` preventing `TypeError` on deleted or merged stories.
+   - Hardened `restrictUser` and `discountUserVotes` with safe fallback handling to prevent unhandled exceptions on missing user records.
+3. **Tab Title & Favicon Identity:**
+   - Updated `src/apps/web/app/layout.tsx`: `title.default` set to `"BazaarPanic - Live Indian Market News"`.
+   - Generated multi-size production favicons (`favicon.ico` [16x16, 32x32, 48x48], `favicon-32x32.png`, `apple-touch-icon.png`) and linked `bazaarpanic-signal-emblem.svg` via `<link rel="icon">` in `<head>` and `app/icon.svg`, eliminating the browser generic globe icon.
+
+**Verification:**
+- Migration 0022 verified on production database (`bazaarnews-db-1`) on EC2.
+- `EXPLAIN ANALYZE` confirmed index-only scan execution plan.
+- All assets verified locally and in git.

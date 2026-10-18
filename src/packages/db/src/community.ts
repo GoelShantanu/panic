@@ -27,7 +27,10 @@ async function audit(
   if (a.ip) await db.query('INSERT INTO ip_log (audit_id, at, ip) VALUES ($1, $2, $3)', [rows[0].id, a.at, a.ip]);
 }
 
-const storyPublicId = async (db: pg.ClientBase, storyId: string) => (await db.query('SELECT public_id FROM story WHERE id = $1', [storyId])).rows[0].public_id as string;
+const storyPublicId = async (db: pg.ClientBase, storyId: string) => {
+  const { rows } = await db.query('SELECT public_id FROM story WHERE id = $1', [storyId]);
+  return (rows[0]?.public_id as string | undefined) ?? storyId;
+};
 
 // ---------------------------------------------------------------- votes (PRD-005)
 
@@ -478,11 +481,11 @@ export async function setUserRestriction(
 ): Promise<void> {
   await tx(db, async () => {
     const column = kind === 'commenting' ? 'comment_suspended_at' : 'voting_revoked_at';
-    await db.query(`UPDATE app_user SET ${column} = $2 WHERE id = $1`, [userId, restricted ? now : null]);
+    const u = await db.query(`UPDATE app_user SET ${column} = $2 WHERE id = $1 RETURNING public_id`, [userId, restricted ? now : null]);
     if (restricted) {
       await db.query(`INSERT INTO user_notice (user_id, kind, payload) VALUES ($1, $2, $3)`, [userId, kind === 'commenting' ? 'commenting_suspended' : 'voting_revoked', { reason }]);
     }
-    const pub = (await db.query('SELECT public_id FROM app_user WHERE id = $1', [userId])).rows[0].public_id;
+    const pub = u.rows[0]?.public_id ?? `user_${userId}`;
     await audit(db, { actorType: 'operator', actorId: operatorId, action: `user.${kind}_${restricted ? 'restricted' : 'restored'}`, entityType: 'user', entityId: pub, after: { reason }, at: now });
   });
 }
@@ -492,7 +495,8 @@ export async function discountUserVotes(db: pg.ClientBase, userId: string, disco
   return tx(db, async () => {
     const d = await db.query(`UPDATE vote_directional SET discounted_at = $2 WHERE user_id = $1`, [userId, discounted ? now : null]);
     const q = await db.query(`UPDATE vote_quality SET discounted_at = $2 WHERE user_id = $1`, [userId, discounted ? now : null]);
-    const pub = (await db.query('SELECT public_id FROM app_user WHERE id = $1', [userId])).rows[0].public_id;
+    const u = await db.query('SELECT public_id FROM app_user WHERE id = $1', [userId]);
+    const pub = u.rows[0]?.public_id ?? `user_${userId}`;
     await audit(db, { actorType: 'operator', actorId: operatorId, action: discounted ? 'votes.discounted' : 'votes.restored', entityType: 'user', entityId: pub, after: { reason }, at: now });
     return (d.rowCount ?? 0) + (q.rowCount ?? 0);
   });

@@ -1,5 +1,13 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Database Optimization (Migration 0022), Null-Safety & Brand Favicon/Title Live — 2026-10-18 (D-104)
+
+[VERIFIED] Completed database profiling, query indexing, NPE defense hardening, and production favicon/title rollout:
+- **Stream Query 91.2% Speedup (Migration 0022):** Applied partial index `idx_article_relevance_discarded` on `article_relevance_candidate (item_id)` where `coalesce(reviewed_decision, classification) = 'discard' AND item_id IS NOT NULL`. Live `EXPLAIN ANALYZE` confirmed stream query latency dropped from 2.111ms to 0.185ms (11.4x faster) and eliminated 37.5M scanned tuples.
+- **Supporting Indexes:** Added `idx_trading_session_starts_at` on `trading_session(starts_at)` and foreign key indexes on `lsh_band(story_id)`, `alert(story_id)`, `auth_challenge(user_id)`, and `story(merged_into)`.
+- **Runtime Null-Safety Hardening:** Patched `src/packages/db/src/community.ts` to use safe navigation and atomic `RETURNING` clauses, preventing potential `TypeError: Cannot read properties of undefined` on missing/merged stories or users.
+- **Brand Favicon & Title:** Updated tab title to `"BazaarPanic - Live Indian Market News"` and generated full multi-size favicon suite (`favicon.ico`, `favicon-32x32.png`, `apple-touch-icon.png`, and `app/icon.svg`), replacing the browser generic globe fallback.
+
 ## Custom Domain Live: bazaarpanic.com — 2026-10-18 (D-100)
 
 [VERIFIED] Production domain `bazaarpanic.com` is live with automated SSL/TLS via Let's Encrypt:

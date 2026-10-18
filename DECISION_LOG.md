@@ -2615,3 +2615,26 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 
 
 
+
+---
+
+## D-099 — Instant 1-Click Signup Mode & Immediate Onboarding (2026-10-18)
+
+**Authority:** Founder directed unblocking user registrations immediately by activating Option B (Instant 1-Click Signup) on EC2, pending the purchase of a custom business domain for transactional SMTP email dispatch.
+
+**Decision:**
+1. **Instant Signup Activation:**
+   - Modified postPasswordSignupStart in src/apps/web/src/credential-auth.ts: when AUTH_INSTANT_SIGNUP=true is set or when running in production without configured SMTP_USER credentials, signup directly creates a pending onboarding session via issuePending and returns HTTP 200 with the sp_session session cookie.
+   - If the submitted email is already registered, returns HTTP 409 (ccount_exists) to notify returning users to sign in.
+   - Preserved all password complexity constraints (8–16 characters, uppercase, lowercase, special characters, sequential number checks) and anti-alias security rules (blocking + alias abuse).
+2. **Seamless Client Transition (SignIn.tsx):**
+   - Updated client signup submission handler to detect HTTP 200 from /v1/auth/password/signup/start and immediately trigger fter(true), routing the new user directly to /welcome to choose their username handle and start their 3-day free trial.
+   - Retained backward-compatible fallback for HTTP 204 OTP verification (setStep('verify')) for future zero-downtime re-activation once custom domain SMTP is configured.
+   - Updated button label to "Create account" on the initial registration screen for a cleaner user experience.
+3. **Deployment & Verification:**
+   - Deployed updated container image to AWS EC2 (3.27.24.82). Verified all 7 containers running and healthy.
+   - Configured AUTH_INSTANT_SIGNUP=true in /etc/stockpanic/app.env.
+   - Verified live registration API call returning HTTP 200 with active session cookie and zero 500 errors.
+   - Executed host cleanup (docker image prune -f, docker builder prune -f, log truncation), reclaiming 335.6 MB and maintaining 19 GB free disk space (33% used).
+
+**Verification:** Vitest unit test suite passes (409 passed). Live endpoint test verified with HTTP 200 OK.

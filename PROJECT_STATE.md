@@ -1,5 +1,14 @@
 # PROJECT_STATE.md — Live Project Memory
 
+## Production Deployment to AWS EC2 Live — 2026-10-18 (Commit `fea1f27`, D-099)
+
+[VERIFIED] Successfully deployed Instant 1-Click Signup mode and deployed to AWS EC2 production (`3.27.24.82` / `bazaarnews.duckdns.org`):
+- **Instant Registration Live:** `postPasswordSignupStart` in `credential-auth.ts` detects missing SMTP credentials in production or `AUTH_INSTANT_SIGNUP=true`, issuing an immediate pending session cookie (`sp_session`) and returning HTTP 200 without attempting external email delivery.
+- **Immediate Welcome Onboarding:** Frontend `SignIn.tsx` detects HTTP 200 on signup, clears password, and routes directly to `/welcome` to pick a username handle, accept terms, and activate the 3-day free trial.
+- **Zero 500 Errors:** Eliminates the unauthenticated SMTP connection error (`530 5.7.0 Authentication Required`) on user signup.
+- **Backward-Compatible OTP Switch:** Fully preserves the HTTP 204 OTP verification path for when custom business domain SMTP credentials are added in the future.
+- **Post-Deploy Host Hygiene:** Pruned dangling images and builder cache, reclaimed 335.6 MB, maintaining 19 GB available disk headroom (33% disk used) and all 7 containers running and healthy.
+
 ## Production Deployment to AWS EC2 Live — 2026-10-18 (Commit `a437644`, D-096, D-097)
 
 [VERIFIED] Successfully deployed the Put/Call Ratio (PCR) F&O Sentiment release and mobile responsiveness enhancements to the AWS EC2 production instance (`3.27.24.82` / `bazaarnews.duckdns.org`):

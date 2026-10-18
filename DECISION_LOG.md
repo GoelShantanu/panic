@@ -2680,3 +2680,25 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
    - Ran Next.js production build (`next build src/apps/web`) — all 26 routes compiled cleanly with zero build errors.
 
 **Verification:** Verified locally via `npm run typecheck`, vitest test suites, and `next build`. Ready for EC2 deployment.
+
+---
+
+## D-102 — News Signal Brand Mark & Dual-Tone Identity (2026-10-18)
+
+**Authority:** Founder directed adopting the custom "News Signal" emblem (navy bull and royal-blue bear diagonally separated inside a rounded news tile with notification dot) and dual-tone wordmark ("Bazaar" in neutral text + "Panic" in vibrant blue), deploying all changes to AWS EC2 and pushing to git.
+
+**Decision:**
+1. **Brand Mark Update (`BrandMark` in `Icon.tsx`):**
+   - Replaced temporary BP monogram with vector News Signal SVG (`viewBox="40 25 330 330"`), featuring diagonal bull & bear silhouettes with mask clearance for the notification alert dot.
+2. **Dual-Tone Typography (`Header.tsx` & `globals.css`):**
+   - Updated desktop header to structure brand name into `.brand-bazaar` and `.brand-panic`.
+   - In light theme: `#14243A` for tile/bull/"Bazaar" and `#245FC2` for bear/dot/"Panic".
+   - In dark theme: adaptive styling with `#94a3b8` tile, `#f8fafc` bull, and `#3b82f6` bear/dot/"Panic" for high-contrast visibility.
+3. **Standalone Assets:**
+   - Saved `bazaarpanic-signal-emblem.svg` and `bazaarpanic-signal-logo.svg` to `src/apps/web/public/` (alongside `bazaarpanic-emblem.svg` and `bazaarpanic-logo.svg`).
+4. **Production Deployment & Verification:**
+   - Deployed updated web application to EC2 (`3.27.24.82`).
+   - Verified live HTTPS at `https://bazaarpanic.com/` (HTTP 200).
+   - Reclaimed Docker build cache and executed host hygiene.
+
+**Verification:** Verified locally and in production on `https://bazaarpanic.com/`. All test suites pass.

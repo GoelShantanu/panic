@@ -36,14 +36,22 @@ export function Icon({ name, size = 18, strokeWidth = 1.7 }: { name: IconName; s
   );
 }
 
-// The brand mark: BP terminal monogram with market pulse candlestick mark.
-export function BrandMark({ size = 30 }: { size?: number }) {
+// The brand mark: News Signal tile with Bull, Bear, and blue alert notification dot.
+export function BrandMark({ size = 28 }: { size?: number }) {
   return (
-    <svg className="brand-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <rect width="32" height="32" rx="7" fill="var(--surface-2, #161a1f)" stroke="var(--border, #2a3038)" strokeWidth="1.2" />
-      <text x="4.5" y="21.5" fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fontWeight="900" fontSize="13.5" fill="var(--text)" letterSpacing="-0.5px">BP</text>
-      <path d="M23.5 19V8 M23.5 8l2 2 M23.5 8l-2 2" stroke="var(--bull, #10b981)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <rect x="22.25" y="10.5" width="2.5" height="5" rx="0.5" fill="var(--bull, #10b981)" />
+    <svg className="brand-mark" width={size} height={size} viewBox="40 25 330 330" role="img" aria-hidden="true" focusable="false">
+      <defs>
+        <mask id="bp-signal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400">
+          <path fill="#FFFFFF" d="M0 0H400V400H0Z" />
+          <circle cx="327" cy="66" r="47" fill="#000000" />
+        </mask>
+      </defs>
+      <g mask="url(#bp-signal-mask)">
+        <rect className="brand-signal-tile" x="55" y="57" width="286" height="286" rx="49" fill="none" stroke="#14243A" strokeWidth="17" />
+        <path className="brand-signal-bull" fill="#14243A" d="M300 91 145 271 125 263 116 248 103 243 92 231 92 219 108 204 120 184 132 173C113 171 102 161 100 147C98 138 101 130 106 123C106 140 118 150 135 148C130 134 133 117 146 103C141 123 145 138 156 144Z" />
+        <path className="brand-signal-bear" fill="#245FC2" d="M316 107V303Q316 318 301 318H109L207 204C209 194 215 187 224 188C231 188 237 194 238 201C248 191 259 191 266 198C269 201 271 205 271 211C283 212 292 219 298 229L318 240 326 252 317 263 300 265C295 279 286 287 271 290L260 306H145Z" />
+      </g>
+      <circle className="brand-signal-dot" cx="327" cy="66" r="34" fill="#245FC2" />
     </svg>
   );
 }

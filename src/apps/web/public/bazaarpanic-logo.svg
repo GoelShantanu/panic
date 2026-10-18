@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 520" role="img" aria-labelledby="title desc">
+  <title id="title">BazaarPanic — Stock Market News</title>
+  <desc id="desc">News Ribbon logo in navy and royal blue, with the BazaarPanic wordmark and Stock Market News descriptor. Transparent background.</desc>
+  <defs>
+    <clipPath id="left"><path d="M70 36 192 100V364L70 298Z"/></clipPath>
+    <clipPath id="right"><path d="M208 100 330 36V298L208 364Z"/></clipPath>
+  </defs>
+  <g transform="translate(100 0)">
+    <path fill="#14243A" d="M70 36 192 100V364L70 298Z"/>
+    <path fill="#245FC2" d="M208 100 330 36V298L208 364Z"/>
+    <g fill="#FFFFFF">
+      <path clip-path="url(#left)" d="M191 156C173 154 162 150 151 145C146 135 143 123 147 110C132 120 128 132 130 144C119 139 111 127 111 115C99 132 104 149 118 156L107 170L98 188L72 202L61 218L78 236L102 238L116 251L128 255L150 281L192 316Z"/>
+      <path clip-path="url(#right)" d="M208 182C220 175 233 173 245 176C243 163 247 154 256 154C266 154 273 163 273 175C288 176 298 185 304 198L330 209L341 223L330 237L309 239C302 254 289 264 276 268L254 290L208 322Z"/>
+    </g>
+  </g>
+  <text x="300" y="434" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="66" font-weight="700" letter-spacing="-2" textLength="500" lengthAdjust="spacingAndGlyphs"><tspan fill="#14243A">Bazaar</tspan><tspan fill="#245FC2">Panic</tspan></text>
+  <text x="300" y="474" text-anchor="middle" fill="#14243A" font-family="Arial, Helvetica, sans-serif" font-size="17" letter-spacing="5">STOCK MARKET NEWS</text>
+</svg>

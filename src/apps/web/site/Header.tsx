@@ -21,7 +21,10 @@ export function Header({ session, viewer }: { session: SessionInfo | null; viewe
     <header className="header">
       <a href="/" className="brand" aria-label="BazaarPanic home">
         <BrandMark />
-        <span className="brand-name">BazaarPanic</span>
+        <span className="brand-name">
+          <span className="brand-bazaar">Bazaar</span>
+          <span className="brand-panic">Panic</span>
+        </span>
       </a>
       <NavLinks signedIn={!!viewer} />
       <Search />

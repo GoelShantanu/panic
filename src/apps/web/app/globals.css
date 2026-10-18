@@ -136,7 +136,26 @@ button { font: inherit; color: inherit; }
 }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: var(--text-lg); color: var(--text); letter-spacing: -0.01em; white-space: nowrap; }
 .brand:hover { text-decoration: none; }
-.brand-mark { flex: none; width: 26px; height: 26px; }
+.brand-mark { flex: none; width: 28px; height: 28px; }
+.brand-name { display: inline-flex; }
+.brand-bazaar { color: var(--text); }
+.brand-panic { color: #245fc2; }
+:root[data-theme='dark'] .brand-panic { color: #3b82f6; }
+:root[data-theme='dark'] .brand-signal-tile { stroke: #94a3b8; }
+:root[data-theme='dark'] .brand-signal-bull { fill: #f8fafc; }
+:root[data-theme='dark'] .brand-signal-bear,
+:root[data-theme='dark'] .brand-signal-dot { fill: #3b82f6; }
+:root[data-theme='dark'] .brand-ribbon-left { fill: #1a2d47; stroke: #2a456c; stroke-width: 4px; }
+:root[data-theme='dark'] .brand-ribbon-right { fill: #2563eb; stroke: #3b82f6; stroke-width: 4px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .brand-panic { color: #3b82f6; }
+  :root:not([data-theme='light']) .brand-signal-tile { stroke: #94a3b8; }
+  :root:not([data-theme='light']) .brand-signal-bull { fill: #f8fafc; }
+  :root:not([data-theme='light']) .brand-signal-bear,
+  :root:not([data-theme='light']) .brand-signal-dot { fill: #3b82f6; }
+  :root:not([data-theme='light']) .brand-ribbon-left { fill: #1a2d47; stroke: #2a456c; stroke-width: 4px; }
+  :root:not([data-theme='light']) .brand-ribbon-right { fill: #2563eb; stroke: #3b82f6; stroke-width: 4px; }
+}
 .nav { display: flex; gap: 2px; }
 .nav-item {
   position: relative; display: inline-flex; align-items: center; gap: 6px;

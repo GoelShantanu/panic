@@ -37,12 +37,25 @@ describe('sign in (PRD-007 US-007.1)', () => {
     fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ValidPass#1' } });
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send verification code' })));
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Create account' })));
     expect(JSON.parse(f.mock.calls[0]![1].body)).toMatchObject({ first_name: 'Ada', last_name: 'Lovelace' });
     expect(push).not.toHaveBeenCalled(); expect(screen.queryByLabelText('Password')).toBeNull();
     fireEvent.change(screen.getByLabelText('Code'), { target: { value: '123456' } });
     await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Verify email' })));
     expect(f).toHaveBeenLastCalledWith('/v1/auth/password/signup/verify', expect.objectContaining({ body: JSON.stringify({ email: 'ada@example.invalid', code: '123456' }) }));
+    expect(push).toHaveBeenCalledWith('/welcome?next=%2F');
+  });
+
+  it('instant signup sends names and password and directly onboards when server returns 200', async () => {
+    const f = vi.fn().mockResolvedValueOnce(json(200, { is_new: true })); vi.stubGlobal('fetch', f);
+    render(<SignIn next="/" googleClientId={null} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ada@example.invalid' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ValidPass#1' } });
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Create account' })));
+    expect(JSON.parse(f.mock.calls[0]![1].body)).toMatchObject({ first_name: 'Ada', last_name: 'Lovelace' });
     expect(push).toHaveBeenCalledWith('/welcome?next=%2F');
   });
 
@@ -87,7 +100,7 @@ describe('sign in (PRD-007 US-007.1)', () => {
     fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lovelace' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'ValidPass#1' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.invalid' } });
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Send verification code' })));
+    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Create account' })));
     expect(screen.getByText(/Check your inbox for a 6-digit code/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Code'), { target: { value: '12a3456' } });
     expect((screen.getByLabelText('Code') as HTMLInputElement).value).toBe('123456');

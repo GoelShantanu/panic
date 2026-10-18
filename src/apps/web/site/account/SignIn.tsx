@@ -147,6 +147,7 @@ export function SignIn({
     const r = await post(path, { email, ...(mode === 'login' || mode === 'signup' ? { password } : {}), ...(mode === 'signup' ? { first_name: firstName, last_name: lastName } : {}) });
     setBusy(false);
     if (mode === 'login' && r.status === 200) { setPassword(''); return after(false); }
+    if (mode === 'signup' && r.status === 200) { setPassword(''); return after(true); }
     if (r.status === 204) { setStep('verify'); setPassword(''); return; }
     if (r.status === 429) setError('Too many attempts. Please try again later.');
     else if (mode === 'login' && r.status === 401) setError('Email or password is incorrect. If you previously used an email code, use Forgot password to set a password.');
@@ -204,7 +205,7 @@ export function SignIn({
   return (
     <div className="auth panel">
       <h1>{heading}</h1>
-      <p className="muted auth-intro">{mode === 'login' ? 'Sign in to follow companies and keep your news in one place.' : mode === 'signup' ? 'Start with your details. We’ll verify your email before creating your account.' : mode === 'reset' ? 'The recovery code only resets your password. You’ll sign in afterward.' : 'Confirm your email to finish connecting your Google account.'}</p>
+      <p className="muted auth-intro">{mode === 'login' ? 'Sign in to follow companies and keep your news in one place.' : mode === 'signup' ? 'Start with your details to create your account.' : mode === 'reset' ? 'The recovery code only resets your password. You’ll sign in afterward.' : 'Confirm your email to finish connecting your Google account.'}</p>
       {step === 'entry' ? (
         <form onSubmit={start} className="form">
           {mode === 'signup' && <div className="auth-name-row">
@@ -226,7 +227,7 @@ export function SignIn({
               </ul>
             </div>
           )}
-          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Send verification code' : 'Send password reset code'}</button>
+          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send password reset code'}</button>
           {mode === 'login' && <button type="button" className="auth-text-button" disabled={busy} onClick={() => changeMode('reset')}>Forgot password?</button>}
         </form>
       ) : (

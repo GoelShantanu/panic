@@ -43,7 +43,15 @@ export async function postPasswordSignupStart(db: pg.ClientBase, body: unknown, 
   if (!isValidPassword(password)) return invalid('password');
   // Same response and hashing cost for an existing address; signup never overwrites its credentials.
   const passwordHash = await hashPassword(password);
-  if (!await findCredentials(db, email)) await requestAuthChallenge(db, email, 'signup', { firstName, lastName, passwordHash }, deps, now, ip);
+  const existingUser = await findCredentials(db, email);
+
+  const instantSignup = process.env['AUTH_INSTANT_SIGNUP'] === 'true' || (process.env['NODE_ENV'] === 'production' && !process.env['SMTP_USER']);
+  if (instantSignup) {
+    if (existingUser) return { status: 409, body: { error: 'account_exists' } };
+    return await issuePending(db, { email, googleSub: null, firstName, lastName, passwordHash }, now);
+  }
+
+  if (!existingUser) await requestAuthChallenge(db, email, 'signup', { firstName, lastName, passwordHash }, deps, now, ip);
   return { status: 204, body: null };
 }
 

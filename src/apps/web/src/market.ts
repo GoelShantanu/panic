@@ -10,6 +10,7 @@ export interface TickerItem {
   percent: number;
   tag?: string | undefined;
   isFutures?: boolean | undefined;
+  currency?: string | undefined;
 }
 
 export interface TickerResponse {
@@ -19,7 +20,7 @@ export interface TickerResponse {
 
 const CACHE_TTL_MS = 30_000; // 30 seconds server-side cache
 
-const SYMBOLS_MAP: Record<string, { name: string; tag?: string; isFutures?: boolean; yahooSymbol?: string }> = {
+const SYMBOLS_MAP: Record<string, { name: string; tag?: string; isFutures?: boolean; yahooSymbol?: string; currency?: string }> = {
   'NSEIX:NIFTY1!': { name: 'GIFT NIFTY', tag: 'GIFT', isFutures: true },
   'NSE:NIFTY': { name: 'NIFTY 50' },
   'BSE:SENSEX': { name: 'SENSEX' },
@@ -38,6 +39,7 @@ const SYMBOLS_MAP: Record<string, { name: string; tag?: string; isFutures?: bool
   'NSE:CNXMIDCAP': { name: 'NIFTY MIDCAP', tag: 'NSE' },
   'NSE:CNXSMALLCAP': { name: 'NIFTY SMALLCAP', tag: 'NSE' },
   'NSE:CNX100': { name: 'NIFTY LARGECAP', tag: 'NSE', yahooSymbol: '^CNX100' },
+  'CRYPTO:BTCINR': { name: 'BTC/INR', tag: 'CRYPTO', yahooSymbol: 'BTC-INR', currency: 'INR' },
 };
 
 const FALLBACK_TICKER: TickerItem[] = [
@@ -59,6 +61,7 @@ const FALLBACK_TICKER: TickerItem[] = [
   { symbol: 'NSE:CNXMIDCAP', name: 'NIFTY MIDCAP', price: 59129.75, change: -67.50, percent: -0.11 },
   { symbol: 'NSE:CNXSMALLCAP', name: 'NIFTY SMALLCAP', price: 19129.80, change: -1.90, percent: -0.01 },
   { symbol: 'NSE:CNX100', name: 'NIFTY LARGECAP', price: 24133.10, change: 147.00, percent: 0.61 },
+  { symbol: 'CRYPTO:BTCINR', name: 'BTC/INR', price: 7680000.00, change: -42000.00, percent: -0.54, tag: 'CRYPTO', currency: 'INR' },
 ];
 
 let cachedTicker: { expiresAt: number; data: TickerResponse } | null = null;
@@ -172,6 +175,7 @@ export async function fetchMarketTicker(): Promise<TickerResponse> {
             percent: Number((pctChange ?? 0).toFixed(2)),
             tag: meta.tag,
             isFutures: meta.isFutures,
+            currency: meta.currency,
           };
           lastKnownMap.set(sym, item);
           return item;
@@ -187,6 +191,7 @@ export async function fetchMarketTicker(): Promise<TickerResponse> {
             percent: yQuote.percent,
             tag: meta.tag,
             isFutures: meta.isFutures,
+            currency: meta.currency,
           };
           lastKnownMap.set(sym, item);
           return item;

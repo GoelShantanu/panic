@@ -25,13 +25,14 @@ if (args[0] === '--activate') {
     const existing = (await db.query("SELECT adapter,kind FROM source WHERE source_id='src_zee_markets' FOR UPDATE")).rows[0];
     if (!existing) await addRssSource(db, {
       sourceId: 'src_zee_markets', name: 'Zee Business Markets', tier: 3, articleScope: 'markets', url: ZEE_BUSINESS_FEED,
-      accessBasis: 'Public publisher RSS, filtered to market-news/stocks/IPO routes; headlines only. Terms reviewed: https://www.zeebiz.com/terms-conditions (D-087; no republication permission asserted)',
+      accessBasis: 'Public publisher RSS, filtered to market-news/stocks/IPO routes. Terms reviewed: https://www.zeebiz.com/terms-conditions',
+      excerptAllowed: true,
     });
     else if (existing.kind !== 'article' || existing.adapter.url !== ZEE_BUSINESS_FEED || existing.adapter.format !== 'zee_business_markets') {
       throw new Error('Existing Zee Business source has unexpected configuration');
     }
     const cadence = Object.fromEntries(['pre_open','open','closed','holiday','special','halted'].map(s => [s,{poll_s:300,expect:true}]));
-    await db.query(`UPDATE source SET enabled=true,excerpt_allowed=false,article_scope='markets',cadence=$1,adapter=$2
+    await db.query(`UPDATE source SET enabled=true,excerpt_allowed=true,article_scope='markets',cadence=$1,adapter=$2
       WHERE source_id='src_zee_markets'`, [cadence,{type:'rss',url:ZEE_BUSINESS_FEED,format:'zee_business_markets'}]);
     await db.query("UPDATE source_fetch_state SET etag=NULL,last_modified=NULL,next_fetch_at=now() WHERE source_id='src_zee_markets'");
     await db.query(`INSERT INTO audit_log(actor_type,action,entity_type,entity_id,after)

@@ -179,6 +179,16 @@
   color: #ffffff;
 }
 
+.ticker-tag-crypto {
+  background: #d97706; /* Rich amber gold for Bitcoin / Crypto */
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] .ticker-tag-crypto {
+  background: #f59e0b; /* Bright amber gold for dark mode */
+  color: #0f172a;
+}
+
 .ticker-name {
   font-weight: 600;
   color: var(--muted);

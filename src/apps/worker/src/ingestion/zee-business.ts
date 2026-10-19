@@ -16,7 +16,7 @@ export function zeeBusinessEntries(entries: readonly FeedEntry[], feedUrl: strin
       return url.protocol === 'https:' && url.hostname === 'www.zeebiz.com' && !url.port && !url.username && !url.password
         && /^\/(?:market-news|markets\/(?:stocks|ipo))\/news-[a-z0-9-]+-\d+\/?$/i.test(url.pathname);
     } catch { return false; }
-  }).map(entry => ({ ...entry, description: null }));
+  });
   // Unrelated recent articles cannot certify that the stock-market section is current.
   const latestPublishedAt = latestFeedPublication(verified, now);
   return {

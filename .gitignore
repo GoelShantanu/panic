@@ -36,3 +36,13 @@ next-env.d.ts
 ui-snapshot/
 test-results/
 playwright-report/
+
+# Android build outputs & binaries
+*.apk
+*.aab
+*.keystore
+local.properties
+.gradle/
+android-app/.gradle/
+android-app/build/
+android-app/app/build/

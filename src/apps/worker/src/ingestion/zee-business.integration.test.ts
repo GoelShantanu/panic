@@ -22,7 +22,7 @@ describe.skipIf(!adminUrl)('Zee Business ingestion (PostgreSQL)',()=>{
     await db.query("UPDATE source SET adapter=adapter || '{\"format\":\"zee_business_markets\"}'::jsonb WHERE source_id='src_zee_markets'");
   });
   afterAll(async()=>{await db?.end();await admin?.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);await admin?.end();});
-  it('imports only the newest ten, never stores excerpts or unrelated/review items, and replays without backfilling',async()=>{
+  it('imports only the newest ten, stores excerpts when permitted, filters unrelated/review items, and replays without backfilling',async()=>{
     const source=(await listEnabledSources(db)).find(s=>s.sourceId==='src_zee_markets')!;
     const deps={jitter:()=>1,fetchImpl:async(input:string,init?:RequestInit)=>{
       expect(input).toBe(ZEE_BUSINESS_FEED);
@@ -32,7 +32,7 @@ describe.skipIf(!adminUrl)('Zee Business ingestion (PostgreSQL)',()=>{
     expect(await fetchSourceOnce(db,source,'open',now,deps)).toMatchObject({inserted:10,duplicates:0,heldForReview:0});
     const saved=(await db.query("SELECT dedup_key,excerpt FROM item WHERE source_id='src_zee_markets'")).rows;
     expect(saved.map(r=>r.dedup_key).sort()).toEqual(Array.from({length:10},(_,i)=>`guid:zee-${i+1}`).sort());
-    expect(saved.every(r=>r.excerpt===null)).toBe(true);
+    expect(saved.every(r=>r.excerpt!==null)).toBe(true);
     expect((await db.query("SELECT count(*)::int n FROM article_relevance_candidate WHERE source_id='src_zee_markets'")).rows[0].n).toBe(10);
     expect((await db.query("SELECT count(*)::int n FROM job WHERE queue='pipeline'")).rows[0].n).toBe(10);
     expect(await fetchSourceOnce(db,source,'open',now,deps)).toMatchObject({inserted:0,duplicates:10,heldForReview:0});

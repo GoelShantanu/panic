@@ -202,10 +202,20 @@ export function MarketTicker({ initial, session: initialSession }: MarketTickerP
               <span className="ticker-name">{idx.name}</span>
             </div>
             <span className="ticker-price mono">
-              {idx.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {idx.currency === 'USD' ? '$' : idx.currency === 'INR' ? '₹' : ''}
+              {idx.price.toLocaleString(idx.currency === 'USD' ? 'en-US' : 'en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </span>
             <span className={`ticker-change mono ${sentimentClass}`}>
-              {arrow} {changeSign}{idx.change.toFixed(2)} ({changeSign}{idx.percent.toFixed(2)}%)
+              {arrow} {changeSign}
+              {idx.currency === 'USD' ? '$' : idx.currency === 'INR' ? '₹' : ''}
+              {Math.abs(idx.change).toLocaleString(idx.currency === 'USD' ? 'en-US' : 'en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{' '}
+              ({changeSign}{idx.percent.toFixed(2)}%)
             </span>
           </div>
         );

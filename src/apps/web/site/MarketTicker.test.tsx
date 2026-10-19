@@ -25,6 +25,7 @@ const mockTicker: TickerResponse = {
     { symbol: 'NSE:CNXREALTY', name: 'NIFTY REALTY', price: 825.95, change: -2.75, percent: -0.33 },
     { symbol: 'NSE:CNXENERGY', name: 'NIFTY ENERGY', price: 36190.85, change: -22.85, percent: -0.06 },
     { symbol: 'NSE:CNXMIDCAP', name: 'NIFTY MIDCAP', price: 59129.75, change: -67.50, percent: -0.11, tag: 'NSE' },
+    { symbol: 'CRYPTO:BTCINR', name: 'BTC/INR', price: 7680000.0, change: -42000.0, percent: -0.54, tag: 'CRYPTO', currency: 'INR' },
   ],
   updatedAt: '2026-10-17T12:00:00.000Z',
 };
@@ -70,17 +71,23 @@ describe('isMcxActive schedule helper', () => {
 
 describe('MarketTicker component', () => {
   it('renders moving infinite marquee with OFFLINE badge on weekends', () => {
-    render(
-      <MarketTicker
-        initial={mockTicker}
-        session={{ state: 'closed', exchange_date: '2026-10-17', next_transition_at: '2026-10-19T03:30:00Z' }}
-      />,
-    );
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-18T12:00:00Z')); // Sunday
+    try {
+      render(
+        <MarketTicker
+          initial={mockTicker}
+          session={{ state: 'closed', exchange_date: '2026-10-17', next_transition_at: '2026-10-19T03:30:00Z' }}
+        />,
+      );
 
-    const header = document.querySelector('.ticker-header');
-    expect(header).toBeTruthy();
-    expect(header?.getAttribute('data-status')).toBe('offline');
-    expect(screen.getByText('OFFLINE')).toBeTruthy();
+      const header = document.querySelector('.ticker-header');
+      expect(header).toBeTruthy();
+      expect(header?.getAttribute('data-status')).toBe('offline');
+      expect(screen.getByText('OFFLINE')).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
 
     // Verify viewport and sequences for marquee animation
     const viewport = document.querySelector('.ticker-viewport');
@@ -110,6 +117,11 @@ describe('MarketTicker component', () => {
     expect(screen.getAllByText('NIFTY ENERGY').length).toBeGreaterThan(0);
     expect(screen.getAllByText('NIFTY MIDCAP').length).toBeGreaterThan(0);
     expect(screen.getAllByText('NSE').length).toBeGreaterThan(0);
+
+    // Verify Crypto indices at end of ticker
+    expect(screen.getAllByText('BTC/INR').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('CRYPTO').length).toBeGreaterThan(0);
+    expect(screen.queryByText('BTC/USD')).toBeNull();
 
     // Verify USD/INR is NOT rendered
     expect(screen.queryByText('USD/INR')).toBeNull();

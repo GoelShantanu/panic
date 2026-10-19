@@ -59,6 +59,15 @@ describe('sign in (PRD-007 US-007.1)', () => {
     expect(push).toHaveBeenCalledWith('/welcome?next=%2F');
   });
 
+  it('verification link with initialCode and initialEmail automatically triggers 1-click verification on mount', async () => {
+    const f = vi.fn().mockResolvedValueOnce(json(200, { is_new: true })); vi.stubGlobal('fetch', f);
+    await act(async () => {
+      render(<SignIn next="/" googleClientId={null} initialMode="signup" initialEmail="ada@example.invalid" initialCode="123456" />);
+    });
+    expect(f).toHaveBeenCalledWith('/v1/auth/password/signup/verify', expect.objectContaining({ body: JSON.stringify({ email: 'ada@example.invalid', code: '123456' }) }));
+    expect(push).toHaveBeenCalledWith('/welcome?next=%2F');
+  });
+
   it('forgot password validates confirmation and returns to sign-in without logging in', async () => {
     const f = vi.fn().mockResolvedValue(json(204)); vi.stubGlobal('fetch', f);
     render(<SignIn next="/" googleClientId={null} />);

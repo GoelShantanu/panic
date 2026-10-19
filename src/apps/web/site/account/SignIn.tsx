@@ -120,6 +120,27 @@ export function SignIn({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleClientId, next]);
 
+  useEffect(() => {
+    if (initialMode === 'signup' && initialCode && /^\d{6}$/.test(initialCode) && initialEmail) {
+      let active = true;
+      setBusy(true);
+      setError(null);
+      (async () => {
+        const r = await post('/v1/auth/password/signup/verify', { email: initialEmail, code: initialCode.trim() });
+        if (!active) return;
+        setBusy(false);
+        if (r.status === 200) return after(r.body.is_new);
+        if (r.status === 423) setError('Too many wrong attempts. Request a new code.');
+        else if (r.status === 429) setError('Too many attempts. Please try again later.');
+        else if (r.body?.error === 'account_exists') setError('This email already has an account. Sign in or reset your password.');
+        else if (r.status === 400) setError('That link or code is not right, or it has expired.');
+        else setError('Could not verify your code. Please try again.');
+      })();
+      return () => { active = false; };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMode, initialCode, initialEmail]);
+
   async function start(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;

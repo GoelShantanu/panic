@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LogMailer, MemoryMailer, SmtpMailer, mailerFromEnv, signInCodeEmail } from './index.ts';
+import { LogMailer, MemoryMailer, SmtpMailer, mailerFromEnv, passwordResetEmail, signInCodeEmail, verificationCodeEmail } from './index.ts';
 
 describe('mailer (ADR-007)', () => {
   it('memory transport captures messages', async () => {
@@ -28,4 +28,29 @@ describe('mailer (ADR-007)', () => {
     expect(e.text).toContain('10 minutes');
     expect(`${e.subject} ${e.text}`).not.toMatch(/act now|hurry|don't miss|urgent|!/i);
   });
+
+  it('the verification email includes 6-digit code, direct link, and factual guardrails', () => {
+    const link = 'https://bazaarpanic.com/sign-in?mode=signup&email=trader%40example.com&code=582914';
+    const e = verificationCodeEmail('582914', link);
+    expect(e.subject).toBe('Verify your BazaarPanic email address');
+    expect(e.text).toContain('582914');
+    expect(e.text).toContain(link);
+    expect(e.text).toContain('10 minutes');
+    expect(e.html).toContain('582914');
+    expect(e.html).toContain(link);
+    expect(e.html).toContain('Verify Email &amp; Activate Account');
+    expect(`${e.subject} ${e.text}`).not.toMatch(/act now|hurry|don't miss|urgent|!/i);
+  });
+
+  it('the password reset email renders recovery code and direct reset link', () => {
+    const link = 'https://bazaarpanic.com/sign-in?mode=reset&email=trader%40example.com&code=918234';
+    const e = passwordResetEmail('918234', link);
+    expect(e.subject).toBe('Reset your BazaarPanic password');
+    expect(e.text).toContain('918234');
+    expect(e.text).toContain(link);
+    expect(e.html).toContain('918234');
+    expect(e.html).toContain(link);
+    expect(e.html).toContain('Reset Password Directly');
+  });
 });
+

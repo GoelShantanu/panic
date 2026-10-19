@@ -2802,3 +2802,170 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
 **Verification:**
 - Verified with `npm run typecheck` and full Vitest suite (412 tests passing).
 - Verified live HTTPS API responses on `https://bazaarpanic.com/`.
+
+---
+
+## D-107 — BazaarPanic Native Android App (Trusted Web Activity / TWA) Architecture, Build, and Direct APK/AAB Delivery (2026-10-19)
+
+**Authority:** Founder directed:
+1. Creating an Android app using existing backend APIs without heavy separate native client maintenance.
+2. Requirement: The Android app, iOS app, and Webapp must all contribute to the exact same web traffic and ad revenue pool under `https://bazaarpanic.com`.
+3. Executing all 3 steps sequentially with deep verification:
+   - Step 1: PWA Web App Manifest, high-DPI icons, layout metadata, and service worker.
+   - Step 2: Android TWA project scaffolding, production keystore generation, and Digital Asset Links (`.well-known/assetlinks.json`).
+   - Step 3: 100% Local Android compilation, integrity testing, and delivery of `.apk` and `.aab` artifacts to user.
+4. Strict constraint: Zero mobile compilation or tooling on AWS EC2. All mobile work remains 100% local on Windows.
+
+**Decision & Implementation:**
+1. **Architecture: Trusted Web Activity (TWA):**
+   - Implemented Google's official Trusted Web Activity (TWA) architecture (`androidbrowserhelper` 2.7.4).
+   - Unlike standard WebView wrappers that sandbox cookies and user agents, TWA runs on the user's native Chrome/Chromium browser engine directly in full-screen standalone mode.
+   - **Unified Traffic & Monetization:**
+     - Android users share the exact same first-party session cookies, authentication tokens, Google Analytics client sessions, and AdSense impression telemetry under the primary apex domain `https://bazaarpanic.com`.
+     - Zero backend API bifurcation or separate mobile endpoints required.
+2. **PWA Assets & Manifest (Step 1):**
+   - Generated high-DPI raster icons (`icon-192x192.png`, `icon-512x512.png`, and `icon-maskable-512x512.png`) from `bazaarpanic-signal-emblem.svg` via `sharp`.
+   - Created `src/apps/web/public/manifest.json` configured for `standalone` display with `#14243A` theme and `#090D16` background.
+   - Wired `manifest: '/manifest.json'` and `appleWebApp` metadata in Next.js `app/layout.tsx`.
+   - Hardened `sw.js` with standard install and activate lifecycle handlers.
+3. **Android Keystore & Digital Asset Links (Step 2):**
+   - Generated production RSA 2048-bit release keystore at `android-app/bazaarpanic.keystore` with 10,000 days validity (Alias: `bazaarpanic`).
+   - Extracted SHA-256 certificate fingerprint: `B6:E5:C4:90:96:09:01:BE:20:13:1A:DB:67:CA:34:9C:EC:03:C3:CC:46:13:7F:79:E0:79:41:7E:1A:4B:02:CC`.
+   - Deployed Google Digital Asset Links file at `src/apps/web/public/.well-known/assetlinks.json` binding `com.bazaarpanic.app` with `delegate_permission/common.handle_all_urls`.
+4. **Local Tooling & Build Pipeline (Step 3):**
+   - Configured portable Microsoft OpenJDK 17 (`C:\AndroidTools\jdk17`) and Android SDK cmdline-tools 12.0 (`C:\AndroidTools\android_sdk`), with `platforms;android-36` and `build-tools;35.0.0`.
+   - Fixed Bubblewrap CLI template bug in `app/build.gradle` (line 44 had missing `splashScreenFadeOutDuration: 300`).
+   - Configured `compileSdkVersion 36`, `minSdkVersion 24`, and release `signingConfigs`.
+   - Built production release APK via `.\gradlew.bat assembleRelease` and Google Play Store App Bundle via `.\gradlew.bat bundleRelease`.
+5. **Output Deliverables:**
+   - Sideloadable Release APK: `c:\backup_15th June 2026\StockPanic\bazaarpanic.apk` (3,914,408 bytes / 3.91 MB).
+   - Google Play Store App Bundle: `c:\backup_15th June 2026\StockPanic\bazaarpanic.aab` (3,746,067 bytes / 3.74 MB).
+
+**Verification:**
+- **Signature Verification:** Verified with `apksigner verify --verbose bazaarpanic.apk` — passed (Verified using APK Signature Scheme v2: `true`, 1 signer).
+- **Package Badging:** Verified with `aapt dump badging bazaarpanic.apk` — package `com.bazaarpanic.app`, versionCode `2`, versionName `1.0.0`, launchable activity `com.bazaarpanic.app.LauncherActivity`.
+- **Codebase Integrity:** `npm run typecheck` passed cleanly; full Vitest suite (40 test files, 412 tests) passed with zero regressions.
+- **Physical Device Test:** Sideloaded and verified on physical Android smartphone by founder — confirmed operational with clean splash screen, standalone full-screen view, responsive navigation, and live market stream.
+- **Strict Local Isolation:** EC2 production instance (`3.27.24.82`) remained untouched.
+
+---
+
+## D-108 — BTC/INR Real-Time Ticker & Digital Asset Links Live on Production (2026-10-19)
+
+**Authority:** Founder directed:
+1. Adding only the `BTC/INR` pair (excluding `BTC/USD`) directly into the production instance ticker.
+2. Positioning `BTC/INR` at the very end of the live ticker sequence with currency formatting and real-time refresh.
+
+**Decision & Implementation:**
+1. **Ticker Registry (`src/apps/web/src/market.ts`):**
+   - Added `CRYPTO:BTCINR` to `SYMBOLS_MAP`: `{ name: 'BTC/INR', tag: 'CRYPTO', yahooSymbol: 'BTC-INR', currency: 'INR' }` at index 19 (the final item).
+   - Omitted `BTC/USD` as specifically directed. Sourced in real time from Yahoo Finance (`BTC-INR`).
+   - Added `currency?: string` to `TickerItem` to dynamically control currency prefixes and localized numeric formatting.
+2. **Frontend Formatting (`MarketTicker.tsx` & `market-ticker.css`):**
+   - Formatted `BTC/INR` with `₹` currency symbol, Indian numbering grouping (`en-IN`), and 2 decimal places.
+   - Styled `.ticker-tag-crypto` in amber gold (`#d97706` / `#f59e0b`).
+3. **Digital Asset Links Deployment:**
+   - Bundled and deployed `src/apps/web/public/.well-known/assetlinks.json` alongside the ticker updates.
+   - Live endpoint `https://bazaarpanic.com/.well-known/assetlinks.json` returns HTTP 200 with the exact keystore SHA-256 fingerprint for package `com.bazaarpanic.app`.
+4. **Production Build & Rollout:**
+   - Deployed updated web source code to EC2 (`/opt/stockpanic/current`).
+   - Rebuilt production container image via Next.js Turbopack (`docs/ops/oracle/Dockerfile`).
+   - Gracefully recreated `bazaarnews-web-1` container.
+   - Executed host hygiene (`docker builder prune -f`, `docker image prune -f`), maintaining 18 GB disk headroom (39% used).
+
+**Verification:**
+- **Local Unit Tests:** `npx vitest run src/apps/web/site/MarketTicker.test.tsx` passed (10/10 tests).
+- **TypeScript:** `npm run typecheck` passed with 0 errors.
+- **Live Production Endpoint:** Verified `https://bazaarpanic.com/v1/market/ticker`:
+  - Returns HTTP 200 with 19 items.
+  - Final item: `name: "BTC/INR"`, `symbol: "CRYPTO:BTCINR"`, `tag: "CRYPTO"`, `currency: "INR"`.
+  - Confirmed `hasBtcUsd: false`.
+- **Digital Asset Links:** Verified `https://bazaarpanic.com/.well-known/assetlinks.json` returns HTTP 200.
+
+---
+
+## D-109 — Direct Moneycontrol Markets Section Adapter Live with Summaries and EC2 Hygiene (2026-10-19)
+
+**Authority:** Founder requested:
+1. Resolving the root cause of missing summaries and Google News redirects for Moneycontrol stories.
+2. Implementing Option 1 (Direct Moneycontrol HTML Section Adapter) with direct canonical URLs and editorial blurbs.
+3. Deploying the updated ingestion adapter and worker pipeline to production EC2.
+4. Executing post-deployment host cleanup on EC2.
+
+**Root Cause:**
+- Google News RSS search feeds (`src_mc_google_news`, D-086) do not carry editorial summaries; their `<description>` tags only contain anchor titles and publisher credits, stripped to `null` to prevent redundant clutter.
+- In turn, Google News links required outbound client-side redirects through `news.google.com/rss/articles/...`.
+- Moneycontrol's own legacy direct RSS feeds (`/rss/latestnews.xml`, `/rss/business.xml`) had frozen in April 2024.
+
+**Decision & Implementation:**
+1. **Direct HTML Section Adapter (`src/apps/worker/src/ingestion/moneycontrol.ts`):**
+   - Targets the live, active Moneycontrol markets section: `https://www.moneycontrol.com/news/business/markets/`.
+   - Parses `<li class="clearfix" id="newslist-X">` elements.
+   - Extracts canonical Moneycontrol URLs (`/news/...-14055245.html`), clean headlines, and rich editorial summaries (`<p>...</p>`).
+   - Generates stable article deduplication keys (`guid: mc-${numericId}`).
+   - Sets publisher attribution and publishes items with 15-item import batch bounds.
+2. **Worker Pipeline Integration (`src/apps/worker/src/ingestion/run-source.ts`):**
+   - Handles `format: 'moneycontrol_markets'` by feeding fetched HTML directly to `moneycontrolMarketEntries(res.body, url, now)`.
+   - Sends standard browser `accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'` header.
+   - Hardened `b.publishedAt?.getTime() ?? 0` sorting to safely handle articles without explicit feed publication timestamps.
+3. **Activation Script (`src/apps/worker/src/cli/moneycontrol.ts`):**
+   - Adds/updates source `src_mc_markets` with `tier: 3`, `article_scope: 'markets'`, `excerpt_allowed: true`, and `format: 'moneycontrol_markets'`.
+   - Atomically pauses Google News fallback `src_mc_google_news` and legacy frozen feeds (`src_mc_business`, `src_mc_latest`, `src_mc_marketreports`).
+4. **Verification & Tests:**
+   - Added unit test suite `src/apps/worker/src/ingestion/moneycontrol.test.ts` (4/4 tests passed).
+   - Local test suite: 419 passed across 41 test files.
+   - Local TypeScript typecheck: 0 errors.
+5. **EC2 Deployment & Verification:**
+   - Synchronized updated codebase to `/opt/stockpanic/current` on EC2 (`3.27.24.82`).
+   - Rebuilt production image `bazaarnews-app:current` with Turbopack.
+   - Recreated all compose containers (`bazaarnews-web-1`, `bazaarnews-live-1`, `bazaarnews-ingest-1`, `bazaarnews-pipeline-1`, `bazaarnews-account-1`, `bazaarnews-alerts-1`).
+   - Executed `moneycontrol.ts --activate` in the ingest container. Ingest immediately fetched and inserted 12 fresh Moneycontrol market articles.
+   - Verified live story API `/v1/stories/{id}` returns direct canonical Moneycontrol URLs and rich editorial summaries.
+6. **EC2 Host Hygiene Cleanup:**
+   - Executed `docker container prune -f`, `docker image prune -a -f`, `docker builder prune -a -f`, and `apt-get clean`.
+   - Reclaimed 338.8 MB; root disk usage kept at 33% (9.2 GB used out of 28 GB, 19 GB free headroom).
+
+---
+
+## D-110 — Transactional Email Verification via Resend SMTP & Branded Template (2026-10-19)
+
+**Authority:** Founder directed:
+1. Retiring Zoho free plan SMTP due to Zoho's policy restricting external SMTP access on free custom-domain tiers.
+2. Integrating Resend as the transactional email provider with verified custom domain `bazaarpanic.com` (`no-reply@bazaarpanic.com`).
+3. Modernizing the transactional email template with a clean light theme, official brand colors (`#14243A` Bazaar / `#245FC2` Panic), removing internal jargon ("telemetry"), revising button fallback prompt to "Verification button link not working?", and providing 1-click magic verification links.
+4. Enforcing email verification on all new account registrations (removing instant unverified login).
+
+**Implementation:**
+1. **Resend SMTP Integration:**
+   - Authenticated domain `bazaarpanic.com` via DKIM (`resend._domainkey`), SPF CNAMEs (`rsend`, `send`), and DMARC (`_dmarc`).
+   - Configured `SmtpMailer` (`src/packages/mail/src/index.ts`) with `smtp.resend.com:465` SSL transport, username `resend`, and API key.
+   - Tested live delivery to founder's email address with 100% success.
+2. **Branded Email Shell & Templates:**
+   - Clean light theme: `#f1f5f9` backdrop, `#ffffff` card container with subtle border (`#e2e8f0`).
+   - Brand Wordmark: Deep Navy (`#14243A`) for "Bazaar" + Royal Signal Blue (`#245FC2`) for "Panic".
+   - Header badge: `NSE • BSE • Real-Time Market Intelligence` (telemetry removed).
+   - Direct 1-Click Verification CTA button with fallback URL box: `"Verification button link not working? Copy and paste this URL into your browser:"`.
+   - Security notice & footer: Fact-based anti-phishing disclaimer.
+3. **Account Security Guardrails:**
+   - Removed `instantSignup` auto-login from `credential-auth.ts`. Every new signup requires email code or magic link verification.
+   - `SignIn.tsx` parses incoming verification parameters (`?mode=signup&email=...&code=...`) and verifies challenges automatically.
+
+---
+
+## D-111 — Google Identity Services (Sign in with Google) Production Rollout (2026-10-19)
+
+**Authority:** Founder directed:
+1. Activating Google OAuth login for BazaarPanic.
+2. Configuring Google Cloud OAuth client credentials for `bazaarpanic.com`.
+3. Simultaneous production deployment on EC2 with zero downtime.
+
+**Implementation:**
+1. **OAuth 2.0 Credentials:**
+   - Registered Web Application client `BazaarPanic Web` under Google Cloud Project `BazaarPanic`.
+   - Client ID: `237423689835-cds5bk24777jt2msu5g1o7e3bprsreep.apps.googleusercontent.com`.
+   - Authorized Origins: `https://bazaarpanic.com`, `https://www.bazaarpanic.com`.
+   - Authorized Redirects: `https://bazaarpanic.com/sign-in`.
+2. **Frontend & Backend Verification:**
+   - `SignIn.tsx` loads Google Identity Services (`https://accounts.google.com/gsi/client`) when `GOOGLE_CLIENT_ID` is set and renders the "Continue with Google" button.
+   - `createGoogleVerifier` (`src/apps/web/src/google.ts`) validates RS256 token signatures against Google JWKS (`https://www.googleapis.com/oauth2/v3/certs`), checks audience, expiry, and email verification.
+   - `/v1/auth/google` handles 1-click account linking and new user onboarding with 3-day Pro trial.

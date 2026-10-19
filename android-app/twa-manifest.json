@@ -1,0 +1,53 @@
+{
+  "packageId": "com.bazaarpanic.app",
+  "host": "bazaarpanic.com",
+  "name": "BazaarPanic - Live Indian Market News",
+  "launcherName": "BazaarPanic",
+  "display": "standalone",
+  "themeColor": "#14243A",
+  "themeColorDark": "#000000",
+  "navigationColor": "#090D16",
+  "navigationColorDark": "#090D16",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#090D16",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "http://127.0.0.1:8080/icon-512x512.png",
+  "maskableIconUrl": "http://127.0.0.1:8080/icon-maskable-512x512.png",
+  "signingKey": {
+    "path": "./bazaarpanic.keystore",
+    "alias": "bazaarpanic"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "http://127.0.0.1:8080/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": false
+    },
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://bazaarpanic.com/",
+  "minSdkVersion": 21,
+  "shareTarget": {
+    "enabled": false
+  },
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

@@ -95,38 +95,54 @@ function emailShell(title: string, bodyContent: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>${title}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      supported-color-schemes: light;
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0b0f17; padding: 32px 16px;">
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #334155; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 40px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; background-color: #131b2a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-          <!-- Header -->
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
+          <!-- Brand Header -->
           <tr>
-            <td style="padding: 28px 32px 20px; border-bottom: 1px solid #1e293b; background: #162032;">
+            <td style="padding: 28px 32px 22px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">BazaarPanic</span>
-                    <span style="display: inline-block; width: 7px; height: 7px; background-color: #10b981; border-radius: 50%; margin-left: 6px; vertical-align: middle;"></span>
-                    <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Real-Time Indian Market Intelligence (NSE & BSE)</div>
+                    <div style="display: inline-block;">
+                      <span style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #14243A;">Bazaar</span><span style="color: #245FC2;">Panic</span></span>
+                      <span style="display: inline-block; width: 8px; height: 8px; background-color: #245FC2; border-radius: 50%; margin-left: 6px; vertical-align: middle;"></span>
+                    </div>
+                    <div style="margin-top: 6px;">
+                      <span style="display: inline-block; padding: 2px 8px; background-color: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11px; font-weight: 600; color: #475569; letter-spacing: 0.5px; text-transform: uppercase;">
+                        NSE &bull; BSE &bull; Real-Time Market Intelligence
+                      </span>
+                    </div>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
-          <!-- Body -->
+          <!-- Body Content -->
           <tr>
-            <td style="padding: 32px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">
+            <td style="padding: 32px 32px 28px; font-size: 15px; line-height: 1.6; color: #334155;">
               ${bodyContent}
             </td>
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding: 20px 32px; background-color: #0d131f; border-top: 1px solid #1e293b; font-size: 12px; color: #64748b; text-align: center; line-height: 1.5;">
-              &copy; 2026 BazaarPanic. All rights reserved.<br>
-              Indian Stock Market Intelligence & Deduplicated News Telemetry
+            <td style="padding: 22px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center; line-height: 1.6;">
+              <div style="font-weight: 600; color: #14243A; margin-bottom: 4px;">BazaarPanic</div>
+              Real-Time Indian Stock Market Intelligence &amp; F&amp;O Sentiment<br>
+              &copy; 2026 BazaarPanic. All rights reserved.
             </td>
           </tr>
         </table>
@@ -149,14 +165,15 @@ export function signInCodeEmail(code: string): { subject: string; text: string; 
   const html = emailShell(
     'Your BazaarPanic sign-in code',
     `
-    <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #f8fafc;">Your sign-in code</h2>
-    <p style="margin: 0 0 20px; color: #94a3b8;">Use the sign-in code below to access your account:</p>
+    <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 700; color: #14243A;">Your sign-in code</h2>
+    <p style="margin: 0 0 20px; color: #475569;">Use the sign-in code below to access your account:</p>
     
-    <div style="background-color: #0b0f17; border: 1px solid #293548; border-radius: 8px; padding: 18px; text-align: center; margin: 20px 0;">
-      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #38bdf8;">${code}</span>
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 22px 16px; text-align: center; margin: 20px 0;">
+      <span style="font-family: 'SF Mono', Menlo, Consolas, Monaco, 'Courier New', monospace; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #245FC2; text-indent: 10px;">${code}</span>
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px;">Valid for 10 minutes &bull; Single-use code</div>
     </div>
 
-    <p style="font-size: 13px; color: #64748b; margin: 24px 0 0; border-top: 1px solid #1e293b; padding-top: 16px;">
+    <p style="font-size: 13px; color: #64748b; margin: 24px 0 0; border-top: 1px solid #e2e8f0; padding-top: 16px;">
       This code expires in <strong>10 minutes</strong> and can be used once.<br>
       If you did not request this, you can safely ignore this email.
     </p>
@@ -176,36 +193,83 @@ export function verificationCodeEmail(code: string, link?: string): { subject: s
     '',
     ...(link ? [`Or verify directly with this link: ${link}`, ''] : []),
     'It expires in 10 minutes and can be used once.',
-    'If you did not request this, ignore this email.',
+    'If you did not request this, you can ignore this email.',
   ].join('\n');
 
-  const buttonHtml = link ? `
-    <div style="text-align: center; margin: 28px 0 20px;">
-      <a href="${link}" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; padding: 12px 28px; border-radius: 6px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Verify Email Directly</a>
+  const buttonSection = link ? `
+    <!-- Direct 1-Click Verification Button -->
+    <div style="margin: 28px 0 24px; text-align: center;">
+      <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+        <tr>
+          <td align="center" style="border-radius: 8px; background-color: #245FC2; background-image: linear-gradient(135deg, #245FC2, #1b4ca3); box-shadow: 0 4px 14px rgba(36, 95, 194, 0.28);">
+            <a href="${link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; letter-spacing: 0.2px;">
+              Verify Email &amp; Activate Account &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
     </div>
-    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0 0 16px;">Or copy and enter the 6-digit code in your open browser tab.</p>
+
+    <!-- Divider -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0 16px;">
+      <tr>
+        <td style="border-bottom: 1px solid #e2e8f0; height: 1px;"></td>
+        <td style="width: auto; padding: 0 12px; text-align: center; font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; font-weight: 600; white-space: nowrap;">
+          Or enter 6-digit code
+        </td>
+        <td style="border-bottom: 1px solid #e2e8f0; height: 1px;"></td>
+      </tr>
+    </table>
+  ` : '';
+
+  const fallbackLinkSection = link ? `
+    <!-- Fallback Direct URL -->
+    <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 16px; margin: 22px 0 16px;">
+      <div style="margin: 0 0 6px; font-size: 12px; color: #64748b; font-weight: 500;">
+        Verification button link not working? Copy and paste this URL into your browser:
+      </div>
+      <a href="${link}" style="font-family: 'SF Mono', Menlo, Consolas, Monaco, monospace; font-size: 11px; color: #245FC2; word-break: break-all; text-decoration: none; line-height: 1.4;">
+        ${link}
+      </a>
+    </div>
   ` : '';
 
   const html = emailShell(
-    'Verify your BazaarPanic email',
+    'Verify your BazaarPanic email address',
     `
-    <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #f8fafc;">Verify your email address</h2>
-    <p style="margin: 0 0 20px; color: #94a3b8;">Welcome to BazaarPanic! Use the code below to verify your email and activate your <strong>3-day free Pro trial</strong>:</p>
-    
-    <div style="background-color: #0b0f17; border: 1px solid #293548; border-radius: 8px; padding: 18px; text-align: center; margin: 20px 0;">
-      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #38bdf8;">${code}</span>
-    </div>
-    
-    ${buttonHtml}
-
-    <p style="font-size: 13px; color: #64748b; margin: 24px 0 0; border-top: 1px solid #1e293b; padding-top: 16px;">
-      This verification code is valid for <strong>10 minutes</strong> and can only be used once.<br>
-      If you did not request an account, please ignore this email.
+    <h1 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #14243A; letter-spacing: -0.3px;">
+      Verify your email address
+    </h1>
+    <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #475569;">
+      Welcome to BazaarPanic. To finish setting up your account and activate your complimentary <strong style="color: #14243A;">3-day Pro trial</strong>, please verify your email address.
     </p>
+
+    ${buttonSection}
+
+    <!-- 6-Digit Monospace Code Card -->
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 22px 16px; text-align: center; margin: 16px 0 20px;">
+      <div style="font-family: 'SF Mono', Menlo, Consolas, Monaco, 'Courier New', monospace; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #245FC2; text-indent: 10px;">
+        ${code}
+      </div>
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px; letter-spacing: 0.3px;">
+        One-time verification code &bull; Valid for 10 minutes
+      </div>
+    </div>
+
+    ${fallbackLinkSection}
+
+    <!-- Security & Anti-Phishing Guardrail Notice -->
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+      <tr>
+        <td style="font-size: 12px; line-height: 1.6; color: #64748b;">
+          <strong style="color: #14243A;">Security Notice:</strong> BazaarPanic will never ask for your password via email. This verification code expires in 10 minutes and can only be used once. If you did not create an account on bazaarpanic.com, you can safely ignore this message.
+        </td>
+      </tr>
+    </table>
     `
   );
 
-  return { subject: 'Verify your BazaarPanic email', text, html };
+  return { subject: 'Verify your BazaarPanic email address', text, html };
 }
 
 export function passwordResetEmail(code: string, link?: string): { subject: string; text: string; html: string } {
@@ -214,32 +278,74 @@ export function passwordResetEmail(code: string, link?: string): { subject: stri
     '',
     ...(link ? [`Or reset directly with this link: ${link}`, ''] : []),
     'Use it with a new password. It expires in 10 minutes and can be used once. This code cannot sign you in.',
-    'If you did not request this, ignore this email. Your password will stay unchanged.',
+    'If you did not request this, you can ignore this email. Your password will stay unchanged.',
   ].join('\n');
 
-  const buttonHtml = link ? `
-    <div style="text-align: center; margin: 28px 0 20px;">
-      <a href="${link}" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; padding: 12px 28px; border-radius: 6px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Reset Password Directly</a>
+  const buttonSection = link ? `
+    <div style="margin: 28px 0 24px; text-align: center;">
+      <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+        <tr>
+          <td align="center" style="border-radius: 8px; background-color: #245FC2; background-image: linear-gradient(135deg, #245FC2, #1b4ca3); box-shadow: 0 4px 14px rgba(36, 95, 194, 0.28);">
+            <a href="${link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; letter-spacing: 0.2px;">
+              Reset Password Directly &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
     </div>
-    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0 0 16px;">Or enter this code on the password reset screen.</p>
+
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0 16px;">
+      <tr>
+        <td style="border-bottom: 1px solid #e2e8f0; height: 1px;"></td>
+        <td style="width: auto; padding: 0 12px; text-align: center; font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; font-weight: 600; white-space: nowrap;">
+          Or enter reset code
+        </td>
+        <td style="border-bottom: 1px solid #e2e8f0; height: 1px;"></td>
+      </tr>
+    </table>
+  ` : '';
+
+  const fallbackLinkSection = link ? `
+    <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px 16px; margin: 22px 0 16px;">
+      <div style="margin: 0 0 6px; font-size: 12px; color: #64748b; font-weight: 500;">
+        Reset button link not working? Copy and paste this URL into your browser:
+      </div>
+      <a href="${link}" style="font-family: 'SF Mono', Menlo, Consolas, Monaco, monospace; font-size: 11px; color: #245FC2; word-break: break-all; text-decoration: none; line-height: 1.4;">
+        ${link}
+      </a>
+    </div>
   ` : '';
 
   const html = emailShell(
     'Reset your BazaarPanic password',
     `
-    <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #f8fafc;">Reset your password</h2>
-    <p style="margin: 0 0 20px; color: #94a3b8;">We received a request to reset your BazaarPanic password. Use the reset code below:</p>
-    
-    <div style="background-color: #0b0f17; border: 1px solid #293548; border-radius: 8px; padding: 18px; text-align: center; margin: 20px 0;">
-      <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #38bdf8;">${code}</span>
+    <h1 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #14243A; letter-spacing: -0.3px;">
+      Reset your password
+    </h1>
+    <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #475569;">
+      We received a request to reset your BazaarPanic password. Click the button below or enter the 6-digit recovery code:
+    </p>
+
+    ${buttonSection}
+
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 22px 16px; text-align: center; margin: 16px 0 20px;">
+      <div style="font-family: 'SF Mono', Menlo, Consolas, Monaco, 'Courier New', monospace; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #245FC2; text-indent: 10px;">
+        ${code}
+      </div>
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px; letter-spacing: 0.3px;">
+        Valid for 10 minutes &bull; Single-use reset code
+      </div>
     </div>
 
-    ${buttonHtml}
+    ${fallbackLinkSection}
 
-    <p style="font-size: 13px; color: #64748b; margin: 24px 0 0; border-top: 1px solid #1e293b; padding-top: 16px;">
-      This code is valid for <strong>10 minutes</strong> and can only be used once.<br>
-      This code cannot sign you in directly. If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.
-    </p>
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+      <tr>
+        <td style="font-size: 12px; line-height: 1.6; color: #64748b;">
+          <strong style="color: #14243A;">Security Notice:</strong> This code cannot sign you in directly. If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.
+        </td>
+      </tr>
+    </table>
     `
   );
 

@@ -7,6 +7,7 @@ import { conditionalGet } from './http.ts';
 import type { FetchLike } from './http.ts';
 import { FeedParseError, latestFeedPublication, parseFeed, toCandidates } from './rss.ts';
 import { MONEYCONTROL_GOOGLE_MAX_ITEMS, moneycontrolGoogleEntries } from './google-news.ts';
+import { MONEYCONTROL_MAX_ITEMS, moneycontrolMarketEntries } from './moneycontrol.ts';
 import { ZEE_BUSINESS_MAX_ITEMS, zeeBusinessEntries } from './zee-business.ts';
 
 export interface FetchDeps {
@@ -70,6 +71,9 @@ export async function fetchSourceOnce(
     ...(source.adapter['format'] === 'zee_business_markets' ? {
       headers: { 'user-agent': 'BazaarPanic RSS reader (+https://bazaarpanic.com/)' },
     } : {}),
+    ...(source.adapter['format'] === 'moneycontrol_markets' ? {
+      headers: { accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
+    } : {}),
     // Pre-upgrade validators cannot establish the age of content we have not inspected.
     etag: source.fetch.publicationObservedAt ? source.fetch.etag : null,
     lastModified: source.fetch.publicationObservedAt ? source.fetch.lastModified : null,
@@ -83,16 +87,22 @@ export async function fetchSourceOnce(
   let entries;
   let latestPublishedAt: Date | null;
   try {
-    entries = parseFeed(res.body);
-    if (source.adapter['format'] === 'moneycontrol_google_news') {
-      const adapted = moneycontrolGoogleEntries(entries, url, now);
+    if (source.adapter['format'] === 'moneycontrol_markets') {
+      const adapted = moneycontrolMarketEntries(res.body, url, now);
       entries = adapted.entries;
       latestPublishedAt = adapted.latestPublishedAt;
-    } else if (source.adapter['format'] === 'zee_business_markets') {
-      const adapted = zeeBusinessEntries(entries, url, now);
-      entries = adapted.entries;
-      latestPublishedAt = adapted.latestPublishedAt;
-    } else latestPublishedAt = latestFeedPublication(entries, now);
+    } else {
+      entries = parseFeed(res.body);
+      if (source.adapter['format'] === 'moneycontrol_google_news') {
+        const adapted = moneycontrolGoogleEntries(entries, url, now);
+        entries = adapted.entries;
+        latestPublishedAt = adapted.latestPublishedAt;
+      } else if (source.adapter['format'] === 'zee_business_markets') {
+        const adapted = zeeBusinessEntries(entries, url, now);
+        entries = adapted.entries;
+        latestPublishedAt = adapted.latestPublishedAt;
+      } else latestPublishedAt = latestFeedPublication(entries, now);
+    }
   } catch (err) {
     if (err instanceof FeedParseError) return finish({ outcome: 'error', error: err.message, ...empty });
     throw err;
@@ -100,10 +110,11 @@ export async function fetchSourceOnce(
   const { candidates, discardedNonEnglish, discardedInvalid } = toCandidates(entries, source.articleScope);
   // Bound initial imports before persistence; unchanged polls cannot backfill older results.
   const limit = source.adapter['format'] === 'moneycontrol_google_news' ? MONEYCONTROL_GOOGLE_MAX_ITEMS
+    : source.adapter['format'] === 'moneycontrol_markets' ? MONEYCONTROL_MAX_ITEMS
     : source.adapter['format'] === 'zee_business_markets' ? ZEE_BUSINESS_MAX_ITEMS : null;
   const selected = limit !== null
     ? candidates.filter(c => c.relevance?.decision === 'keep')
-      .sort((a, b) => b.publishedAt!.getTime() - a.publishedAt!.getTime()).slice(0, limit)
+      .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0)).slice(0, limit)
     : candidates;
   const { inserted, duplicates, heldForReview, discardedIrrelevant } = await storeCandidates(db, source, selected);
   return finish(

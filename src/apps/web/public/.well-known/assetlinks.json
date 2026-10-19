@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bazaarpanic.app",
+      "sha256_cert_fingerprints": [
+        "B6:E5:C4:90:96:09:01:BE:20:13:1A:DB:67:CA:34:9C:EC:03:C3:CC:46:13:7F:79:E0:79:41:7E:1A:4B:02:CC"
+      ]
+    }
+  }
+]

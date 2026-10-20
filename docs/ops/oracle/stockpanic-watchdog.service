@@ -1,0 +1,7 @@
+[Unit]
+Description=BazaarPanic proactive memory and container watchdog
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/stockpanic/current/docs/ops/oracle/watchdog.sh check

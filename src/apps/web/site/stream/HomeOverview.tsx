@@ -157,7 +157,7 @@ export function HomeOverview({ trending, comments, onSelectStory }: HomeOverview
       {/* Footer credits and legal links */}
       <footer className="home-footer">
         <div className="home-footer-links">
-          <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/grievance">Grievance</Link> · <Link href="/plans">Plans</Link>
+          <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/plans">Plans</Link> · <a href="mailto:support@bazaarpanic.com">Support</a>
         </div>
         <div className="home-footer-copy">© 2026 BazaarPanic · Financial news intelligence</div>
       </footer>

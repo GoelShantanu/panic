@@ -3,7 +3,16 @@
 ## Executive Status & Context for New Sessions (Updated: 2026-10-19 17:15 IST)
 
 ### ✅ What Has Been Completed & Verified Live in Production:
-1. **Google Identity Services (Sign in with Google) Rollout (D-111):**
+1. **Web Push Notifications (VAPID) & Browser Alerts (D-113):**
+   - Generated production VAPID keypair. Configured PUSH=web, VAPID_SUBJECT, VAPID_PUBLIC_KEY, and VAPID_PRIVATE_KEY on EC2 (/etc/stockpanic/app.env).
+   - Enabled 1-click browser push notification subscriptions on desktop and Android Chrome via /settings/alerts and /sw.js.
+2. **Proactive EC2 Memory Watchdog & Pre-Market Telegram Ping (D-114):**
+   - Installed /opt/stockpanic/scripts/stockpanic_watchdog.sh on EC2 with systemd timer running every 5 mins. Automatically alerts Telegram if available RAM < 80 MB or memory > 85%, reporting top memory consumer processes.
+   - Pre-market opening bell health summary scheduled daily at 08:45 AM IST.
+3. **Support Email Unification & Grievance Simplification (D-112):**
+   - Retired individual Grievance Officer personal details section; unified customer support under support@bazaarpanic.com.
+   - Updated footer navigation across the entire site to link directly to mailto:support@bazaarpanic.com.
+4. **Google Identity Services (Sign in with Google) Rollout (D-111):**
    - Configured Google Cloud OAuth 2.0 Web Client (`237423689835-cds5bk24777jt2msu5g1o7e3bprsreep.apps.googleusercontent.com`) under `BazaarPanic` with authorized origins (`https://bazaarpanic.com`, `https://www.bazaarpanic.com`) and redirect (`https://bazaarpanic.com/sign-in`).
    - Integrated Google Identity Services client script and official button rendering in `SignIn.tsx`. Backend `/v1/auth/google` cryptographically verifies RS256 signatures against Google JWKS, links accounts, creates sessions, and grants complimentary 3-day Pro trial to new users.
 2. **Transactional Email Verification via Resend SMTP (D-110):**

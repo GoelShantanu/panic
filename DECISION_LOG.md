@@ -2969,3 +2969,41 @@ These are **open**, not decided. Recommendations are the CTO's; the decision is 
    - `SignIn.tsx` loads Google Identity Services (`https://accounts.google.com/gsi/client`) when `GOOGLE_CLIENT_ID` is set and renders the "Continue with Google" button.
    - `createGoogleVerifier` (`src/apps/web/src/google.ts`) validates RS256 token signatures against Google JWKS (`https://www.googleapis.com/oauth2/v3/certs`), checks audience, expiry, and email verification.
    - `/v1/auth/google` handles 1-click account linking and new user onboarding with 3-day Pro trial.
+
+---
+
+## D-112 — Support Email Unification & Grievance Simplification (2026-10-21)
+
+**Authority:** Founder directed:
+1. Removing individual Grievance Officer personal details section.
+2. Unifying support and inquiry contacts under `support@bazaarpanic.com`.
+3. Updating footer navigation to link directly to `mailto:support@bazaarpanic.com`.
+
+**Implementation:**
+1. Replaced `GrievanceOfficer` component in `src/apps/web/site/legal.tsx` with unified support contact notice: `Support & Inquiries: support@bazaarpanic.com`.
+2. Updated root footer navigation in `src/apps/web/app/layout.tsx` and home overview in `HomeOverview.tsx` to display `Support` pointing to `mailto:support@bazaarpanic.com`.
+
+---
+
+## D-113 — Web Push Notifications (VAPID) Integration (2026-10-21)
+
+**Authority:** Founder directed enabling browser push notifications.
+
+**Implementation:**
+1. Generated production VAPID keypair (`web-push`).
+2. Configured `PUSH=web`, `VAPID_SUBJECT=mailto:support@bazaarpanic.com`, `VAPID_PUBLIC_KEY`, and `VAPID_PRIVATE_KEY` in `/etc/stockpanic/app.env`.
+3. Enabled browser notification registration in `AlertSettings.tsx` and worker alert dispatch in `alerts.ts`.
+
+---
+
+## D-114 — Proactive High-Memory Watchdog & Pre-Market Telegram Alert (2026-10-21)
+
+**Authority:** Founder directed installing automated watchdog monitoring for EC2 memory and pre-market opening bell health summaries.
+
+**Implementation:**
+1. Installed `/opt/stockpanic/scripts/stockpanic_watchdog.sh` on EC2:
+   - Evaluates available RAM every 5 minutes. If available RAM < 80 MB or memory used > 85%, immediately dispatches a high-priority alert to Telegram (`@shantanu_stockapp_news_bot`) with top memory processes. Cooldown debounces alerts to once per 45 minutes during high load.
+   - Verifies container health; alerts if any of the 7 containers exit or become unhealthy.
+2. Created daily pre-market opening bell summary at 08:45 AM IST (03:15 AM UTC):
+   - Confirms all 7 containers healthy, reports RAM/Swap usage, disk headroom, and active database item/story counts 30 minutes before market open (09:15 AM IST).
+3. Configured systemd service and timer `stockpanic-watchdog.timer` running continuously.

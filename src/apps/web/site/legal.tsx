@@ -1,11 +1,8 @@
-// Grievance Officer details are configuration (IT Rules 2021 Rule 3(2) [INFERRED]); never invented.
+// Support contact configuration
 export function GrievanceOfficer() {
-  const name = process.env['GRIEVANCE_OFFICER_NAME'];
-  const email = process.env['GRIEVANCE_OFFICER_EMAIL'];
-  if (!name || !email) return null;
   return (
     <p>
-      Grievance Officer: <strong>{name}</strong>, <a href={`mailto:${email}`}>{email}</a>. Complaints are acknowledged within 24 hours and resolved within 15 days; court and government orders within 36 hours.
+      Support &amp; Inquiries: <a href="mailto:support@bazaarpanic.com">support@bazaarpanic.com</a>. Queries and reports are handled promptly by our support team.
     </p>
   );
 }

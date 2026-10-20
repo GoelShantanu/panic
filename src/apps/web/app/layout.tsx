@@ -100,7 +100,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <Link href="/plans">Plans</Link>
                 <Link href="/terms">Terms</Link>
                 <Link href="/privacy">Privacy</Link>
-                <Link href="/grievance">Grievances</Link>
+                <a href="mailto:support@bazaarpanic.com">Support</a>
               </nav>
             </footer>
           </div>

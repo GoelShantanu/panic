@@ -115,9 +115,16 @@ export function PulseScreen({
     setIsActivatingTrial(true);
     setTrialError(null);
     try {
-      const res = await fetch('/v1/billing/trial', { method: 'POST', credentials: 'same-origin' });
+      const res = await fetch('/v1/billing/trial', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: '{}',
+      });
       if (res.ok) {
         window.location.reload();
+      } else if (res.status === 401) {
+        window.location.href = '/sign-in?next=/pulse';
       } else {
         const data = await res.json().catch(() => null);
         setTrialError(data?.error === 'trial_used' ? 'The free trial has already been used on this account.' : 'Could not activate trial.');
@@ -535,12 +542,23 @@ export function PulseScreen({
                     Upgrade to Pro (₹149/mo) →
                   </button>
                   {!trialUsed && (
-                    <Link
-                      href={signedIn ? '/settings' : '/sign-in?next=/settings'}
-                      className="pcr-lock-trial-btn"
-                    >
-                      Start 3-Day Free Trial
-                    </Link>
+                    signedIn ? (
+                      <button
+                        type="button"
+                        className="pcr-lock-trial-btn"
+                        onClick={handleStartTrial}
+                        disabled={isActivatingTrial}
+                      >
+                        {isActivatingTrial ? 'Activating...' : 'Start 3-Day Free Trial'}
+                      </button>
+                    ) : (
+                      <Link
+                        href="/sign-in?next=/pulse"
+                        className="pcr-lock-trial-btn"
+                      >
+                        Start 3-Day Free Trial
+                      </Link>
+                    )
                   )}
                 </div>
                 {process.env.NODE_ENV !== 'production' && (
@@ -763,12 +781,23 @@ export function PulseScreen({
                 Upgrade to Pro (₹149/mo)
               </button>
               {!trialUsed && (
-                <Link
-                  href={signedIn ? '/settings' : '/sign-in?next=/settings'}
-                  className="pulse-pro-banner-trial-btn"
-                >
-                  Start 3-Day Free Trial →
-                </Link>
+                signedIn ? (
+                  <button
+                    type="button"
+                    className="pulse-pro-banner-trial-btn"
+                    onClick={handleStartTrial}
+                    disabled={isActivatingTrial}
+                  >
+                    {isActivatingTrial ? 'Activating...' : 'Start 3-Day Free Trial →'}
+                  </button>
+                ) : (
+                  <Link
+                    href="/sign-in?next=/pulse"
+                    className="pulse-pro-banner-trial-btn"
+                  >
+                    Start 3-Day Free Trial →
+                  </Link>
+                )
               )}
             </div>
           </div>
@@ -989,7 +1018,7 @@ export function PulseScreen({
                   </button>
                 ) : (
                   <Link
-                    href="/sign-in?next=/settings"
+                    href="/sign-in?next=/pulse"
                     className="pulse-modal-trial-action-btn"
                   >
                     Start 3-Day Free Trial →

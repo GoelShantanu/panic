@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PulseScreen } from './PulseScreen.tsx';
 import type { PulseResponse } from '../../src/pulse.ts';
@@ -425,6 +425,66 @@ describe('PulseScreen component', () => {
     fireEvent.click(statusBtn);
     expect(screen.getByText(/● LIVE/)).toBeTruthy();
     expect(screen.queryByText(/Exchange feed paused • Background retry in progress/)).toBeNull();
+  });
+
+  it('signed-in user can activate 3-day trial from modal with JSON headers', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: RequestInit) => {
+      if (url.includes('/billing/trial')) {
+        expect(opts?.method).toBe('POST');
+        expect((opts?.headers as Record<string, string>)?.['content-type']).toBe('application/json');
+        return {
+          ok: true,
+          json: async () => ({ trial: { ends_at: '2026-10-24T12:00:00Z' } }),
+        };
+      }
+      return { ok: true, json: async () => ({ stories: mockStories }) };
+    });
+    global.fetch = fetchMock;
+
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" signedIn={true} trialUsed={false} />);
+
+    // Click a sector to open upgrade modal
+    const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
+    fireEvent.click(itCard);
+
+    // Modal is open, click Start 3-Day Free Trial inside modal
+    const modal = screen.getByRole('dialog');
+    const trialBtn = within(modal).getByRole('button', { name: /Start 3-Day Free Trial →/i });
+    fireEvent.click(trialBtn);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/v1/billing/trial', expect.objectContaining({
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+      }));
+    });
+  });
+
+  it('displays friendly error when trial has already been used', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/billing/trial')) {
+        return {
+          ok: false,
+          status: 409,
+          json: async () => ({ error: 'trial_used' }),
+        };
+      }
+      return { ok: true, json: async () => ({ stories: mockStories }) };
+    });
+    global.fetch = fetchMock;
+
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" signedIn={true} trialUsed={false} />);
+
+    const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
+    fireEvent.click(itCard);
+
+    const modal = screen.getByRole('dialog');
+    const trialBtn = within(modal).getByRole('button', { name: /Start 3-Day Free Trial →/i });
+    fireEvent.click(trialBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('The free trial has already been used on this account.')).toBeTruthy();
+    });
   });
 });
 

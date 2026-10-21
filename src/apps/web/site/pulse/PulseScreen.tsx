@@ -8,6 +8,7 @@ import { Icon } from '../Icon.tsx';
 import type { PulseResponse, SectorItem, PcrData } from '../../src/pulse.ts';
 import { CLIENT_DEFAULT_PCR, CLIENT_FALLBACK_PCR } from './pcrDefaults.ts';
 import type { StoryCard } from '../types.ts';
+import { trackEvent } from '../analytics.ts';
 import './pulse.css';
 
 export interface UsageInfo {
@@ -122,6 +123,7 @@ export function PulseScreen({
         body: '{}',
       });
       if (res.ok) {
+        trackEvent('trial_activated', { source: 'pulse_modal', feature: upgradeModal?.feature });
         window.location.reload();
       } else if (res.status === 401) {
         window.location.href = '/sign-in?next=/pulse';

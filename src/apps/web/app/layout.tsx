@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Script from 'next/script';
 import type { ReactNode } from 'react';
 import { api } from '../site/api.ts';
 import type { SessionInfo } from '../site/format.ts';
@@ -69,6 +70,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     new Date(me.body.trial.ends_at) > new Date() &&
     (!me.body.subscription || me.body.subscription.status !== 'active');
   const viewer: Viewer | null = me && me.status === 200 ? { username: me.body.username, tier: me.body.tier, isTrial, attention } : null;
+  const gaMeasurementId = process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID'] ?? process.env['GA_MEASUREMENT_ID'] ?? 'G-E8B8ZNCCYJ';
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <head>
@@ -79,6 +81,28 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: DENSITY_BOOT }} />
       </head>
       <body>
+        {gaMeasurementId && process.env.NODE_ENV !== 'test' && (
+          <>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaMeasurementId}', {
+                    page_path: window.location.pathname,
+                  });
+                `,
+              }}
+            />
+          </>
+        )}
         <LiveProvider>
           <a href="#main" className="skip-link">
             Skip to content

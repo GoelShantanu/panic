@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { trackEvent } from '../analytics.ts';
 
 declare global {
   interface Window {
@@ -50,6 +51,7 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
       const r = await fetch('/v1/billing', { credentials: 'same-origin' }).catch(() => null);
       const b = r?.ok ? await r.json() : null;
       if (b?.tier === 'paid') {
+        trackEvent('subscription_confirmed', { plan: 'pro' });
         setMsg('You are on the paid plan. Thank you.');
         setBusy(false);
         router.refresh();
@@ -64,6 +66,7 @@ export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans:
     if (!signedIn) return router.push('/sign-in?next=/plans');
     setBusy(true);
     setMsg(null);
+    trackEvent('subscribe_clicked', { plan });
     const res = await fetch('/v1/billing/checkout', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan }) }).catch(() => null);
     const body = res ? await res.json().catch(() => null) : null;
     if (!res || res.status === 503) { setBusy(false); return setMsg('Subscriptions are not open yet. Try the free trial meanwhile.'); }

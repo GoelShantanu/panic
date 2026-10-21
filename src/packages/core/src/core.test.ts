@@ -86,8 +86,8 @@ describe('event taxonomy (PRD-004 §1)', () => {
 });
 
 describe('entitlements (PRD-007 §2.1)', () => {
-  it('free history is 3 days; paid is 30 days (D-077)', () => {
-    expect(ENTITLEMENTS.free.historyDays).toBe(3);
+  it('history is 30 days for members (D-077)', () => {
+    expect(ENTITLEMENTS.free.historyDays).toBe(30);
     expect(ENTITLEMENTS.paid.historyDays).toBe(30);
   });
 
@@ -101,7 +101,7 @@ describe('entitlements (PRD-007 §2.1)', () => {
     expect(upgradeRequired('watchlist_limit')).toEqual({
       error: 'upgrade_required',
       feature: 'watchlist_limit',
-      limit: 20,
+      limit: 200,
       paid_value: 200,
     });
   });

@@ -94,58 +94,19 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
       </section>
 
       <section className="panel settings-section" aria-labelledby="plan-h">
-        <h2 id="plan-h">Plan</h2>
+        <h2 id="plan-h">Membership</h2>
         <p>
-          You are on the <strong>{me.trial.ends_at && new Date(me.trial.ends_at) > new Date() && (!sub || sub.status !== 'active') ? 'Trial' : me.tier === 'paid' ? 'Paid' : 'Free'}</strong> plan.
-          {me.trial.ends_at && new Date(me.trial.ends_at) > new Date() && ` · ends ${day(me.trial.ends_at)}.`}
+          You are a <strong>Verified Member</strong> with full, unrestricted access to all BazaarPanic features (100% Free).
         </p>
-        {sub?.payment_retrying && <p className="notice notice-warn">Your last payment failed and is being retried. Paid features stay on meanwhile; you can update the payment method in your bank or UPI app mandate.</p>}
-        {sub && (
-          <dl className="kv">
-            <dt>Subscription</dt>
-            <dd>{sub.plan === 'yearly' ? 'Yearly, ₹1,199' : 'Monthly, ₹149'} (GST included)</dd>
-            <dt>{sub.cancel_at_period_end ? 'Paid access until' : 'Renews on'}</dt>
-            <dd>{day(sub.cancel_at_period_end ? sub.access_until : (sub.renews_at ?? sub.access_until))}</dd>
-            {sub.pending_plan && (
-              <>
-                <dt>Changing to</dt>
-                <dd>{sub.pending_plan} at the next renewal</dd>
-              </>
-            )}
-          </dl>
-        )}
-        <div className="row-buttons">
-          {me.tier === 'free' && !me.trial.used && (
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={async () => {
-                const r = await call('POST', '/v1/billing/trial');
-                if (r.status === 200) (say('plan', `Your free trial runs until ${day(r.body.trial.ends_at)}.`), router.refresh());
-                else say('plan', 'The free trial has already been used on this account.');
-              }}
-            >
-              Start 3-day free trial
-            </button>
-          )}
-          {(!sub || sub.cancel_at_period_end) && (
-            <Link href="/plans" className="button">
-              {me.tier === 'paid' ? 'See plans' : 'Compare plans'}
-            </Link>
-          )}
-          {sub && !sub.cancel_at_period_end && billingEnabled && (
+        <p className="faint" style={{ marginTop: '0.5rem' }}>
+          ✓ 12-Sector Heatmap &amp; Filings Intelligence • 30-Day News Archive • 200-Stock Watchlists • Live F&amp;O PCR Telemetry • Instant ↻ Refresh Now
+        </p>
+        <div className="row-buttons" style={{ marginTop: '1rem' }}>
+          <Link href="/plans" className="button">
+            View All Features
+          </Link>
+          {sub && !sub.cancel_at_period_end && (
             <>
-              <button
-                type="button"
-                className="button"
-                onClick={async () => {
-                  const r = await call('POST', '/v1/billing/switch', { plan: sub.plan === 'yearly' ? 'monthly' : 'yearly' });
-                  if (r.status === 200) (say('plan', 'Your plan changes at the next renewal.'), router.refresh());
-                  else say('plan', r.body?.error === 'switch_unavailable' ? 'Your payment method cannot change plans automatically. Cancel, then subscribe to the other plan.' : 'That did not work. Try again.');
-                }}
-              >
-                Switch to {sub.plan === 'yearly' ? 'monthly' : 'yearly'} at renewal
-              </button>
               {!confirmCancel ? (
                 <button type="button" className="button" onClick={() => setConfirmCancel(true)}>
                   Cancel subscription
@@ -176,7 +137,7 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
         {msg['plan'] && <p className="muted" role="status">{msg['plan']}</p>}
         {invoices.length > 0 && (
           <>
-            <h3 className="sub-h">Invoices</h3>
+            <h3 className="sub-h">Past Invoices</h3>
             <ul className="plain-list">
               {invoices.map((i) => (
                 <li key={i.invoice_id}>

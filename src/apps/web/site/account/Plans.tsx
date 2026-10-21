@@ -1,144 +1,94 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { trackEvent } from '../analytics.ts';
 
-declare global {
-  interface Window {
-    Razorpay?: new (o: Record<string, unknown>) => { open(): void; on(ev: string, fn: () => void): void };
-  }
-}
-
-// PRD-007 §2.1, as shown to people (C-007.2: depth and convenience only, nothing about any company).
 const ROWS: [string, string, string][] = [
-  ['Live stream, story and company pages', 'Included', 'Included'],
-  ['Market Breadth intelligence', 'Every 15 min (overview)', 'Every 1 min live refresh + instant manual refresh'],
-  ['Put/Call Ratio (PCR) sentiment', '—', 'Live Nifty & Bank Nifty PCR, smart-money writing bias & range gauge'],
-  ['Sector & Index intelligence', 'Overview only', 'Deep filtering across all 12 sectors & benchmark indices'],
-  ['Watchlist size', '20 companies', '200 companies'],
-  ['Individual alerts per day', 'Up to 3', 'Up to 25'],
-  ['Daily digest', 'Included', 'Included'],
-  ['Stream and company history', 'Last 3 days', 'Last 30 days'],
-  ['Event-type filter', 'One type at a time', 'Combine several'],
-  ['Saved views', '—', 'Up to 10'],
-  ['Alert history', '30 days', '1 year'],
-  ['Voting and comments', 'Included', 'Included, same rules'],
+  ['Live stream & breaking news', 'Included', 'Included'],
+  ['Market Breadth intelligence', 'Every 15 min overview', 'Live auto-refresh + 100 on-demand instant refreshes/day'],
+  ['Put/Call Ratio (PCR) sentiment', 'Real-time Nifty & Bank Nifty PCR', 'Real-time Nifty & Bank Nifty PCR + writing bias'],
+  ['Sector Heatmap & Intelligence', 'Overview only', 'Full interactive filtering across all 12 sectors & indices'],
+  ['Watchlist size', '5 stocks (local)', 'Up to 200 companies (synced to account)'],
+  ['Alerts & Notifications', '—', 'Browser Push & Email alerts (up to 25/day)'],
+  ['Daily market digest', '—', 'Included (email)'],
+  ['Stream & filings history', 'Last 3 days', 'Full 30-day deep archive search'],
+  ['Multi-event filter & saved views', '—', 'Up to 10 saved custom views'],
+  ['Voting and community comments', 'Read-only', 'Full voting & discussion access'],
 ];
 
-function loadCheckout(): Promise<boolean> {
-  if (window.Razorpay) return Promise.resolve(true);
-  return new Promise((resolve) => {
-    const s = document.createElement('script');
-    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.head.appendChild(s);
-  });
-}
-
-export function Plans({ plans, signedIn, tier, trialUsed, subscribed }: { plans: { id: 'monthly' | 'yearly'; price_inr: number }[]; signedIn: boolean; tier: 'free' | 'paid' | null; trialUsed: boolean; subscribed: boolean }) {
-  const router = useRouter();
-  const [msg, setMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  // Paid access starts only when the provider's webhook confirms payment (D-036); wait up to 60 s.
-  async function waitForPaid() {
-    setMsg('Confirming your payment…');
-    for (let i = 0; i < 30; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      const r = await fetch('/v1/billing', { credentials: 'same-origin' }).catch(() => null);
-      const b = r?.ok ? await r.json() : null;
-      if (b?.tier === 'paid') {
-        trackEvent('subscription_confirmed', { plan: 'pro' });
-        setMsg('You are on the paid plan. Thank you.');
-        setBusy(false);
-        router.refresh();
-        return;
-      }
-    }
-    setMsg('Payment received by the provider; confirmation is taking longer than usual. Your plan will update shortly, and an invoice will be emailed.');
-    setBusy(false);
-  }
-
-  async function subscribe(plan: 'monthly' | 'yearly') {
-    if (!signedIn) return router.push('/sign-in?next=/plans');
-    setBusy(true);
-    setMsg(null);
-    trackEvent('subscribe_clicked', { plan });
-    const res = await fetch('/v1/billing/checkout', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ plan }) }).catch(() => null);
-    const body = res ? await res.json().catch(() => null) : null;
-    if (!res || res.status === 503) { setBusy(false); return setMsg('Subscriptions are not open yet. Try the free trial meanwhile.'); }
-    if (res.status === 409) {
-      setBusy(false);
-      return setMsg(body?.error === 'checkout_in_progress' ? `A ${body.plan} checkout is already open. Select that plan to resume checkout.` : 'You already have an active subscription.');
-    }
-    if (!res.ok) { setBusy(false); return setMsg('Checkout could not start. Try again.'); }
-    if (!(await loadCheckout()) || !window.Razorpay) {
-      window.location.href = body.provider_checkout_url; // provider-hosted page as a fallback
-      return;
-    }
-    const rzp = new window.Razorpay({
-      key: body.key_id,
-      subscription_id: body.subscription_id,
-      name: 'BazaarPanic',
-      description: plan === 'yearly' ? 'Paid plan, yearly' : 'Paid plan, monthly',
-      handler: () => void waitForPaid(),
-      modal: { ondismiss: () => { setBusy(false); setMsg('Checkout closed. Nothing was charged.'); } },
-    });
-    rzp.on('payment.failed', () => { setBusy(false); setMsg('Payment was not completed. You can try again.'); });
-    rzp.open();
-  }
-
+export function Plans({
+  signedIn,
+}: {
+  plans?: unknown;
+  signedIn: boolean;
+  tier?: unknown;
+  trialUsed?: boolean;
+  subscribed?: boolean;
+}) {
   return (
     <div className="plans">
-      <h1>Plans</h1>
-      <p className="muted">The core product is free. Paid adds depth and convenience; it never changes what news exists, how stories rank, or how votes count.</p>
+      <div style={{ marginBottom: '2rem' }}>
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '4px 10px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            background: 'var(--accent)',
+            color: '#fff',
+            marginBottom: '0.75rem',
+          }}
+        >
+          100% FREE FOR TRADERS
+        </span>
+        <h1>All Features Unlocked. Zero Paywalls.</h1>
+        <p className="muted" style={{ maxWidth: '640px', lineHeight: 1.6 }}>
+          BazaarPanic is freely available to all Indian market participants. Simply sign in to access full 12-sector heatmaps, 30-day corporate filings archive, 200-stock watchlists, and live F&amp;O PCR telemetry.
+        </p>
+
+        {!signedIn ? (
+          <Link
+            href="/sign-in"
+            className="button button-primary"
+            style={{ marginTop: '1.25rem', display: 'inline-block', padding: '0.6rem 1.25rem' }}
+          >
+            Sign in with Google / Email — Free →
+          </Link>
+        ) : (
+          <p style={{ color: 'var(--accent)', fontWeight: 600, marginTop: '1.25rem' }}>
+            ✓ You are signed in with full Member access.
+          </p>
+        )}
+      </div>
+
       <table className="plans-table panel">
         <thead>
           <tr>
             <th scope="col">
               <span className="sr-only">Feature</span>
             </th>
-            <th scope="col">Free</th>
-            <th scope="col">Paid</th>
+            <th scope="col">Guest (Not Signed In)</th>
+            <th scope="col">Member (Signed In)</th>
           </tr>
         </thead>
         <tbody>
-          {ROWS.map(([what, free, paid]) => (
+          {ROWS.map(([what, guest, member]) => (
             <tr key={what}>
               <th scope="row">{what}</th>
-              <td>{free}</td>
-              <td>{paid}</td>
+              <td>{guest}</td>
+              <td>
+                <strong style={{ color: member === '—' ? 'inherit' : 'var(--accent)' }}>{member}</strong>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="plan-cards">
-        {plans.map((p) => (
-          <div key={p.id} className="panel plan-card">
-            <h2>{p.id === 'yearly' ? 'Yearly' : 'Monthly'}</h2>
-            <p className="plan-price">
-              ₹{p.price_inr.toLocaleString('en-IN')} <span className="faint">/ {p.id === 'yearly' ? 'year' : 'month'}, GST included</span>
-            </p>
-            <button type="button" className="button button-primary" disabled={busy || subscribed} onClick={() => void subscribe(p.id)}>
-              {subscribed ? 'Current plan' : `Subscribe ${p.id === 'yearly' ? 'yearly' : 'monthly'}`}
-            </button>
-          </div>
-        ))}
-      </div>
-      {signedIn && !trialUsed && tier === 'free' && (
-        <p>
-          Or <Link href="/settings">start a 3-day free trial</Link> from settings, including 10 days of news history, with no payment details needed.
-        </p>
-      )}
-      <p className="faint">UPI AutoPay, cards and net banking through Razorpay. BazaarPanic never sees your card or bank details. Cancel any time from settings in one step; paid features last until the end of the period you paid for.</p>
-      {msg && (
-        <p className="notice notice-warn" role="status">
-          {msg}
-        </p>
-      )}
+
+      <p className="faint" style={{ marginTop: '1.5rem' }}>
+        No payment details, no subscriptions, and no trial expirations. BazaarPanic is built to deliver real-time Indian stock market intelligence without friction.
+      </p>
     </div>
   );
 }

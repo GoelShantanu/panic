@@ -121,7 +121,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <footer className="footer">
               <p>Stories link to their original sources. Vote counts and comments are user opinion, not BazaarPanic&apos;s assessment, and not investment advice.</p>
               <nav className="footer-links" aria-label="Footer">
-                <Link href="/plans">Plans</Link>
+                <Link href="/plans">Features</Link>
                 <Link href="/terms">Terms</Link>
                 <Link href="/privacy">Privacy</Link>
                 <a href="mailto:support@bazaarpanic.com">Support</a>

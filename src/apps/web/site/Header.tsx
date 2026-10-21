@@ -42,7 +42,6 @@ export function Header({ session, viewer }: { session: SessionInfo | null; viewe
           <Link href="/settings" className="nav-item account-link">
             <Icon name="user" />
             <span className="account-name">{viewer.username ?? 'Account'}</span>
-            {viewer.tier === 'paid' && <span className="tier-badge">{viewer.isTrial ? 'Trial' : 'Paid'}</span>}
           </Link>
         ) : (
           <Link href="/sign-in" className="nav-item sign-in-link">

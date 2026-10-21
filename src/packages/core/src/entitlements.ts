@@ -3,7 +3,7 @@
 
 export type Tier = 'free' | 'paid';
 export type HistoryAccess = 'free' | 'trial' | 'paid';
-export const HISTORY_DAYS: Readonly<Record<HistoryAccess, number>> = { free: 3, trial: 10, paid: 30 };
+export const HISTORY_DAYS: Readonly<Record<HistoryAccess, number>> = { free: 30, trial: 30, paid: 30 };
 
 export interface Entitlements {
   readonly watchlistLimit: number;
@@ -18,14 +18,14 @@ export interface Entitlements {
 
 export const ENTITLEMENTS: Readonly<Record<Tier, Entitlements>> = {
   free: {
-    watchlistLimit: 20,
-    alertBudgetCeiling: 3,
-    defaultAlertBudget: 3,
-    historyDays: 3,
-    alertHistoryDays: 30,
-    multiEventFilter: false,
-    streamFilingsOnly: false,
-    savedViews: 0,
+    watchlistLimit: 200,
+    alertBudgetCeiling: 25,
+    defaultAlertBudget: 10,
+    historyDays: 30,
+    alertHistoryDays: 365,
+    multiEventFilter: true,
+    streamFilingsOnly: true,
+    savedViews: 10,
   },
   paid: {
     watchlistLimit: 200,

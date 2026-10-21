@@ -53,11 +53,9 @@ export default async function PulsePage() {
   const stories = storiesRes && storiesRes.status === 200 && storiesRes.body?.stories ? storiesRes.body.stories : [];
   const session = sessionRes && sessionRes.status === 200 && sessionRes.body?.session ? sessionRes.body.session : null;
   const signedIn = meRes?.status === 200;
-  const isTrial = Boolean(meRes?.status === 200 && meRes.body?.trial?.ends_at && new Date(meRes.body.trial.ends_at) > new Date());
-  const isPaid = meRes?.status === 200 && meRes.body?.tier === 'paid';
-  const isPro = isPaid || isTrial;
-  const userTier: 'free' | 'paid' = isPro ? 'paid' : 'free';
-  const trialUsed = meRes?.status === 200 ? Boolean(meRes.body?.trial?.used) : false;
+  // All authenticated users receive full member features (100% Free)
+  const userTier: 'free' | 'paid' = signedIn ? 'paid' : 'free';
+  const trialUsed = true;
 
   const initialUsage = pulseRes && pulseRes.status === 200 && pulseRes.body?.usage
     ? {

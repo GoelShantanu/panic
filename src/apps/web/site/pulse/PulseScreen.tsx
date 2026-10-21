@@ -384,9 +384,9 @@ export function PulseScreen({
                   type="button"
                   className="pulse-refresh-btn pulse-pro-btn"
                   onClick={() => setUpgradeModal({ feature: 'refresh' })}
-                  title="Manual refresh is available for Pro members"
+                  title="Sign in to refresh market pulse"
                 >
-                  ↻ Refresh Now <span className="pulse-btn-pro-tag">PRO</span>
+                  ↻ Refresh Now <span className="pulse-btn-pro-tag">FREE</span>
                 </button>
               )}
 
@@ -523,45 +523,28 @@ export function PulseScreen({
           className={`pulse-pcr-card ${!isPro ? 'pulse-pcr-locked' : ''}`}
           aria-label="F&O Derivatives Sentiment"
         >
-          {/* Pro Lock Overlay for Free / Non-Paid Users */}
+          {/* Lock Overlay for Guests / Non-Signed-In Users */}
           {!isPro && (
-            <div className="pcr-pro-lock-overlay" role="region" aria-label="Pro Feature: Put/Call Ratio">
+            <div className="pcr-pro-lock-overlay" role="region" aria-label="Member Feature: Put/Call Ratio">
               <div className="pcr-lock-card">
                 <div className="pcr-lock-badge-row">
-                  <span className="pcr-lock-pro-pill">🔒 PRO EXCLUSIVE</span>
-                  <span className="pcr-lock-sub-pill">1-MIN REFRESH</span>
+                  <span className="pcr-lock-pro-pill" style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}>
+                    ⚡ MEMBER FEATURE
+                  </span>
+                  <span className="pcr-lock-sub-pill">100% FREE</span>
                 </div>
                 <h3 className="pcr-lock-title">Put/Call Ratio (PCR) Sentiment</h3>
                 <p className="pcr-lock-desc">
                   Institutional F&amp;O derivatives positioning, Put/Call writing open interest distribution &amp; visual sentiment range gauge.
                 </p>
                 <div className="pcr-lock-actions">
-                  <button
-                    type="button"
+                  <Link
+                    href="/sign-in?next=/pulse"
                     className="pcr-lock-upgrade-btn"
-                    onClick={() => setUpgradeModal({ feature: 'pcr' })}
+                    style={{ textAlign: 'center', display: 'block' }}
                   >
-                    Upgrade to Pro (₹149/mo) →
-                  </button>
-                  {!trialUsed && (
-                    signedIn ? (
-                      <button
-                        type="button"
-                        className="pcr-lock-trial-btn"
-                        onClick={handleStartTrial}
-                        disabled={isActivatingTrial}
-                      >
-                        {isActivatingTrial ? 'Activating...' : 'Start 3-Day Free Trial'}
-                      </button>
-                    ) : (
-                      <Link
-                        href="/sign-in?next=/pulse"
-                        className="pcr-lock-trial-btn"
-                      >
-                        Start 3-Day Free Trial
-                      </Link>
-                    )
-                  )}
+                    Sign in to Unlock (Free) →
+                  </Link>
                 </div>
                 {process.env.NODE_ENV !== 'production' && (
                   <button
@@ -753,7 +736,7 @@ export function PulseScreen({
             <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)' }}>
               {userTier === 'paid'
                 ? '(Click any sector or index tile to load matching stories)'
-                : '(Sector & index intelligence is exclusive to Pro members)'}
+                : '(Sign in to unlock interactive sector news filtering)'}
             </span>
           </h2>
           {selectedSectorId && (
@@ -772,37 +755,17 @@ export function PulseScreen({
 
         {userTier !== 'paid' && (
           <div className="pulse-pro-banner">
-            <span className="pulse-pro-banner-icon">🔒</span>
+            <span className="pulse-pro-banner-icon">⚡</span>
             <div className="pulse-pro-banner-text">
-              <b>Sector News Intelligence (Pro Feature):</b> Click any sector or index below to unlock deep company filings and institutional news across 12 core sectors. <b>Start a 3-day free trial — no credit card needed!</b>
+              <b>Sector News Intelligence:</b> Click any sector or index below to filter live corporate filings and breaking stories across 12 sectors. <b>Sign in to unlock full access — 100% Free!</b>
             </div>
             <div className="pulse-pro-banner-actions">
-              <button
-                type="button"
+              <Link
+                href="/sign-in?next=/pulse"
                 className="pulse-pro-banner-btn"
-                onClick={() => setUpgradeModal({ feature: 'sector' })}
               >
-                Upgrade to Pro (₹149/mo)
-              </button>
-              {!trialUsed && (
-                signedIn ? (
-                  <button
-                    type="button"
-                    className="pulse-pro-banner-trial-btn"
-                    onClick={handleStartTrial}
-                    disabled={isActivatingTrial}
-                  >
-                    {isActivatingTrial ? 'Activating...' : 'Start 3-Day Free Trial →'}
-                  </button>
-                ) : (
-                  <Link
-                    href="/sign-in?next=/pulse"
-                    className="pulse-pro-banner-trial-btn"
-                  >
-                    Start 3-Day Free Trial →
-                  </Link>
-                )
-              )}
+                Sign in to Unlock (Free) →
+              </Link>
             </div>
           </div>
         )}
@@ -928,7 +891,7 @@ export function PulseScreen({
         )}
       </section>
 
-      {/* Upgrade Modal for Non-Paid Users */}
+      {/* Free Member Unlock Modal for Guests */}
       {upgradeModal && (
         <div
           className="pulse-modal-backdrop"
@@ -948,19 +911,17 @@ export function PulseScreen({
 
             <div className="pulse-modal-header">
               <div className="pulse-modal-pro-badge">
-                <span className="pulse-modal-pro-pill">PRO MEMBER FEATURE</span>
+                <span className="pulse-modal-pro-pill" style={{ background: 'var(--accent)', color: '#fff', border: 'none' }}>
+                  100% FREE MEMBER FEATURE
+                </span>
               </div>
               <h2 className="pulse-modal-title">
-                {upgradeModal.feature === 'pcr'
-                  ? 'Unlock Put/Call Ratio (PCR) with Pro'
-                  : upgradeModal.feature === 'refresh'
-                  ? 'Unlock Manual Refresh with Pro'
-                  : 'Unlock Sector & Index Intelligence with Pro'}
+                {upgradeModal.feature === 'refresh'
+                  ? 'Sign in to Refresh Market Pulse'
+                  : 'Sign in to Filter Sector Intelligence'}
               </h2>
               <p className="pulse-modal-desc">
-                {upgradeModal.feature === 'pcr'
-                  ? 'Access live institutional derivatives sentiment, smart-money Put/Call writing open interest & 1-minute auto-refreshes.'
-                  : upgradeModal.feature === 'refresh'
+                {upgradeModal.feature === 'refresh'
                   ? 'Get instant on-demand market breadth, index tracking, and sector rotation updates.'
                   : 'Filter live corporate announcements, BSE/NSE filings, and expert commentary across all 12 sectors & benchmark indices.'}
               </p>
@@ -970,25 +931,19 @@ export function PulseScreen({
               <div className="pulse-modal-feature-item">
                 <span className="pulse-modal-check">✓</span>
                 <div>
-                  <b>Live Put/Call Ratio (PCR):</b> Real-time F&amp;O derivatives sentiment, smart-money Put/Call writing bias &amp; 5-zone range gauge.
+                  <b>Sector Intelligence:</b> Deep filtering across 30+ days stories for all 12 core sectors &amp; benchmark indices.
                 </div>
               </div>
               <div className="pulse-modal-feature-item">
                 <span className="pulse-modal-check">✓</span>
                 <div>
-                  <b>1-Minute Live Refresh:</b> Breadth &amp; F&amp;O refresh every 1 min (vs 15 min on Free) + up to 100 on-demand refreshes/day.
+                  <b>On-Demand Instant Refresh:</b> Refresh breadth, F&amp;O and ticker data anytime (up to 100 refreshes/day).
                 </div>
               </div>
               <div className="pulse-modal-feature-item">
                 <span className="pulse-modal-check">✓</span>
                 <div>
-                  <b>Sector Intelligence:</b> Deep filtering across all 30+ days stories for Nifty 50, Smallcap, Midcap, Largecap, IT, Banking, Auto, Pharma, Energy, Metal, Realty &amp; FMCG.
-                </div>
-              </div>
-              <div className="pulse-modal-feature-item">
-                <span className="pulse-modal-check">✓</span>
-                <div>
-                  <b>25 Alerts/Day:</b> Up to 25 instant alerts per day (vs 3 on Free).
+                  <b>200-Stock Watchlists:</b> Save and track up to 200 instruments synced across your devices.
                 </div>
               </div>
               <div className="pulse-modal-feature-item">
@@ -997,78 +952,21 @@ export function PulseScreen({
                   <b>30-Day News Archive:</b> Full company filings history &amp; multi-event filters.
                 </div>
               </div>
-            </div>
-
-            {!trialUsed && (
-              <div className="pulse-modal-trial-card">
-                <div className="pulse-modal-trial-badge">⚡ 3-DAY FREE TRIAL</div>
-                <div className="pulse-modal-trial-body">
-                  <div className="pulse-modal-trial-heading">
-                    Want to test Pro first? Try it free for 3 days.
-                  </div>
-                  <div className="pulse-modal-trial-sub">
-                    Get full, unrestricted access to all 12 sectors, filings &amp; instant manual refresh — <b>no credit card required</b>.
-                  </div>
-                  {trialError && <div className="pulse-modal-trial-error">{trialError}</div>}
+              <div className="pulse-modal-feature-item">
+                <span className="pulse-modal-check">✓</span>
+                <div>
+                  <b>25 Alerts/Day:</b> Real-time browser push &amp; email alerts.
                 </div>
-                {signedIn ? (
-                  <button
-                    type="button"
-                    className="pulse-modal-trial-action-btn"
-                    onClick={handleStartTrial}
-                    disabled={isActivatingTrial}
-                  >
-                    {isActivatingTrial ? 'Activating Trial...' : 'Start 3-Day Free Trial →'}
-                  </button>
-                ) : (
-                  <Link
-                    href="/sign-in?next=/pulse"
-                    className="pulse-modal-trial-action-btn"
-                  >
-                    Start 3-Day Free Trial →
-                  </Link>
-                )}
               </div>
-            )}
-
-            <div className="pulse-modal-pricing">
-              <button
-                type="button"
-                className={`pulse-plan-box ${selectedPlan === 'monthly' ? 'selected' : ''}`}
-                onClick={() => setSelectedPlan('monthly')}
-                aria-pressed={selectedPlan === 'monthly'}
-              >
-                <div className="pulse-plan-top-row">
-                  <div className="pulse-plan-name">Monthly</div>
-                  <div className={`pulse-plan-radio ${selectedPlan === 'monthly' ? 'active' : ''}`}>
-                    {selectedPlan === 'monthly' && <span className="pulse-plan-radio-dot" />}
-                  </div>
-                </div>
-                <div className="pulse-plan-cost">₹149 <span>/ mo</span></div>
-                <div className="pulse-plan-tax">GST included · Cancel anytime</div>
-              </button>
-
-              <button
-                type="button"
-                className={`pulse-plan-box ${selectedPlan === 'yearly' ? 'selected' : ''}`}
-                onClick={() => setSelectedPlan('yearly')}
-                aria-pressed={selectedPlan === 'yearly'}
-              >
-                <span className="pulse-plan-badge">SAVE 33%</span>
-                <div className="pulse-plan-top-row">
-                  <div className="pulse-plan-name">Yearly</div>
-                  <div className={`pulse-plan-radio ${selectedPlan === 'yearly' ? 'active' : ''}`}>
-                    {selectedPlan === 'yearly' && <span className="pulse-plan-radio-dot" />}
-                  </div>
-                </div>
-                <div className="pulse-plan-cost">₹1,199 <span>/ yr</span></div>
-                <div className="pulse-plan-tax">₹99/mo equivalent · GST included</div>
-              </button>
             </div>
 
-            <div className="pulse-modal-actions">
-              <Link href={`/plans?billing=${selectedPlan}`} className="button button-primary pulse-modal-btn">
-                Upgrade to Pro
+            <div className="pulse-modal-actions" style={{ marginTop: '1.5rem' }}>
+              <Link
+                href="/sign-in?next=/pulse"
+                className="button button-primary pulse-modal-btn"
+                style={{ width: '100%', textAlign: 'center', padding: '0.85rem', fontSize: '15px' }}
+              >
+                Sign in with Google / Email — 100% Free →
               </Link>
             </div>
           </div>

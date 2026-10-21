@@ -171,48 +171,24 @@ describe('PulseScreen component', () => {
     expect(screen.getByText('LIVE TELEMETRY')).toBeTruthy();
   });
 
-  it('free user clicking sector card opens upgrade modal', () => {
+  it('free user clicking sector card opens free member unlock modal', () => {
     render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
 
     // Verify refresh text shows 15 min for free user
     expect(screen.getByText(/Every 15 min\./i)).toBeTruthy();
-
-    // Sector card should NOT have PRO label badge
-    expect(screen.queryByText(/PRO 🔒/i)).toBeNull();
 
     // Click NIFTY IT sector card
     const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
     fireEvent.click(itCard);
 
     // Modal appears
-    expect(screen.getByText(/Unlock Sector & Index Intelligence with Pro/i)).toBeTruthy();
-    expect(screen.getByRole('link', { name: /^Upgrade to Pro$/i })).toBeTruthy();
+    expect(screen.getByText(/Sign in to Filter Sector Intelligence/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Sign in with Google \/ Email — 100% Free →/i })).toBeTruthy();
 
     // Verify updated copy and all features present
-    expect(screen.getByText(/Live Put\/Call Ratio \(PCR\):/i)).toBeTruthy();
-    expect(screen.getByText(/1-Minute Live Refresh:/i)).toBeTruthy();
-    expect(screen.queryByText(/\(up to 100 hits\/day\)\./i)).toBeNull();
-
-    // Verify 3-day free trial card and banner
-    expect(screen.getAllByText(/3-DAY FREE TRIAL/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Start 3-Day Free Trial →/i).length).toBeGreaterThan(0);
-
-    // Maybe Later button should not exist
-    expect(screen.queryByRole('button', { name: /Maybe Later/i })).toBeNull();
-
-    // Monthly and Yearly plan cards are clickable
-    const monthlyBtn = screen.getByRole('button', { name: /Monthly/i });
-    const yearlyBtn = screen.getByRole('button', { name: /Yearly/i });
-    expect(monthlyBtn).toBeTruthy();
-    expect(yearlyBtn).toBeTruthy();
-
-    fireEvent.click(yearlyBtn);
-    expect(yearlyBtn.getAttribute('aria-pressed')).toBe('true');
-    expect(monthlyBtn.getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(monthlyBtn);
-    expect(monthlyBtn.getAttribute('aria-pressed')).toBe('true');
-    expect(yearlyBtn.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByText(/Sector Intelligence:/i)).toBeTruthy();
+    expect(screen.getByText(/On-Demand Instant Refresh:/i)).toBeTruthy();
+    expect(screen.getByText(/200-Stock Watchlists:/i)).toBeTruthy();
   });
 
   it('paid user can click sector heatmap cards and filter stories', async () => {
@@ -243,13 +219,14 @@ describe('PulseScreen component', () => {
     });
   });
 
-  it('free user clicking refresh opens upgrade modal', () => {
+  it('free user clicking refresh opens free member unlock modal', () => {
     render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
 
     const refreshBtn = screen.getByRole('button', { name: /Refresh Now/i });
     fireEvent.click(refreshBtn);
 
-    expect(screen.getByText(/Unlock Manual Refresh with Pro/i)).toBeTruthy();
+    expect(screen.getByText(/Sign in to Refresh Market Pulse/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Sign in with Google \/ Email — 100% Free →/i })).toBeTruthy();
   });
 
   it('paid user clicking refresh triggers rate limit and runs cooldown timer', async () => {
@@ -277,7 +254,7 @@ describe('PulseScreen component', () => {
     expect(screen.getByText(/Only 8 hits left for the day/i)).toBeTruthy();
   });
 
-  it('renders PCR Pro lock overlay and 1-min Pro hint for free users', () => {
+  it('renders PCR lock overlay for guest free users', () => {
     render(
       <PulseScreen
         initialPulse={mockPulse}
@@ -287,17 +264,14 @@ describe('PulseScreen component', () => {
       />
     );
 
-    // Refresh interval mentions 1 min for Pro
-    expect(screen.getByText(/(1 min for Pro ⚡)/i)).toBeTruthy();
-
     // Lock overlay is present on PCR card
-    expect(screen.getByText(/PRO EXCLUSIVE/i)).toBeTruthy();
-    expect(screen.getByText(/Put\/Call Ratio \(PCR\) Sentiment/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Upgrade to Pro \(₹149\/mo\) →/i })).toBeTruthy();
-    expect(screen.getAllByText(/Start 3-Day Free Trial/i).length).toBeGreaterThan(0);
+    const pcrOverlay = screen.getByRole('region', { name: /Member Feature: Put\/Call Ratio/i });
+    expect(within(pcrOverlay).getByText(/MEMBER FEATURE/i)).toBeTruthy();
+    expect(within(pcrOverlay).getByText(/Put\/Call Ratio \(PCR\) Sentiment/i)).toBeTruthy();
+    expect(within(pcrOverlay).getByRole('link', { name: /Sign in to Unlock \(Free\) →/i })).toBeTruthy();
   });
 
-  it('clicking upgrade on PCR lock overlay opens upgrade modal with PCR feature details', () => {
+  it('clicking unlock on PCR lock overlay navigates to sign in', () => {
     render(
       <PulseScreen
         initialPulse={mockPulse}
@@ -306,14 +280,9 @@ describe('PulseScreen component', () => {
       />
     );
 
-    const upgradeBtn = screen.getByRole('button', { name: /Upgrade to Pro \(₹149\/mo\) →/i });
-    fireEvent.click(upgradeBtn);
-
-    // Modal appears with PCR specific headline and feature bullet
-    expect(screen.getByText('Unlock Put/Call Ratio (PCR) with Pro')).toBeTruthy();
-    expect(screen.getByText(/Access live institutional derivatives sentiment/i)).toBeTruthy();
-    expect(screen.getByText(/Live Put\/Call Ratio \(PCR\):/i)).toBeTruthy();
-    expect(screen.getByRole('link', { name: /^Upgrade to Pro$/i })).toBeTruthy();
+    const pcrOverlay = screen.getByRole('region', { name: /Member Feature: Put\/Call Ratio/i });
+    const unlockLink = within(pcrOverlay).getByRole('link', { name: /Sign in to Unlock \(Free\) →/i });
+    expect(unlockLink.getAttribute('href')).toBe('/sign-in?next=/pulse');
   });
 
   it('renders F&O Derivatives Sentiment (PCR) card in LIVE state for paid users', () => {
@@ -427,64 +396,28 @@ describe('PulseScreen component', () => {
     expect(screen.queryByText(/Exchange feed paused • Background retry in progress/)).toBeNull();
   });
 
-  it('signed-in user can activate 3-day trial from modal with JSON headers', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: RequestInit) => {
-      if (url.includes('/billing/trial')) {
-        expect(opts?.method).toBe('POST');
-        expect((opts?.headers as Record<string, string>)?.['content-type']).toBe('application/json');
-        return {
-          ok: true,
-          json: async () => ({ trial: { ends_at: '2026-10-24T12:00:00Z' } }),
-        };
-      }
-      return { ok: true, json: async () => ({ stories: mockStories }) };
-    });
-    global.fetch = fetchMock;
+  it('modal can be closed via the close button', () => {
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
 
-    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" signedIn={true} trialUsed={false} />);
-
-    // Click a sector to open upgrade modal
     const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
     fireEvent.click(itCard);
 
-    // Modal is open, click Start 3-Day Free Trial inside modal
-    const modal = screen.getByRole('dialog');
-    const trialBtn = within(modal).getByRole('button', { name: /Start 3-Day Free Trial →/i });
-    fireEvent.click(trialBtn);
+    expect(screen.getByRole('dialog')).toBeTruthy();
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/v1/billing/trial', expect.objectContaining({
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-      }));
-    });
+    const closeBtn = screen.getByRole('button', { name: /Close/i });
+    fireEvent.click(closeBtn);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('displays friendly error when trial has already been used', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (url: string) => {
-      if (url.includes('/billing/trial')) {
-        return {
-          ok: false,
-          status: 409,
-          json: async () => ({ error: 'trial_used' }),
-        };
-      }
-      return { ok: true, json: async () => ({ stories: mockStories }) };
-    });
-    global.fetch = fetchMock;
-
-    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" signedIn={true} trialUsed={false} />);
+  it('modal link points to sign-in with next redirect to pulse', () => {
+    render(<PulseScreen initialPulse={mockPulse} initialStories={mockStories} userTier="free" />);
 
     const itCard = screen.getByRole('button', { name: /NIFTY IT/i });
     fireEvent.click(itCard);
 
-    const modal = screen.getByRole('dialog');
-    const trialBtn = within(modal).getByRole('button', { name: /Start 3-Day Free Trial →/i });
-    fireEvent.click(trialBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText('The free trial has already been used on this account.')).toBeTruthy();
-    });
+    const link = screen.getByRole('link', { name: /Sign in with Google \/ Email — 100% Free →/i });
+    expect(link.getAttribute('href')).toBe('/sign-in?next=/pulse');
   });
 });
 

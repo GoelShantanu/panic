@@ -127,12 +127,14 @@ function parseListParams(params: URLSearchParams, viewer: Viewer): ListParams | 
 const isResponse = (v: unknown): v is ApiResponse => typeof v === 'object' && v !== null && 'status' in v && 'body' in v;
 
 function notBefore(viewer: Viewer, now: Date): Date | null {
-  return new Date(now.getTime() - HISTORY_DAYS[viewer.historyAccess ?? viewer.tier] * 86_400_000);
+  const days = viewer.userId ? 30 : 3;
+  return new Date(now.getTime() - days * 86_400_000);
 }
 
 function historyInfo(viewer: Viewer, now: Date) {
-  const access = viewer.historyAccess ?? viewer.tier;
-  return { history_access: access, history_days: HISTORY_DAYS[access], history_cutoff: notBefore(viewer, now)!.toISOString() };
+  const days = viewer.userId ? 30 : 3;
+  const access = viewer.userId ? 'paid' : 'free';
+  return { history_access: access, history_days: days, history_cutoff: notBefore(viewer, now)!.toISOString() };
 }
 
 function streamQuery(view: StreamView, isin: string | null, watchlistUserId: string | null, p: ListParams, viewer: Viewer, now: Date): StreamQuery {
@@ -416,10 +418,10 @@ export async function route(
     const target = await recordOutbound(db, id, url.searchParams.get('from') ?? 'other', now);
     return target ? { status: 302, body: null, headers: { location: target, 'referrer-policy': 'no-referrer' } } : notFound();
   }
-  // Manual market pulse refresh (paid subscribers only, 4 hits/min, 100 hits/day)
+  // Manual market pulse refresh (free for registered members, 4 hits/min, 100 hits/day)
   if (path === 'market/pulse/refresh' && method === 'POST') {
-    if (!user || (viewer.tier !== 'paid' && viewer.historyAccess !== 'trial' && viewer.historyAccess !== 'paid')) {
-      return { status: 402, body: { error: 'upgrade_required', message: 'Manual refresh is exclusive to Pro members.' } };
+    if (!user) {
+      return { status: 401, body: { error: 'auth_required', message: 'Sign in for free to refresh market pulse.' } };
     }
     const hitResult = await recordPulseRefreshHit(db, user.id, now);
     if (!hitResult.allowed) {
@@ -452,11 +454,11 @@ export async function route(
   if (path === 'plans') return getPlans();
   if (path === 'market/ticker') return ok(await fetchMarketTicker());
   if (path === 'market/pulse') {
-    const isPro = Boolean(user && (viewer.tier === 'paid' || viewer.historyAccess === 'trial' || viewer.historyAccess === 'paid'));
+    const isMember = Boolean(user);
     const pcrParam = url.searchParams.get('pcrState');
     const pcrState = pcrParam === 'live' || pcrParam === 'paused' ? pcrParam : undefined;
-    const pulse = await fetchMarketPulse(false, isPro, pcrState);
-    const usage = isPro ? await checkPulseRefreshUsage(db, user!.id, now) : null;
+    const pulse = await fetchMarketPulse(false, isMember, pcrState);
+    const usage = isMember ? await checkPulseRefreshUsage(db, user!.id, now) : null;
     return ok({
       ...pulse,
       usage: usage ? { daily_hits: usage.dailyHits, hits_left: usage.hitsLeft, max_daily: usage.maxDaily } : null,
@@ -464,13 +466,13 @@ export async function route(
   }
   if (path === 'market/pulse/stories') {
     const sector = url.searchParams.get('sector');
-    if (sector && viewer.tier !== 'paid' && viewer.historyAccess !== 'trial' && viewer.historyAccess !== 'paid') {
+    if (sector && !user) {
       return {
-        status: 402,
+        status: 401,
         body: {
-          error: 'upgrade_required',
+          error: 'auth_required',
           feature: 'sector_news',
-          message: 'Sector news filtering is exclusive to Pro members.',
+          message: 'Sign in for free to filter news by sector.',
         },
       };
     }

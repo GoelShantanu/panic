@@ -180,25 +180,15 @@ describe('settings (US-007.3, US-007.8)', () => {
 });
 
 describe('plans (US-007.7)', () => {
-  it('visitors are sent to sign in; billing closed is explained; Razorpay opens with the subscription', async () => {
-    const { unmount } = render(<Plans plans={[{ id: 'monthly', price_inr: 149 }, { id: 'yearly', price_inr: 1199 }]} signedIn={false} tier={null} trialUsed={false} subscribed={false} />);
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe monthly' })));
-    expect(push).toHaveBeenCalledWith('/sign-in?next=/plans');
+  it('displays 100% free model and directs visitors to sign in', () => {
+    const { unmount } = render(<Plans signedIn={false} />);
+    expect(screen.getByText('100% FREE FOR TRADERS')).toBeTruthy();
+    expect(screen.getByText('All Features Unlocked. Zero Paywalls.')).toBeTruthy();
+    const signinLink = screen.getByRole('link', { name: /Sign in with Google \/ Email — Free →/i });
+    expect(signinLink.getAttribute('href')).toBe('/sign-in');
     unmount();
 
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(503, { error: 'billing_unavailable' })).mockResolvedValueOnce(json(200, { subscription_id: 'sub_1', key_id: 'rzp_test', provider_checkout_url: 'https://rzp.example/x' })));
-    const open = vi.fn();
-    const ctor = vi.fn(function (this: any) {
-      this.open = open;
-      this.on = vi.fn();
-    });
-    (window as any).Razorpay = ctor;
-    render(<Plans plans={[{ id: 'yearly', price_inr: 1199 }]} signedIn tier="free" trialUsed subscribed={false} />);
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe yearly' })));
-    expect(screen.getByRole('status').textContent).toContain('not open yet');
-    await act(async () => void fireEvent.click(screen.getByRole('button', { name: 'Subscribe yearly' })));
-    expect((ctor.mock.calls as unknown as unknown[][])[0]![0]).toMatchObject({ key: 'rzp_test', subscription_id: 'sub_1', name: 'BazaarPanic' });
-    expect(open).toHaveBeenCalled();
-    delete (window as any).Razorpay;
+    render(<Plans signedIn={true} />);
+    expect(screen.getByText(/You are signed in with full Member access/i)).toBeTruthy();
   });
 });

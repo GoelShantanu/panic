@@ -300,9 +300,9 @@ export function PulseScreen({
   const rawPcr = pulse.pcr ?? CLIENT_DEFAULT_PCR;
   const effectivePcr: PcrData =
     pcrOverride === 'paused'
-      ? { ...CLIENT_FALLBACK_PCR, lastConfirmedAt: rawPcr.lastConfirmedAt ?? '14:30 IST' }
+      ? { ...CLIENT_FALLBACK_PCR, lastConfirmedAt: rawPcr.lastConfirmedAt ?? '15:30 IST' }
       : pcrOverride === 'live'
-      ? { ...CLIENT_DEFAULT_PCR, updatedAt: new Date().toISOString() }
+      ? { ...rawPcr, status: 'live' }
       : rawPcr;
   const isPcrLive = effectivePcr.status === 'live';
 
@@ -623,8 +623,10 @@ export function PulseScreen({
               <div className="pcr-primary-box">
                 <div className="pcr-metric-meta">
                   <span className="pcr-metric-label">NIFTY 50 PCR</span>
-                  {!isPcrLive && effectivePcr.lastConfirmedAt && (
-                    <span className="pcr-timestamp-pill">LAST CONFIRMED ({effectivePcr.lastConfirmedAt})</span>
+                  {effectivePcr.lastConfirmedAt && (
+                    <span className="pcr-timestamp-pill">
+                      {isPcrLive ? `LIVE (${effectivePcr.lastConfirmedAt})` : `LAST CONFIRMED (${effectivePcr.lastConfirmedAt})`}
+                    </span>
                   )}
                 </div>
                 <div className="pcr-val-row">

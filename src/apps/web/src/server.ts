@@ -107,15 +107,15 @@ export function clientIp(req: IncomingMessage, trustProxy = process.env['TRUST_P
 }
 
 const PRODUCTION = process.env['NODE_ENV'] === 'production';
-// Third parties the pages load: Google Identity (sign-in) and Razorpay Checkout (D-036). Inline scripts
-// are still allowed because Next.js streams inline payloads; React escapes rendered text (D-053).
+// Third parties the pages load: Google Identity (sign-in), Razorpay Checkout (D-036), and Google Analytics (D-119).
+// Inline scripts are still allowed because Next.js streams inline payloads; React escapes rendered text (D-053).
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${PRODUCTION ? '' : " 'unsafe-eval'"} https://accounts.google.com https://checkout.razorpay.com`,
+  `script-src 'self' 'unsafe-inline'${PRODUCTION ? '' : " 'unsafe-eval'"} https://accounts.google.com https://checkout.razorpay.com https://www.googletagmanager.com`,
   "style-src 'self' 'unsafe-inline' https://accounts.google.com",
-  "img-src 'self' data: https:",
+  "img-src 'self' data: https: https://*.google-analytics.com https://*.googletagmanager.com",
   "font-src 'self' data:",
-  `connect-src 'self' https://accounts.google.com https://api.razorpay.com https://lumberjack.razorpay.com${PRODUCTION ? '' : ' ws: wss:'}`,
+  `connect-src 'self' https://accounts.google.com https://api.razorpay.com https://lumberjack.razorpay.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com${PRODUCTION ? '' : ' ws: wss:'}`,
   'frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com',
   "frame-ancestors 'none'",
   "object-src 'none'",

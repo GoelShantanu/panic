@@ -66,6 +66,7 @@ import * as corrections from './corrections.ts';
 import { getSavedViews, postSavedView, removeSavedView } from './savedViews.ts';
 import { currentSubscription } from '@stockpanic/db';
 import { fetchMarketTicker } from './market.ts';
+import { fetchMarketHeatmap } from './heatmap.ts';
 import { checkPulseRefreshUsage, fetchMarketPulse, fetchPulseStoriesBySector, recordPulseRefreshHit } from './pulse.ts';
 
 export interface ApiResponse {
@@ -453,6 +454,7 @@ export async function route(
   if (method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } };
   if (path === 'plans') return getPlans();
   if (path === 'market/ticker') return ok(await fetchMarketTicker());
+  if (path === 'market/heatmap') return ok(await fetchMarketHeatmap());
   if (path === 'market/pulse') {
     const isMember = Boolean(user);
     const pcrParam = url.searchParams.get('pcrState');

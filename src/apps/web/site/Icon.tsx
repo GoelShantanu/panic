@@ -13,6 +13,7 @@ const PATHS = {
   moon: 'M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z',
   contrast: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 4v16',
   pulse: 'M3 12h4l2.5-6 4.5 12 2.5-6H21',
+  heatmap: 'M3 3h8v9H3z M13 3h8v5h-8z M13 10h8v11h-8z M3 14h8v7H3z',
   external: 'M14 4h6v6 M20 4l-9 9 M18 14v6H4V6h6',
   bull: 'M18 15l-6-6-6 6',
   bear: 'M6 9l6 6 6-6',

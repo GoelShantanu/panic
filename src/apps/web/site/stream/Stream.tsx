@@ -93,7 +93,7 @@ export function Stream({
         on ? n.add(isin) : n.delete(isin);
         return n;
       });
-    } else if (res?.status === 402 && selected) setMessages((m) => ({ ...m, [selected]: 'Your watchlist is full on this plan. Paid holds 200 companies.' }));
+    } else if (res?.status === 402 && selected) setMessages((m) => ({ ...m, [selected]: 'Your watchlist has reached the 200 company limit.' }));
   }
   const [depthLimit, setDepthLimit] = useState(timeline?.depthLimitReached ?? false);
   const buffer = useRef<StoryCard[]>([]);
@@ -259,7 +259,7 @@ export function Stream({
             )}
           </div>
           {stories.length === 0 && empty ? (
-            <>{empty}{!cursor && query.view !== 'trending' && <div className="stream-end"><HistoryNotice history_days={history.days} history_access={history.access} /></div>}</>
+            <>{empty}</>
           ) : (
             <>
               <ol className="rows panel" ref={listRef} aria-label="Stories">
@@ -295,7 +295,7 @@ export function Stream({
                 )}
                 {!cursor && !loadingMore && stories.length > 0 && query.view !== 'trending' && (
                   <span className="faint">
-                    {history.days ? <HistoryNotice history_days={history.days} history_access={history.access} /> : depthLimit ? 'Older stories are available on the paid plan.' : 'No more stories.'}
+                    {history.days ? <HistoryNotice history_days={history.days} history_access={history.access} /> : depthLimit ? <><a href="/sign-in">Sign in for free</a> to view older stories.</> : 'No more stories.'}
                   </span>
                 )}
                 {cursor && !loadingMore && !loadError && (

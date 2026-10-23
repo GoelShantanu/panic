@@ -27,7 +27,7 @@ export function FollowButton({ isin, initial, signedIn, disabled }: { isin: stri
     }).catch(() => null);
     setBusy(false);
     if (res && (res.ok || res.status === 409)) setFollowed(!followed);
-    else if (res?.status === 402) setMessage('Your watchlist is full on the free plan. Paid allows more companies.');
+    else if (res?.status === 402) setMessage('Your watchlist has reached the 200 company limit.');
     else setMessage('That did not work. Try again.');
   }
   return (
@@ -37,7 +37,7 @@ export function FollowButton({ isin, initial, signedIn, disabled }: { isin: stri
       </button>
       {message && (
         <span className="vote-error" role="status">
-          {message} {message.includes('plan') && <Link href="/plans">See plans</Link>}
+          {message}
         </span>
       )}
     </span>

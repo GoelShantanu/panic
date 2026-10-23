@@ -112,8 +112,9 @@ describe('<Stream>', () => {
   it.each([['free', 3], ['trial', 10], ['paid', 30]] as const)('explains the %s history limit after the final page', (access, days) => {
     mount([], { initial: { stories: [card()], next_cursor: null, history_days: days, history_access: access } });
     expect(screen.getAllByRole('status').some((s) => s.textContent?.includes(`all available stories from the last ${days} days`))).toBe(true);
-    expect(document.querySelector('.stream-end')!.textContent).toContain(access === 'trial' ? 'your trial' : access === 'paid' ? 'your paid plan' : 'free plan');
-    expect(document.querySelector('.stream-end a') !== null).toBe(access !== 'paid');
+    if (days < 30 && access !== 'paid') {
+      expect(document.querySelector('.stream-end')!.textContent).toContain('Sign in for free to access up to 30 days');
+    }
   });
 
   it('waits for pagination to finish before displaying the history limit', async () => {

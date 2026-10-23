@@ -114,9 +114,9 @@ export async function StreamScreen({ query, page }: { query: StreamQuery; page?:
     );
   } else if (stream.status === 402) {
     content = (
-      <State title="This filter is part of the paid plan">
+      <State title="Sign in to use multiple filters">
         <p>
-          <Link href="/plans">See plans</Link> or <Link href={clear ? `/?${clear}` : '/'}>clear the filter</Link>.
+          <Link href="/sign-in">Sign in for free</Link> to combine multiple filters, or <Link href={clear ? `/?${clear}` : '/'}>clear the filter</Link>.
         </p>
       </State>
     );

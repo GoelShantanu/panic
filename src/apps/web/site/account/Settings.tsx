@@ -151,9 +151,8 @@ export function Settings({ me, billing, invoices, savedViews, billingEnabled }: 
 
       <section className="panel settings-section" aria-labelledby="views-h">
         <h2 id="views-h">Saved views</h2>
-        {savedViews.disabled && views.length > 0 && <p className="muted">Your saved views are kept, and work again when you are on the paid plan.</p>}
         {views.length === 0 ? (
-          <p className="muted">{savedViews.disabled ? 'Saved views are part of the paid plan.' : 'Save a view from the stream to reopen it here in one click.'}</p>
+          <p className="muted">{'Save a view from the stream to reopen it here in one click.'}</p>
         ) : (
           <ul className="plain-list">
             {views.map((v) => {

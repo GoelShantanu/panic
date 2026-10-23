@@ -6,9 +6,13 @@ export interface FeedHistory {
 
 export function HistoryNotice({ history_days: days, history_access: access }: FeedHistory) {
   if (!days) return null;
-  return <span className="faint" role="status">
-    You&apos;ve seen all available stories from the last {days} days{access === 'trial' ? ' included in your trial' : access === 'paid' ? ' included in your paid plan' : ' included in the free plan'}.
-    {access === 'free' && <> <a href="/plans">Get 10 days with a trial or 30 days with a paid plan.</a></>}
-    {access === 'trial' && <> <a href="/plans">Upgrade to a paid plan for 30 days of history.</a></>}
-  </span>;
+  const isFullHistory = days >= 30 || access === 'paid';
+  return (
+    <span className="faint" role="status">
+      You&apos;ve seen all available stories from the last {days} days.
+      {!isFullHistory && (
+        <> <a href="/sign-in">Sign in for free to access up to 30 days of market news history.</a></>
+      )}
+    </span>
+  );
 }

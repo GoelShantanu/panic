@@ -109,7 +109,7 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
           <div className="dropdown-menu panel" role="group" aria-label="Event types">
             {!entitlements.multi_event_filter && (
               <p className="faint dropdown-note">
-                Free plan: one type at a time. <Link href="/plans">Paid</Link> combines several.
+                {signedIn ? 'One event type at a time.' : <>Select one type at a time, or <Link href="/sign-in">Sign in for free</Link> to combine several.</>}
               </p>
             )}
             {eventTypes.map((t) => (
@@ -138,8 +138,8 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
           </details>
         )}
         {showViews && signedIn && !naming && (
-          <button type="button" className="icon-button" onClick={() => (savedAllowed ? setNaming(true) : setUpgrade('Saved views are part of the paid plan: save a view and its filters, reopen it in one click.'))}>
-            Save view {!savedAllowed && <span className="paid-label">Paid</span>}
+          <button type="button" className="icon-button" onClick={() => (savedAllowed ? setNaming(true) : setUpgrade('Save a view and its filters, reopen it in one click.'))}>
+            Save view
           </button>
         )}
         {naming && (
@@ -160,7 +160,7 @@ export function Filters({ query, eventTypes, directionalEnabled, entitlements, b
       </div>
       {upgrade && (
         <div className="notice notice-warn" role="status">
-          {upgrade} <Link href="/plans">See plans</Link>{' '}
+          {upgrade} {!signedIn && <Link href="/sign-in">Sign in for free</Link>}{' '}
           <button type="button" className="icon-button" onClick={() => setUpgrade(null)} aria-label="Dismiss">
             ✕
           </button>

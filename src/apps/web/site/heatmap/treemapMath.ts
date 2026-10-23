@@ -183,8 +183,8 @@ export function computeNestedTreemap<T extends { sector: string; marketCap: numb
     const secData = ps.item;
     const secRect = ps.rect;
 
-    const innerX = secRect.x;
-    const innerY = secRect.y + headerHeight;
+    const innerX = 0;
+    const innerY = headerHeight;
     const innerW = secRect.w;
     const innerH = Math.max(0, secRect.h - headerHeight);
 

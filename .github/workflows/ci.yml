@@ -136,3 +136,22 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  deploy-ec2:
+    name: Continuous Deployment to EC2
+    needs: [docker-publish]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/stockpanic/current
+            git pull origin main
+            chmod +x docs/ops/oracle/*.sh
+            ./docs/ops/oracle/deploy.sh
+
+

@@ -38,7 +38,15 @@ sudo docker image prune -f
 commit_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
 commit_msg=$(git log -1 --pretty=%s 2>/dev/null || echo "Release update")
 ist_time=$(TZ='Asia/Kolkata' date '+%Y-%m-%d %I:%M %p IST')
-web_status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 4 http://127.0.0.1:3002/v1/session || echo "000")
+web_status="000"
+for i in $(seq 1 6); do
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://127.0.0.1:3002/v1/session 2>/dev/null || true)
+  if [ "$code" = "200" ]; then
+    web_status="200"
+    break
+  fi
+  sleep 2
+done
 
 echo "[$(date -u --iso-8601=seconds)] Deployment complete. Status:"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"

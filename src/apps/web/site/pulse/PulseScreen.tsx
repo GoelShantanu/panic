@@ -306,7 +306,8 @@ export function PulseScreen({
       : pcrOverride === 'live'
       ? { ...rawPcr, status: 'live' }
       : rawPcr;
-  const isPcrLive = effectivePcr.status === 'live';
+  const isMarketClosed = session !== undefined && session !== null && session.state !== 'open' && session.state !== 'special';
+  const isPcrLive = pcrOverride ? pcrOverride === 'live' : (!isMarketClosed && effectivePcr.status === 'live');
 
   // Gauge range: 0.5 to 1.7 (spread of 1.2)
   const gaugeMin = 0.5;
@@ -583,22 +584,35 @@ export function PulseScreen({
                 )}
                 <button
                   type="button"
-                  className={`pcr-status-pill pcr-status-${effectivePcr.status}`}
+                  className={`pcr-status-pill pcr-status-${effectivePcr.status === 'paused' ? 'paused' : isMarketClosed && !pcrOverride ? 'offline' : effectivePcr.status}`}
                   onClick={handleTogglePcrStatus}
                   title="Click to toggle between LIVE and PAUSED preview states"
-                  aria-label={`PCR status: ${isPcrLive ? 'Live' : 'Paused / Offline'}. Click to toggle preview.`}
+                  aria-label={`PCR status: ${effectivePcr.status === 'paused' ? 'Paused' : isMarketClosed && !pcrOverride ? 'Market Offline' : isPcrLive ? 'Live' : 'Offline'}. Click to toggle preview.`}
                 >
                   <span className={isPcrLive ? 'pcr-live-dot' : 'pcr-paused-dot'} />
-                  <span>{isPcrLive ? '● LIVE' : 'PAUSED / OFFLINE'}</span>
+                  <span>
+                    {effectivePcr.status === 'paused'
+                      ? 'PAUSED / OFFLINE'
+                      : isMarketClosed && !pcrOverride
+                      ? 'MARKET CLOSED (EOD)'
+                      : isPcrLive
+                      ? '● LIVE'
+                      : 'PAUSED / OFFLINE'}
+                  </span>
                 </button>
               </div>
             </div>
 
-            {/* Graceful Fallback Notice (When upstream is paused/offline) */}
-            {!isPcrLive && (
+            {/* Graceful Fallback / Proxy Estimation Notice */}
+            {(!isPcrLive || Boolean(effectivePcr.notice)) && (
               <div className="pcr-notice-banner" role="status">
                 <span className="pcr-notice-icon">⚡</span>
-                <span>{effectivePcr.notice || 'Exchange feed paused • Background retry in progress (No impact on cash breadth)'}</span>
+                <span>
+                  {effectivePcr.notice ||
+                    (isMarketClosed && !pcrOverride
+                      ? 'Market closed • Displaying closing session derivative settlement estimates'
+                      : 'Exchange feed paused • Background retry in progress (No impact on cash breadth)')}
+                </span>
               </div>
             )}
 
@@ -610,7 +624,15 @@ export function PulseScreen({
                   <span className="pcr-metric-label">NIFTY 50 PCR</span>
                   {effectivePcr.lastConfirmedAt && (
                     <span className="pcr-timestamp-pill">
-                      {isPcrLive ? `LIVE (${effectivePcr.lastConfirmedAt})` : `LAST CONFIRMED (${effectivePcr.lastConfirmedAt})`}
+                      {effectivePcr.status === 'paused'
+                        ? `LAST CONFIRMED (${effectivePcr.lastConfirmedAt})`
+                        : isMarketClosed && !pcrOverride
+                        ? `EOD SETTLEMENT (${effectivePcr.lastConfirmedAt})`
+                        : isPcrLive
+                        ? effectivePcr.notice
+                          ? `ESTIMATE (${effectivePcr.lastConfirmedAt})`
+                          : `LIVE (${effectivePcr.lastConfirmedAt})`
+                        : `LAST CONFIRMED (${effectivePcr.lastConfirmedAt})`}
                     </span>
                   )}
                 </div>

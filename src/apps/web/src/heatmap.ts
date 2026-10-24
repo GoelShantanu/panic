@@ -2,6 +2,8 @@
 // Fetches real-time price, percentage change, and market capitalization for top 200 NSE stocks
 // in a single batch request, cached in memory for 60 seconds (100% free data).
 
+import { isOfficialNifty50, isOfficialNifty100 } from './niftyConstituents.ts';
+
 export interface HeatmapStock {
   symbol: string;
   name: string;
@@ -117,8 +119,8 @@ export async function fetchMarketHeatmap(forceRefresh = false): Promise<HeatmapR
           marketCap,
           sector,
           rank: idx + 1,
-          isNifty50: idx < 50,
-          isNifty100: idx < 100,
+          isNifty50: isOfficialNifty50(sym),
+          isNifty100: isOfficialNifty100(sym),
           isNifty200: true,
         };
       });

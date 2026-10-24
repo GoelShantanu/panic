@@ -419,5 +419,64 @@ describe('PulseScreen component', () => {
     const link = screen.getByRole('link', { name: /Sign in with Google \/ Email — 100% Free →/i });
     expect(link.getAttribute('href')).toBe('/sign-in?next=/pulse');
   });
+
+  it('renders PCR card in MARKET CLOSED (EOD) state when market session is closed', () => {
+    render(
+      <PulseScreen
+        initialPulse={mockPulse}
+        initialStories={mockStories}
+        userTier="paid"
+        session={{ state: 'closed', exchange_date: '2026-10-24', next_transition_at: '2026-10-26T03:30:00Z' }}
+      />
+    );
+
+    expect(screen.getByText('MARKET CLOSED (EOD)')).toBeTruthy();
+    expect(screen.getByText(/Market closed • Displaying closing session derivative settlement estimates/)).toBeTruthy();
+    expect(screen.getAllByText(/EOD SETTLEMENT/).length).toBeGreaterThan(0);
+  });
+
+  it('displays ESTIMATE label and transparency notice when PCR is derived via proxy', () => {
+    const proxyPulse: PulseResponse = {
+      ...mockPulse,
+      pcr: {
+        ...mockPulse.pcr!,
+        status: 'live',
+        nifty: {
+          symbol: 'NIFTY',
+          name: 'NIFTY 50',
+          pcr: 1.15,
+          sentiment: 'bullish',
+          sentimentLabel: 'BULLISH SUPPORT',
+          putOi: 10_000_000,
+          callOi: 8_500_000,
+        },
+        bankNifty: {
+          symbol: 'BANKNIFTY',
+          name: 'BANK NIFTY',
+          pcr: 0.95,
+          sentiment: 'neutral',
+          sentimentLabel: 'NEUTRAL',
+          putOi: 5_000_000,
+          callOi: 5_200_000,
+        },
+        lastConfirmedAt: '12:45 IST',
+        notice: 'Derived from cash market breadth & volatility proxy (Direct NSE F&O feed paused)',
+        updatedAt: '2026-10-24T12:45:00.000Z',
+      },
+    };
+
+    render(
+      <PulseScreen
+        initialPulse={proxyPulse}
+        initialStories={mockStories}
+        userTier="paid"
+        session={{ state: 'open', exchange_date: '2026-10-24', next_transition_at: '2026-10-24T10:00:00Z' }}
+      />
+    );
+
+    expect(screen.getByText(/● LIVE/)).toBeTruthy();
+    expect(screen.getByText(/Derived from cash market breadth & volatility proxy/)).toBeTruthy();
+    expect(screen.getAllByText(/ESTIMATE \(12:45 IST\)/).length).toBeGreaterThan(0);
+  });
 });
 

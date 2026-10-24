@@ -372,6 +372,7 @@ export function calculateLivePcr(context?: MarketTelemetryContext, now = new Dat
       callOi: bankCallOi,
     },
     lastConfirmedAt,
+    notice: 'Derived from cash market breadth & volatility proxy (Direct NSE F&O feed paused)',
     updatedAt: now.toISOString(),
   };
 }

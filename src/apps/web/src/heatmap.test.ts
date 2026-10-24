@@ -5,6 +5,7 @@ import {
   FALLBACK_HEATMAP,
 } from './heatmap.ts';
 import type { HeatmapStock } from './heatmap.ts';
+import { isOfficialNifty50, isOfficialNifty100 } from './niftyConstituents.ts';
 
 describe('Nifty 200 Heatmap Module (heatmap.ts)', () => {
   beforeEach(() => {
@@ -93,5 +94,22 @@ describe('Nifty 200 Heatmap Module (heatmap.ts)', () => {
     expect(result.stocks[0]?.isNifty200).toBe(true);
     expect(result.advances).toBe(1);
     expect(result.declines).toBe(1);
+  });
+
+  it('correctly maps official Nifty 50 and Nifty 100 constituents according to NSE methodology', () => {
+    expect(isOfficialNifty50('RELIANCE')).toBe(true);
+    expect(isOfficialNifty50('TCS')).toBe(true);
+    expect(isOfficialNifty50('HDFCBANK')).toBe(true);
+    expect(isOfficialNifty50('TRENT')).toBe(true);
+
+    // TATAPOWER and LICI are in Nifty 100 (Next 50), but NOT in Nifty 50
+    expect(isOfficialNifty50('TATAPOWER')).toBe(false);
+    expect(isOfficialNifty100('TATAPOWER')).toBe(true);
+    expect(isOfficialNifty50('LICI')).toBe(false);
+    expect(isOfficialNifty100('LICI')).toBe(true);
+
+    // Unknown or smallcap symbols are in neither
+    expect(isOfficialNifty50('RANDOMCO')).toBe(false);
+    expect(isOfficialNifty100('RANDOMCO')).toBe(false);
   });
 });

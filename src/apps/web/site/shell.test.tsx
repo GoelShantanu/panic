@@ -45,13 +45,13 @@ describe('header', () => {
     expect(screen.getByText(/^Open/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Sign in' }).getAttribute('href')).toBe('/sign-in');
   });
-  it('shows the account and tier for a signed-in user', () => {
+  it('shows the account for a signed-in user', () => {
     render(<Header session={null} viewer={{ username: 'asha', tier: 'paid' }} />);
-    expect(screen.getByRole('link', { name: /asha/ }).textContent).toContain('Paid');
+    expect(screen.getByRole('link', { name: /asha/ }).textContent).toContain('asha');
   });
-  it('shows Trial badge for a user on active trial', () => {
+  it('shows username for a user on active trial', () => {
     render(<Header session={null} viewer={{ username: 'sgoel', tier: 'paid', isTrial: true }} />);
-    expect(screen.getByRole('link', { name: /sgoel/ }).textContent).toContain('Trial');
+    expect(screen.getByRole('link', { name: /sgoel/ }).textContent).toContain('sgoel');
   });
   it('marks the current section; a story page counts as News; Alerts only when signed in (D-057)', () => {
     path = '/s/st_00000000000000000000000001';

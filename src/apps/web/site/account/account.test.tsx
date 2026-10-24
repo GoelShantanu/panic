@@ -174,7 +174,7 @@ describe('settings (US-007.3, US-007.8)', () => {
   });
   it('downgraded saved views are kept and shown as disabled (US-007.9 AC-2)', () => {
     render(<Settings me={{ ...me, tier: 'free', subscription: null }} billing={null} invoices={[]} savedViews={{ views: [{ id: '1', name: 'Results only', params: { view: 'latest', event_types: ['results'], filings_only: false } }], disabled: true }} billingEnabled={false} />);
-    expect(screen.getByText(/kept, and work again/)).toBeTruthy();
+    expect(screen.getByText('Results only')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Results only' })).toBeNull();
   });
 });

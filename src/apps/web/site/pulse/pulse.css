@@ -686,6 +686,17 @@
   transform: translateY(-1px);
 }
 
+.pcr-status-offline {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.pcr-status-offline:hover {
+  background: rgba(148, 163, 184, 0.22);
+  transform: translateY(-1px);
+}
+
 .pcr-live-dot {
   width: 7px;
   height: 7px;

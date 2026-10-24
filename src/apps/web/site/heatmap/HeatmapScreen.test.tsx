@@ -2,7 +2,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { HeatmapScreen, getHeatmapColor, formatCrores } from './HeatmapScreen.tsx';
+import { HeatmapScreen, getHeatmapColor, formatCrores, getIndianMarketStatus } from './HeatmapScreen.tsx';
 import { squarify, computeNestedTreemap } from './treemapMath.ts';
 import type { HeatmapResponse } from '../../src/heatmap.ts';
 
@@ -94,7 +94,7 @@ describe('HeatmapScreen & Treemap Engine', () => {
     });
   });
 
-  describe('Helper Functions', () => {
+  describe('Helper Functions & Market Status', () => {
     it('returns appropriate color mapping for different price percentage changes', () => {
       expect(getHeatmapColor(4.5).bg).toBe('#047857'); // Strong bull
       expect(getHeatmapColor(0.0).bg).toBe('#1e293b'); // Neutral slate
@@ -105,13 +105,50 @@ describe('HeatmapScreen & Treemap Engine', () => {
       expect(formatCrores(15000000000000)).toBe('₹15.00 Lakh Cr');
       expect(formatCrores(50000000000)).toBe('₹5000 Cr');
     });
+
+    it('determines market open status when session is open', () => {
+      const status = getIndianMarketStatus({
+        state: 'open',
+        exchange_date: '2026-10-23',
+        next_transition_at: null,
+      });
+      expect(status.isOpen).toBe(true);
+      expect(status.statusKind).toBe('live');
+      expect(status.badgeText).toContain('Live Scanner');
+    });
+
+    it('determines market closed status on weekends or holidays', () => {
+      // 2026-10-24 is a Saturday
+      const saturday = new Date('2026-10-24T10:00:00.000Z');
+      const status = getIndianMarketStatus(null, saturday);
+      expect(status.isOpen).toBe(false);
+      expect(status.statusKind).toBe('closed');
+      expect(status.badgeText).toBe('Market Closed (EOD Data)');
+    });
   });
 
   describe('HeatmapScreen Component', () => {
-    it('renders the header with title, live badge, and timestamp', () => {
-      render(<HeatmapScreen initialHeatmap={mockHeatmapData} />);
-      expect(screen.getByText('NIFTY 200 HEATMAP')).toBeDefined();
+    it('renders the header renamed to NIFTY HEATMAP and shows market status', () => {
+      render(
+        <HeatmapScreen
+          initialHeatmap={mockHeatmapData}
+          session={{ state: 'open', exchange_date: '2026-10-23', next_transition_at: null }}
+          userTier="paid"
+          signedIn={true}
+        />
+      );
+      expect(screen.getByText('NIFTY HEATMAP')).toBeDefined();
       expect(screen.getByText('Live Scanner (60s Cache)')).toBeDefined();
+    });
+
+    it('displays Market Closed badge when market session is closed', () => {
+      render(
+        <HeatmapScreen
+          initialHeatmap={mockHeatmapData}
+          session={{ state: 'closed', exchange_date: '2026-10-24', next_transition_at: null }}
+        />
+      );
+      expect(screen.getByText('Market Closed (EOD Data)')).toBeDefined();
     });
 
     it('renders stock tile links pointing to /c/[symbol]', () => {
@@ -134,6 +171,51 @@ describe('HeatmapScreen & Treemap Engine', () => {
       expect(screen.queryByRole('link', { name: /TATAPOWER/i })).toBeNull();
       // RELIANCE is isNifty50=true, so it remains
       expect(screen.getAllByRole('link', { name: /RELIANCE/i }).length).toBeGreaterThan(0);
+    });
+
+    it('filters stocks when clicking Advances, Declines, or Unchanged', () => {
+      render(<HeatmapScreen initialHeatmap={mockHeatmapData} />);
+
+      // Initially all 3 stocks are present
+      expect(screen.getAllByRole('link', { name: /RELIANCE/i }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('link', { name: /HDFCBANK/i }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('link', { name: /TATAPOWER/i }).length).toBeGreaterThan(0);
+
+      // Click Advances filter
+      const advancesBtn = screen.getByRole('button', { name: /Advances:/i });
+      fireEvent.click(advancesBtn);
+
+      // Only advancing stocks (RELIANCE +2.5%, TATAPOWER +0.8%) should remain, declining stock (HDFCBANK -1.8%) is hidden
+      expect(screen.getAllByRole('link', { name: /RELIANCE/i }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('link', { name: /TATAPOWER/i }).length).toBeGreaterThan(0);
+      expect(screen.queryByRole('link', { name: /HDFCBANK/i })).toBeNull();
+
+      // Click Declines filter
+      const declinesBtn = screen.getByRole('button', { name: /Declines:/i });
+      fireEvent.click(declinesBtn);
+
+      // Only declining stock (HDFCBANK -1.8%) should remain
+      expect(screen.getAllByRole('link', { name: /HDFCBANK/i }).length).toBeGreaterThan(0);
+      expect(screen.queryByRole('link', { name: /RELIANCE/i })).toBeNull();
+      expect(screen.queryByRole('link', { name: /TATAPOWER/i })).toBeNull();
+
+      // Reset filter via Reset pill
+      const resetBtn = screen.getByRole('button', { name: /Show All/i });
+      fireEvent.click(resetBtn);
+
+      // All stocks return
+      expect(screen.getAllByRole('link', { name: /RELIANCE/i }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('link', { name: /HDFCBANK/i }).length).toBeGreaterThan(0);
+    });
+
+    it('shows unlock modal for guest when clicking refresh button with PRO badge', () => {
+      render(<HeatmapScreen initialHeatmap={mockHeatmapData} signedIn={false} userTier="free" />);
+      const refreshBtn = screen.getByRole('button', { name: /Sign in to refresh Nifty heatmap/i });
+      expect(screen.getByText('PRO')).toBeDefined();
+
+      fireEvent.click(refreshBtn);
+      expect(screen.getByText('Sign in to Refresh Nifty Heatmap')).toBeDefined();
+      expect(screen.getByRole('link', { name: /Sign in for Free/i }).getAttribute('href')).toBe('/sign-in?next=/heatmap');
     });
 
     it('filters stocks when selecting a sector from the dropdown', () => {

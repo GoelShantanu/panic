@@ -1,4 +1,4 @@
-www.bazaarpanic.com {
+www.bazaarpanic.com, bazaarpanic.in, www.bazaarpanic.in {
     redir https://bazaarpanic.com{uri} permanent
 }
 

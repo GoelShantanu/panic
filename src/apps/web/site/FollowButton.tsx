@@ -27,7 +27,7 @@ export function FollowButton({ isin, initial, signedIn, disabled }: { isin: stri
     }).catch(() => null);
     setBusy(false);
     if (res && (res.ok || res.status === 409)) setFollowed(!followed);
-    else if (res?.status === 402) setMessage('Your watchlist has reached the 200 company limit.');
+    else if (res?.status === 402) setMessage('Your watchlist is full (reached the 200 company limit).');
     else setMessage('That did not work. Try again.');
   }
   return (

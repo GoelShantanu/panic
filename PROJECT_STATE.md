@@ -697,6 +697,7 @@ OQ-6 procurement · ~~OQ-7~~ ✅ D-016 · ~~OQ-8~~ ✅ D-018 · OQ-9 Part IV sco
 
 | Date | Session summary | State change |
 | --- | --- | --- |
+| 2026-10-24 | [VERIFIED] Offsite Telegram DB backup implemented & tested live (`sendDocument` via `/usr/local/bin/stockpanic-backup.sh`). Nifty Heatmap constituents updated to official 50/100 sets following NSE methodology with market schedule and advance/decline stock filters. PCR data credibility fixed: transparent proxy estimation banner and distinct off-hours EOD settlement state. Outdated test expectations cleaned up; entire test suite passing 100% (448 passed, 0 failed). Caddy domain consolidation (301 permanent redirect from `bazaarpanic.in` to `bazaarpanic.com`) configured. Local production build (`npm run web:build`) fully verified. | All ChatGPT core improvements completed and verified locally; ready for deployment |
 | 2026-10-08 | D-064: real-news release pilot, shared resolver/evaluator, conservative attribution and relevance fixes; see QA §8 for results and limitations. | Tagging target remains unmet; attribution and duplicate matching are next |
 | 2026-07-15 | Phase 1 research produced and approved. Five strategic OQs raised. | OQs opened |
 | 2026-07-15 | CryptoPanic RE Parts I–III produced from public artefacts. One error found and corrected via errata (§14, WebSocket). | RE study at v1.2 |

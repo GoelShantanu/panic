@@ -8,6 +8,7 @@ export const NIFTY_50_SYMBOLS: ReadonlySet<string> = new Set([
   'ASIANPAINT',
   'AXISBANK',
   'BAJAJ-AUTO',
+  'BAJAJ_AUTO',
   'BAJFINANCE',
   'BAJAJFINSV',
   'BEL',
@@ -46,6 +47,7 @@ export const NIFTY_50_SYMBOLS: ReadonlySet<string> = new Set([
   'TCS',
   'TATACONSUM',
   'TATAMOTORS',
+  'TMCV',
   'TATASTEEL',
   'TECHM',
   'TITAN',
@@ -114,10 +116,16 @@ export const NIFTY_100_SYMBOLS: ReadonlySet<string> = new Set([
 
 export function isOfficialNifty50(symbol: string): boolean {
   const clean = symbol.trim().toUpperCase().replace(/^NSE:/, '');
-  return NIFTY_50_SYMBOLS.has(clean);
+  if (NIFTY_50_SYMBOLS.has(clean)) return true;
+  if (clean === 'BAJAJ_AUTO' || clean === 'BAJAJ-AUTO') return true;
+  if (clean === 'TMCV' || clean === 'TATAMOTORS') return true;
+  return false;
 }
 
 export function isOfficialNifty100(symbol: string): boolean {
   const clean = symbol.trim().toUpperCase().replace(/^NSE:/, '');
-  return NIFTY_100_SYMBOLS.has(clean);
+  if (NIFTY_100_SYMBOLS.has(clean)) return true;
+  if (clean === 'BAJAJ_AUTO' || clean === 'BAJAJ-AUTO') return true;
+  if (clean === 'TMCV' || clean === 'TATAMOTORS') return true;
+  return false;
 }

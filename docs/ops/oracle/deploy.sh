@@ -33,6 +33,10 @@ fi
 
 cd /opt/stockpanic/current
 sudo docker compose -f docs/ops/oracle/compose.yaml up -d
+
+echo "[$(date -u --iso-8601=seconds)] Applying database migrations..."
+sudo docker compose -f docs/ops/oracle/compose.yaml exec -T web npm run db:migrate || true
+
 sudo docker image prune -f
 
 commit_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")

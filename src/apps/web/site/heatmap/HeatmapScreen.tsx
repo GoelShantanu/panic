@@ -64,6 +64,15 @@ export function getIndianMarketStatus(session?: SessionInfo | null, date: Date =
     };
   }
 
+  if (session?.state === 'closed') {
+    return {
+      isOpen: false,
+      statusKind: 'closed',
+      badgeText: 'Market Closed (EOD Data)',
+      tooltip: 'NSE/BSE Indian stock market is CLOSED (Trading hours: Mon–Fri 9:15 AM – 3:30 PM IST)',
+    };
+  }
+
   if (session?.state === 'holiday') {
     return {
       isOpen: false,

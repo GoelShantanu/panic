@@ -369,7 +369,7 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       await story(name, [a], at, { primaryItemId: a, sourceCount: 1, eventTypes: ['other'], tags: [{ isin: K, method: 'rule' }], unresolved: [] });
     }
     {
-      for (const [access, days, uid] of [['free', 3, null], ['paid', 30, 'usr_fixture']] as const) {
+      for (const [access, days, uid] of [['free', 3, null], ['paid', 30, '1']] as const) {
         const viewer = { tier: access === 'free' ? 'free' as const : 'paid' as const, userId: uid, historyAccess: access };
         for (const company of [false, true]) {
           let cursor: string | null = null;

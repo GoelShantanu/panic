@@ -14,6 +14,7 @@ const adminUrl = process.env['TEST_DATABASE_URL'];
 const isin = (b: string) => `IN${b}${isinCheckDigit(`IN${b}`)}`;
 const A = isin('E00AST101');
 const K = isin('E00KES101');
+const testIsin = (n: number) => isin(`E${String(n).padStart(5, '0')}001`);
 
 describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () => {
   const dbName = `sp_watch_${randomBytes(4).toString('hex')}`;
@@ -53,7 +54,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       await db.query(`INSERT INTO instrument_name (isin, kind, name, valid) VALUES ($1, 'legal', $2, '[2020-01-01,)')`, [i, name]);
       await db.query(`INSERT INTO instrument_code (isin, exchange, code, valid) VALUES ($1, 'NSE', $2, '[2020-01-01,)')`, [i, nse]);
     }
-    for (let n = 0; n < 200; n++) await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [isin(`E${String(n).padStart(5, '0')}001`)]);
+    for (let n = 0; n < 200; n++) await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [testIsin(n)]);
     await db.query(`INSERT INTO source (source_id, name, kind, tier, cadence) VALUES ('src_desk', 'Example Desk', 'article', 3, '{}')`);
     const u = await db.query(
       `INSERT INTO app_user (public_id, username, email, email_verified_at, age_confirmed_at, terms_accepted_at, privacy_consent_at)
@@ -86,7 +87,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
     });
 
     it('a merged company stays on the list and names its successor, which is not added (US-003.4 AC-3)', async () => {
-      const M = isin('E00F00001');
+      const M = testIsin(0);
       expect((await call('POST', '/v1/watchlist', { isin: M })).status).toBe(201);
       await db.query(`UPDATE instrument SET status = 'merged', successor_isin = $2 WHERE isin = $1`, [M, K]);
       expect(b(await call('GET', '/v1/watchlist')).instruments).toMatchObject([{ isin: M, status: 'merged', successor_isin: K }]);
@@ -95,7 +96,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
     });
 
     it('the free tier stops at 200 with the standard 402 body', async () => {
-      for (let n = 0; n < 200; n++) expect((await call('POST', '/v1/watchlist', { isin: isin(`E${String(n).padStart(5, '0')}001`) })).status).toBe(201);
+      for (let n = 0; n < 200; n++) expect((await call('POST', '/v1/watchlist', { isin: testIsin(n) })).status).toBe(201);
       expect(await call('POST', '/v1/watchlist', { isin: A })).toMatchObject({ status: 402, body: upgradeRequired('watchlist_limit') });
       await db.query('DELETE FROM watchlist_entry WHERE user_id = $1', [userId]);
     });
@@ -154,7 +155,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
     it('the Watchlist view shows only watched companies; unread is exact', async () => {
       const t0 = Date.now() - 1800_000;
       const watched = await story(K, 'Kestrel invented order story', new Date(t0));
-      const other = await story(isin('E00F05001'), 'Unwatched invented story', new Date(t0 + 1000));
+      const other = await story(testIsin(5), 'Unwatched invented story', new Date(t0 + 1000));
       const w = b(await call('GET', '/v1/stream?view=watchlist'));
       expect(w.stories.map((s: any) => s.story_id)).toContain(watched);
       expect(w.stories.map((s: any) => s.story_id)).not.toContain(other);

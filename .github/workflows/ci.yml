@@ -60,11 +60,8 @@ jobs:
         run: |
           set -o pipefail
           npm run test:ci 2>&1 | tee /tmp/test-ci.log || {
-            echo "## ❌ Vitest CI Failures" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            grep -E "FAIL|✕|AssertionError|not ok|skipped" /tmp/test-ci.log -A 4 -B 2 | head -n 100 >> $GITHUB_STEP_SUMMARY || true
-            tail -n 80 /tmp/test-ci.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            ERR=$(tail -n 15 /tmp/test-ci.log | tr '\n' ' ')
+            echo "::error title=VitestFailure::$ERR"
             exit 1
           }
       - name: Build production frontend
@@ -102,10 +99,8 @@ jobs:
         run: |
           set -o pipefail
           npm run test:browser 2>&1 | tee /tmp/browser.log || {
-            echo "## ❌ Browser Test Failures" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 80 /tmp/browser.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            ERR=$(tail -n 15 /tmp/browser.log | tr '\n' ' ')
+            echo "::error title=BrowserFailure::$ERR"
             exit 1
           }
       - uses: actions/upload-artifact@v7

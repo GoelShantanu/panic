@@ -41,7 +41,7 @@ try {
   if (seed.status !== 0) throw new Error('Browser seed failed');
   for (const name of ['reader', 'other', 'payerdesktop', 'payermobile', 'recoverydesktop', 'recoverymobile']) {
     await pool.query(`INSERT INTO app_user (public_id, username, email, password_hash, email_verified_at, age_confirmed_at, terms_accepted_at, privacy_consent_at)
-      VALUES ($1,$2,$3,$4,now(),now(),now(),now())`, [newPublicId('us'), name, `${name}@example.invalid`, await hashPassword('A unique browser testing passphrase!')]);
+      VALUES ($1,$2,$3,$4,now(),now(),now(),now())`, [newPublicId('us'), name, `${name}@example.invalid`, await hashPassword('ValidPass#19')]);
   }
   const story = (await pool.query('SELECT public_id FROM story ORDER BY first_seen_at DESC LIMIT 1')).rows[0].public_id as string;
   const mailer = new MemoryMailer();

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
 
-const password = 'A unique browser testing passphrase!';
+const password = 'ValidPass#19';
 async function browserRead(page: Page, path: string) {
   return page.evaluate(async path => {
     const response = await fetch(path, { credentials: 'same-origin' });
@@ -110,7 +110,7 @@ test('fake checkout waits for a signed payment webhook before granting paid acce
 
 test('password recovery resets credentials without logging in', async ({ page, request }, info) => {
   const email = `recovery${info.project.name}@example.invalid`;
-  const replacement = 'A replacement browser testing passphrase!';
+  const replacement = 'NewPass#91';
   await page.goto('/sign-in');
   await page.getByRole('button', { name: 'Forgot password?' }).click();
   await page.getByLabel('Email', { exact: true }).fill(email);

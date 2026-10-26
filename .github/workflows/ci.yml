@@ -60,8 +60,8 @@ jobs:
         run: |
           set -o pipefail
           npm run test:ci 2>&1 | tee /tmp/test-ci.log || {
-            ERR=$(tail -n 15 /tmp/test-ci.log | tr '\n' ' ')
-            echo "::error title=VitestFailure::$ERR"
+            ERR=$(grep -E "(FAIL |✕ )" /tmp/test-ci.log | head -n 30 | tr '\n' ' ; ')
+            echo "::error title=VitestFailures::$ERR"
             exit 1
           }
       - name: Build production frontend

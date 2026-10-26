@@ -57,7 +57,16 @@ jobs:
       - name: Verify database constraints
         run: docker exec -i ${{ job.services.postgres.id }} psql -U postgres -d stockpanic_ci -v ON_ERROR_STOP=1 < docs/database/tests/0001_constraints_test.sql
       - name: Run all tests (no skips)
-        run: npm run test:ci
+        run: |
+          set -o pipefail
+          npm run test:ci 2>&1 | tee /tmp/test-ci.log || {
+            echo "## ❌ Vitest CI Failures" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -E "FAIL|✕|AssertionError|not ok|skipped" /tmp/test-ci.log -A 4 -B 2 | head -n 100 >> $GITHUB_STEP_SUMMARY || true
+            tail -n 80 /tmp/test-ci.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
       - name: Build production frontend
         run: npm run web:build
   browser:
@@ -89,7 +98,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - name: Run browser tests
+        run: |
+          set -o pipefail
+          npm run test:browser 2>&1 | tee /tmp/browser.log || {
+            echo "## ❌ Browser Test Failures" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 80 /tmp/browser.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
       - uses: actions/upload-artifact@v7
         if: always()
         with:

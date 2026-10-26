@@ -22,13 +22,23 @@ send_telegram() {
 }
 
 IMAGE="ghcr.io/goelshantanu/panic:latest"
+commit_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+commit_msg=$(git log -1 --pretty=%s 2>/dev/null || echo "Release update")
+ist_time=$(TZ='Asia/Kolkata' date '+%Y-%m-%d %I:%M %p IST')
 
 echo "[$(date -u --iso-8601=seconds)] Pulling latest pre-built container..."
 if sudo docker pull "$IMAGE"; then
   sudo docker tag "$IMAGE" bazaarnews-app:current
   echo "[$(date -u --iso-8601=seconds)] Successfully pulled $IMAGE from GHCR."
 else
-  echo "[$(date -u --iso-8601=seconds)] Note: GHCR image pull failed or requires auth. Using current local release."
+  echo "[$(date -u --iso-8601=seconds)] ERROR: Failed to pull $IMAGE from GHCR!"
+  send_telegram "🚨 <b>BazaarPanic Deployment FAILED</b>
+━━━━━━━━━━━━━━━━━━━━
+Status: <b>IMAGE PULL FAILED 🔴</b>
+Commit: <code>${commit_sha}</code>
+Message: <i>${commit_msg}</i>
+Action: Could not pull container from GHCR. Deployment aborted."
+  exit 1
 fi
 
 cd /opt/stockpanic/current
@@ -48,9 +58,6 @@ fi
 
 sudo docker image prune -f
 
-commit_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
-commit_msg=$(git log -1 --pretty=%s 2>/dev/null || echo "Release update")
-ist_time=$(TZ='Asia/Kolkata' date '+%Y-%m-%d %I:%M %p IST')
 web_status="000"
 for i in $(seq 1 6); do
   code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://127.0.0.1:3002/v1/session 2>/dev/null || true)

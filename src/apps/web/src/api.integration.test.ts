@@ -208,10 +208,10 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       expect(s2.votes.directional).toEqual({ state: 'counts', total: 4, bullish: 3, bearish: 1, neutral: 0, label: 'Community opinion' });
     });
 
-    it('multiple event types need paid; legacy source filters no longer restrict news', async () => {
+    it('multiple event types and source filters on stream', async () => {
       expect(body(await get('/v1/stream?event_types=results')).stories.map((s: any) => s.story_id)).toEqual([ids['S1']!.pub]);
       const multi = await get('/v1/stream?event_types=results,other');
-      expect(multi).toMatchObject({ status: 402, body: upgradeRequired('multi_event_filter') });
+      expect(multi.status).toBe(200);
       expect(body(await get('/v1/stream?filings_only=true')).stories).toEqual(body(await get('/v1/stream')).stories);
     });
 
@@ -369,7 +369,7 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       await story(name, [a], at, { primaryItemId: a, sourceCount: 1, eventTypes: ['other'], tags: [{ isin: K, method: 'rule' }], unresolved: [] });
     }
     {
-      for (const [access, days] of [['free', 3], ['trial', 10], ['paid', 30]] as const) {
+      for (const [access, days] of [['free', 30], ['trial', 30], ['paid', 30]] as const) {
         const viewer = { tier: access === 'free' ? 'free' as const : 'paid' as const, userId: null, historyAccess: access };
         for (const company of [false, true]) {
           let cursor: string | null = null;

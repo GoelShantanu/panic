@@ -53,7 +53,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       await db.query(`INSERT INTO instrument_name (isin, kind, name, valid) VALUES ($1, 'legal', $2, '[2020-01-01,)')`, [i, name]);
       await db.query(`INSERT INTO instrument_code (isin, exchange, code, valid) VALUES ($1, 'NSE', $2, '[2020-01-01,)')`, [i, nse]);
     }
-    for (let n = 0; n < 20; n++) await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [isin(`E00F${String(n).padStart(2, '0')}001`)]);
+    for (let n = 0; n < 200; n++) await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [isin(`E00F${String(n).padStart(3, '0')}001`)]);
     await db.query(`INSERT INTO source (source_id, name, kind, tier, cadence) VALUES ('src_desk', 'Example Desk', 'article', 3, '{}')`);
     const u = await db.query(
       `INSERT INTO app_user (public_id, username, email, email_verified_at, age_confirmed_at, terms_accepted_at, privacy_consent_at)
@@ -79,7 +79,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       expect((await call('POST', '/v1/watchlist', { isin: isin('E00ZZZ999') })).status).toBe(404);
       expect((await call('POST', '/v1/watchlist', { isin: 'RELIANCE' })).status).toBe(400);
       const list = b(await call('GET', '/v1/watchlist'));
-      expect(list).toMatchObject({ limit: 20, instruments: [{ isin: A, display_symbol: 'ASTERION', name: 'Asterion Industries Limited', status: 'listed' }] });
+      expect(list).toMatchObject({ limit: 200, instruments: [{ isin: A, display_symbol: 'ASTERION', name: 'Asterion Industries Limited', status: 'listed' }] });
       expect((await call('DELETE', `/v1/watchlist/${A}`)).status).toBe(204);
       expect((await call('DELETE', `/v1/watchlist/${A}`)).status).toBe(404);
       expect((await call('GET', '/v1/watchlist', null, null)).status).toBe(401);
@@ -94,8 +94,8 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       await db.query('DELETE FROM watchlist_entry WHERE user_id = $1', [userId]);
     });
 
-    it('the free tier stops at 20 with the standard 402 body', async () => {
-      for (let n = 0; n < 20; n++) expect((await call('POST', '/v1/watchlist', { isin: isin(`E00F${String(n).padStart(2, '0')}001`) })).status).toBe(201);
+    it('the free tier stops at 200 with the standard 402 body', async () => {
+      for (let n = 0; n < 200; n++) expect((await call('POST', '/v1/watchlist', { isin: isin(`E00F${String(n).padStart(3, '0')}001`) })).status).toBe(201);
       expect(await call('POST', '/v1/watchlist', { isin: A })).toMatchObject({ status: 402, body: upgradeRequired('watchlist_limit') });
       await db.query('DELETE FROM watchlist_entry WHERE user_id = $1', [userId]);
     });
@@ -121,8 +121,8 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       const s = b(await call('GET', '/v1/alerts/settings'));
       expect(s).toMatchObject({
         channels: { email: true, push: false },
-        daily_budget: 5,
-        budget_ceiling: 5,
+        daily_budget: 10,
+        budget_ceiling: 25,
         used_today: 0,
         quiet_hours: { enabled: true, start: '22:00', end: '08:00', tz: 'Asia/Kolkata' },
         digest: { time: '08:00', digest_only: false },
@@ -135,7 +135,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       const r = b(await call('PUT', '/v1/alerts/settings', { daily_budget: 3, quiet_hours: { start: '23:00' }, event_types: { trading_window: true } }));
       expect(r).toMatchObject({ daily_budget: 3, quiet_hours: { start: '23:00' } });
       expect(r.event_types.trading_window).toBe(true);
-      expect(b(await call('PUT', '/v1/alerts/settings', { daily_budget: 6 })).param).toBe('daily_budget'); // above free ceiling
+      expect(b(await call('PUT', '/v1/alerts/settings', { daily_budget: 26 })).param).toBe('daily_budget'); // above free ceiling
       expect(b(await call('PUT', '/v1/alerts/settings', { quiet_hours: { start: '25:00' } })).param).toBe('quiet_hours');
       expect(b(await call('PUT', '/v1/alerts/settings', { event_types: { order_win: true } })).param).toBe('event_types');
     });

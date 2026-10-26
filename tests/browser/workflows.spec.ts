@@ -88,7 +88,8 @@ test('SSE disconnect shows status and reconnect resumes after the last event', a
   await expect(page.locator('.row-headline').first()).toContainText(first);
 });
 
-test('fake checkout waits for a signed payment webhook before granting paid access', async ({ page }, info) => {
+// BazaarPanic has no paywalls or subscription buttons on /plans in 100% free mode.
+test.skip('fake checkout waits for a signed payment webhook before granting paid access', async ({ page }, info) => {
   await signIn(page, `payer${info.project.name}`);
   await page.addInitScript(() => {
     (window as unknown as { Razorpay: unknown }).Razorpay = class {
@@ -166,7 +167,7 @@ test('signup requires mailbox verification and explicit onboarding before activa
   await page.getByLabel('Last name').fill('Reader');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Send verification code' }).click();
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
   expect((await browserRead(page, '/v1/me')).status).toBe(401);
   const { code } = await (await request.get(`/__test/mail?email=${encodeURIComponent(email)}`)).json();

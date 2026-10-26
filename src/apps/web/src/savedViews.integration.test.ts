@@ -43,13 +43,11 @@ describe.skipIf(!adminUrl)('saved views and account preferences (PostgreSQL)', (
 
   const params = { view: 'latest', event_types: ['results'], filings_only: true };
 
-  it('free accounts get the upgrade response', async () => {
-    expect(b(await call('GET', '/v1/saved-views'))).toEqual({ views: [], limit: 0, disabled: true });
-    expect(await call('POST', '/v1/saved-views', { name: 'Results', params })).toMatchObject({ status: 402, body: { error: 'upgrade_required', feature: 'saved_views' } });
+  it('member accounts can list saved views (limit 10)', async () => {
+    expect(b(await call('GET', '/v1/saved-views'))).toEqual({ views: [], limit: 10, disabled: false });
   });
 
-  it('paid: create, validate, unique names, at most 10, delete; kept but disabled after downgrade', async () => {
-    await db.query(`INSERT INTO trial (user_id, started_at, ends_at) VALUES ($1, now(), now() + interval '14 days')`, [userId]);
+  it('create, validate, unique names, at most 10, delete', async () => {
     expect((await call('POST', '/v1/saved-views', { name: 'Results', params })).status).toBe(201);
     expect(b(await call('POST', '/v1/saved-views', { name: 'Results', params }))).toEqual({ error: 'name_taken' });
     expect(b(await call('POST', '/v1/saved-views', { name: 'Bad', params: { view: 'everything' } }))).toMatchObject({ param: 'params' });
@@ -63,10 +61,6 @@ describe.skipIf(!adminUrl)('saved views and account preferences (PostgreSQL)', (
     expect((await call('DELETE', `/v1/saved-views/${list.views[0].id}`)).status).toBe(204);
     expect((await call('DELETE', `/v1/saved-views/${list.views[0].id}`)).status).toBe(404);
     expect((await call('DELETE', '/v1/saved-views/not-a-number')).status).toBe(404);
-
-    await db.query(`UPDATE trial SET started_at = now() - interval '30 days', ends_at = now() - interval '1 day' WHERE user_id = $1`, [userId]);
-    expect(b(await call('GET', '/v1/saved-views'))).toMatchObject({ disabled: true, limit: 0 });
-    expect(b(await call('GET', '/v1/saved-views')).views).toHaveLength(9);
   });
 
   it('marketing email is a separate opt-in that can be changed; /v1/me reports it and sign-in methods', async () => {

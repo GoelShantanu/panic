@@ -138,7 +138,8 @@ describe.skipIf(!adminUrl)('alerts end-to-end (PostgreSQL)', () => {
   });
 
   it('beyond the daily budget alerts go to the digest; individual + digest = every alert-worthy story (C-003.4)', async () => {
-    // alice has used 2 of her free budget of 5 so far today.
+    // alice has used 2 of her budget so far today; configure her budget to 5 for this test.
+    await db.query(`INSERT INTO alert_settings (user_id, daily_budget) VALUES ($1, 5) ON CONFLICT (user_id) DO UPDATE SET daily_budget = 5`, [users['alice']]);
     for (let i = 0; i < 5; i++) {
       const s = await story(A, ['results'], IST(day, `09:4${i}`));
       await enqueueAlertEvaluation(db, s);
@@ -185,13 +186,13 @@ describe.skipIf(!adminUrl)('alerts end-to-end (PostgreSQL)', () => {
     expect((await db.query('SELECT email_enabled, email_bounces FROM alert_settings WHERE user_id = $1', [users['frank']])).rows[0]).toEqual({ email_enabled: false, email_bounces: 3 });
   });
 
-  it('after a downgrade only the 20 most recently added companies alert (PRD-007 US-007.9)', async () => {
+  it('after a downgrade only the 200 most recently added companies alert (PRD-007 US-007.9)', async () => {
     await user('gina');
     const oldest = isin('E00OLD001');
     await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [oldest]);
     await watch('gina', oldest, new Date('2026-01-01T00:00:00Z'));
-    for (let i = 0; i < 20; i++) {
-      const extra = isin(`E00X${String(i).padStart(2, '0')}001`);
+    for (let i = 0; i < 200; i++) {
+      const extra = isin(`E00X${String(i).padStart(3, '0')}001`);
       await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [extra]);
       await watch('gina', extra, new Date(Date.UTC(2026, 1, 1 + i)));
     }

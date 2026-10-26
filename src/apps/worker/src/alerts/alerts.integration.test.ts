@@ -192,7 +192,7 @@ describe.skipIf(!adminUrl)('alerts end-to-end (PostgreSQL)', () => {
     await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [oldest]);
     await watch('gina', oldest, new Date('2026-01-01T00:00:00Z'));
     for (let i = 0; i < 200; i++) {
-      const extra = isin(`E00X${String(i).padStart(3, '0')}001`);
+      const extra = isin(`E${String(i).padStart(5, '0')}001`);
       await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [extra]);
       await watch('gina', extra, new Date(Date.UTC(2026, 1, 1 + i)));
     }

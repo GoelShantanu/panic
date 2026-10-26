@@ -53,7 +53,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
       await db.query(`INSERT INTO instrument_name (isin, kind, name, valid) VALUES ($1, 'legal', $2, '[2020-01-01,)')`, [i, name]);
       await db.query(`INSERT INTO instrument_code (isin, exchange, code, valid) VALUES ($1, 'NSE', $2, '[2020-01-01,)')`, [i, nse]);
     }
-    for (let n = 0; n < 200; n++) await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [isin(`E00F${String(n).padStart(3, '0')}001`)]);
+    for (let n = 0; n < 200; n++) await db.query(`INSERT INTO instrument (isin, segment) VALUES ($1, 'mainboard')`, [isin(`E${String(n).padStart(5, '0')}001`)]);
     await db.query(`INSERT INTO source (source_id, name, kind, tier, cadence) VALUES ('src_desk', 'Example Desk', 'article', 3, '{}')`);
     const u = await db.query(
       `INSERT INTO app_user (public_id, username, email, email_verified_at, age_confirmed_at, terms_accepted_at, privacy_consent_at)
@@ -95,7 +95,7 @@ describe.skipIf(!adminUrl)('watchlist, alert settings, unread (PostgreSQL)', () 
     });
 
     it('the free tier stops at 200 with the standard 402 body', async () => {
-      for (let n = 0; n < 200; n++) expect((await call('POST', '/v1/watchlist', { isin: isin(`E00F${String(n).padStart(3, '0')}001`) })).status).toBe(201);
+      for (let n = 0; n < 200; n++) expect((await call('POST', '/v1/watchlist', { isin: isin(`E${String(n).padStart(5, '0')}001`) })).status).toBe(201);
       expect(await call('POST', '/v1/watchlist', { isin: A })).toMatchObject({ status: 402, body: upgradeRequired('watchlist_limit') });
       await db.query('DELETE FROM watchlist_entry WHERE user_id = $1', [userId]);
     });

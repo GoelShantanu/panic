@@ -35,7 +35,16 @@ cd /opt/stockpanic/current
 sudo docker compose -f docs/ops/oracle/compose.yaml up -d
 
 echo "[$(date -u --iso-8601=seconds)] Applying database migrations..."
-sudo docker compose -f docs/ops/oracle/compose.yaml exec -T web npm run db:migrate || true
+if ! sudo docker compose -f docs/ops/oracle/compose.yaml exec -T web npm run db:migrate; then
+  echo "[$(date -u --iso-8601=seconds)] ERROR: Database migration failed!"
+  send_telegram "🚨 <b>BazaarPanic Deployment FAILED</b>
+━━━━━━━━━━━━━━━━━━━━
+Status: <b>MIGRATION ERROR 🔴</b>
+Commit: <code>${commit_sha}</code>
+Message: <i>${commit_msg}</i>
+Action: Database migration aborted. Please inspect logs."
+  exit 1
+fi
 
 sudo docker image prune -f
 
@@ -52,8 +61,19 @@ for i in $(seq 1 6); do
   sleep 2
 done
 
-echo "[$(date -u --iso-8601=seconds)] Deployment complete. Status:"
+echo "[$(date -u --iso-8601=seconds)] Deployment complete. Status: ${web_status}"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+if [ "$web_status" != "200" ]; then
+  send_telegram "🚨 <b>BazaarPanic Deployment UNHEALTHY</b>
+━━━━━━━━━━━━━━━━━━━━
+Status: <b>HEALTH CHECK FAILED (HTTP ${web_status}) 🔴</b>
+Time: <code>${ist_time}</code>
+Commit: <code>${commit_sha}</code>
+Message: <i>${commit_msg}</i>
+Public URL: https://bazaarpanic.com"
+  exit 1
+fi
 
 msg="🚀 <b>BazaarPanic Deployment Complete</b>
 ━━━━━━━━━━━━━━━━━━━━

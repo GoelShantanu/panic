@@ -25,13 +25,12 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_DB: stockpanic_ci
           # Disposable service only; published exclusively on the runner's loopback.
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 127.0.0.1:5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d stockpanic_ci"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
@@ -51,6 +50,8 @@ jobs:
         run: npm ci
       - name: Typecheck
         run: npm run typecheck
+      - name: Create CI database
+        run: docker exec -i ${{ job.services.postgres.id }} psql -U postgres -c "CREATE DATABASE stockpanic_ci;"
       - name: Apply migrations
         run: npm run db:migrate
       - name: Verify database constraints
@@ -99,7 +100,7 @@ jobs:
           retention-days: 7
   docker-publish:
     name: Build & Publish Docker Image to GHCR
-    needs: [verify]
+    needs: [verify, browser]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:

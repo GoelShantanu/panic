@@ -18,7 +18,7 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
   const dbName = `sp_api_${randomBytes(4).toString('hex')}`;
   let admin: pg.Client;
   let db: pg.Client;
-  const now = new Date();
+  const now = new Date(Math.floor(Date.now() / 1000) * 1000);
   const ago = (h: number) => new Date(now.getTime() - h * 3600_000);
   const ids: Record<string, { id: string; pub: string }> = {};
   const get = async (path: string) => route(db, 'GET', new URL(`http://test${path}`), now);
@@ -134,7 +134,9 @@ describe.skipIf(!adminUrl)('read API (PostgreSQL)', () => {
       await db.query(`INSERT INTO source_fetch_state (source_id, latest_published_at, publication_observed_at) VALUES ('src_desk', $1, $2)`, [ago(24), now]);
       const s = body(await get('/v1/sources/status')).sources;
       expect(s.map((x: any) => x.source_id)).toEqual(['src_desk']); // retired exchange sources are not advertised
-      expect(s[0]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale', last_success_at: now, latest_published_at: ago(24) });
+      expect(s[0]).toMatchObject({ name: 'Example Desk', tier: 3, health: 'stale' });
+      expect(new Date(s[0].last_success_at).getTime()).toBe(now.getTime());
+      expect(new Date(s[0].latest_published_at).getTime()).toBe(ago(24).getTime());
       expect(JSON.stringify(s)).not.toContain('503');
       await db.query(`UPDATE source_health SET state = 'healthy', last_error = NULL WHERE source_id = 'src_desk'`);
     });

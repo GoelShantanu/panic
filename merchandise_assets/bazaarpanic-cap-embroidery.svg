@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <!-- 3D Puff Embroidery Crown Emblem -->
+  <g transform="translate(150, 150) scale(1.75)">
+    <!-- Squircle Border -->
+    <rect x="55" y="55" width="290" height="290" rx="52" fill="none" stroke="#F5F5F0" stroke-width="20" stroke-linejoin="round" />
+    <!-- Diagonal Divider -->
+    <path d="M 62,338 L 308,92" fill="none" stroke="#F5F5F0" stroke-width="16" stroke-linecap="round" />
+    <!-- Bull (Upper Left) -->
+    <path fill="#F5F5F0" d="M 88,252 L 104,188 L 128,154 L 158,136 L 178,132 L 214,84 L 224,90 L 196,128 L 248,104 L 252,112 L 212,136 L 230,154 L 214,180 L 194,180 L 182,166 L 164,194 L 142,228 L 116,262 Z" />
+    <!-- Bear (Lower Right) -->
+    <path fill="#F5F5F0" d="M 312,156 L 312,284 L 276,314 L 234,314 L 216,288 L 194,268 L 184,244 L 168,226 L 188,220 L 200,230 L 210,210 L 234,190 L 248,162 L 262,168 L 258,190 L 290,178 Z" />
+  </g>
+</svg>

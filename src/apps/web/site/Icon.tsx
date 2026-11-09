@@ -37,22 +37,23 @@ export function Icon({ name, size = 18, strokeWidth = 1.7 }: { name: IconName; s
   );
 }
 
-// The brand mark: News Signal tile with Bull, Bear, and blue alert notification dot.
+// The brand mark: Geometric Precision News Signal tile with Bull, Bear, and blue alert notification dot.
 export function BrandMark({ size = 28 }: { size?: number }) {
   return (
-    <svg className="brand-mark" width={size} height={size} viewBox="40 25 330 330" role="img" aria-hidden="true" focusable="false">
+    <svg className="brand-mark" width={size} height={size} viewBox="40 35 325 320" role="img" aria-hidden="true" focusable="false">
       <defs>
         <mask id="bp-signal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400">
           <path fill="#FFFFFF" d="M0 0H400V400H0Z" />
-          <circle cx="327" cy="66" r="47" fill="#000000" />
+          <circle cx="330" cy="70" r="44" fill="#000000" />
         </mask>
       </defs>
       <g mask="url(#bp-signal-mask)">
-        <rect className="brand-signal-tile" x="55" y="57" width="286" height="286" rx="49" fill="none" stroke="#14243A" strokeWidth="17" />
-        <path className="brand-signal-bull" fill="#14243A" d="M300 91 145 271 125 263 116 248 103 243 92 231 92 219 108 204 120 184 132 173C113 171 102 161 100 147C98 138 101 130 106 123C106 140 118 150 135 148C130 134 133 117 146 103C141 123 145 138 156 144Z" />
-        <path className="brand-signal-bear" fill="#245FC2" d="M316 107V303Q316 318 301 318H109L207 204C209 194 215 187 224 188C231 188 237 194 238 201C248 191 259 191 266 198C269 201 271 205 271 211C283 212 292 219 298 229L318 240 326 252 317 263 300 265C295 279 286 287 271 290L260 306H145Z" />
+        <rect className="brand-signal-tile" x="55" y="55" width="290" height="290" rx="52" fill="none" stroke="#14243A" strokeWidth="16" />
+        <path className="brand-signal-beam" d="M 62,338 L 308,92" fill="none" stroke="#14243A" strokeWidth="12" strokeLinecap="round" />
+        <path className="brand-signal-bull" fill="#14243A" d="M 88,252 L 104,188 L 128,154 L 158,136 L 178,132 L 214,84 L 224,90 L 196,128 L 248,104 L 252,112 L 212,136 L 230,154 L 214,180 L 194,180 L 182,166 L 164,194 L 142,228 L 116,262 Z" />
+        <path className="brand-signal-bear" fill="#245FC2" d="M 312,156 L 312,284 L 276,314 L 234,314 L 216,288 L 194,268 L 184,244 L 168,226 L 188,220 L 200,230 L 210,210 L 234,190 L 248,162 L 262,168 L 258,190 L 290,178 Z" />
       </g>
-      <circle className="brand-signal-dot" cx="327" cy="66" r="34" fill="#245FC2" />
+      <circle className="brand-signal-dot" cx="330" cy="70" r="28" fill="#245FC2" />
     </svg>
   );
 }

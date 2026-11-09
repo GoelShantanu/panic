@@ -141,7 +141,8 @@ button { font: inherit; color: inherit; }
 .brand-bazaar { color: var(--text); }
 .brand-panic { color: #245fc2; }
 :root[data-theme='dark'] .brand-panic { color: #3b82f6; }
-:root[data-theme='dark'] .brand-signal-tile { stroke: #94a3b8; }
+:root[data-theme='dark'] .brand-signal-tile,
+:root[data-theme='dark'] .brand-signal-beam { stroke: #94a3b8; }
 :root[data-theme='dark'] .brand-signal-bull { fill: #f8fafc; }
 :root[data-theme='dark'] .brand-signal-bear,
 :root[data-theme='dark'] .brand-signal-dot { fill: #3b82f6; }
@@ -149,7 +150,8 @@ button { font: inherit; color: inherit; }
 :root[data-theme='dark'] .brand-ribbon-right { fill: #2563eb; stroke: #3b82f6; stroke-width: 4px; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .brand-panic { color: #3b82f6; }
-  :root:not([data-theme='light']) .brand-signal-tile { stroke: #94a3b8; }
+  :root:not([data-theme='light']) .brand-signal-tile,
+  :root:not([data-theme='light']) .brand-signal-beam { stroke: #94a3b8; }
   :root:not([data-theme='light']) .brand-signal-bull { fill: #f8fafc; }
   :root:not([data-theme='light']) .brand-signal-bear,
   :root:not([data-theme='light']) .brand-signal-dot { fill: #3b82f6; }

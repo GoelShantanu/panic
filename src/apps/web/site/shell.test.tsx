@@ -26,6 +26,8 @@ describe('session label (PRD-001 US-001.7 AC-1)', () => {
   it('halted resumes; holiday opens', () => {
     expect(sessionLabel({ state: 'halted', exchange_date: '2026-10-05', next_transition_at: '2026-10-05T06:15:00Z' }, at('2026-10-05T05:40:00Z'))).toBe('Halted · resumes 11:45 IST');
     expect(sessionLabel({ state: 'holiday', exchange_date: '2026-10-02', next_transition_at: null }, at('2026-10-02T06:00:00Z'))).toBe('Holiday');
+    expect(sessionLabel({ state: 'holiday', exchange_date: '2026-11-10', next_transition_at: '2026-11-11T03:30:00Z' }, at('2026-11-10T06:00:00Z'))).toBe('Holiday · opens Wed 09:00 IST');
+    expect(sessionLabel({ state: 'closed', exchange_date: '2026-11-09', next_transition_at: '2026-11-11T03:30:00Z' }, at('2026-11-09T16:30:00Z'))).toBe('Closed · opens Wed 09:00 IST');
   });
 });
 

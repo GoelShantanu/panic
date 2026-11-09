@@ -71,7 +71,9 @@ describe.skipIf(!adminUrl)('trading calendar and Trending (PostgreSQL)', () => {
   describe('calendar', () => {
     it('session state follows the 2026 calendar, skipping midnights to the next real change', async () => {
       expect(b(await get('/v1/stream', NOW)).session).toMatchObject({ state: 'open', next_transition_at: istInstant('2026-10-05', '15:30') });
-      expect(b(await get('/v1/stream', istInstant('2026-10-02', '12:00'))).session).toMatchObject({ state: 'holiday', next_transition_at: istInstant('2026-10-03', '00:00') });
+      expect(b(await get('/v1/stream', istInstant('2026-10-02', '12:00'))).session).toMatchObject({ state: 'holiday', next_transition_at: istInstant('2026-10-05', '09:00'), holiday_name: 'Mahatma Gandhi Jayanti' });
+      expect(b(await get('/v1/stream', istInstant('2026-11-09', '20:00'))).session).toMatchObject({ state: 'closed', next_transition_at: istInstant('2026-11-11', '09:00'), holiday_name: 'Diwali-Balipratipada' });
+      expect(b(await get('/v1/stream', istInstant('2026-11-10', '12:00'))).session).toMatchObject({ state: 'holiday', next_transition_at: istInstant('2026-11-11', '09:00'), holiday_name: 'Diwali-Balipratipada' });
       expect(b(await get('/v1/stream', istInstant('2026-10-09', '16:00'))).session).toMatchObject({ state: 'closed', next_transition_at: istInstant('2026-10-12', '09:00') });
       const muhurat = await calendarDay(db, '2026-11-08');
       expect(muhurat.periods.map((p: any) => p.session)).toEqual(['closed', 'special', 'closed']);

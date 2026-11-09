@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { EVENT_TYPES, VIEW_VOTE_THRESHOLD, normaliseName, voteDisplay } from '@stockpanic/core';
+import { EVENT_TYPES, VIEW_VOTE_THRESHOLD, istDate, normaliseName, voteDisplay } from '@stockpanic/core';
 import type { DirectionalDisplay, EventTypeCode, VoteDisplay } from '@stockpanic/core';
 
 // Read side for PRD-001 (stream), PRD-004 (story, company), PRD-002 §8.3 (instrument),
@@ -218,6 +218,7 @@ export interface SessionInfo {
   state: string;
   exchange_date: string;
   next_transition_at: Date | null;
+  holiday_name?: string | null;
 }
 
 export async function sessionInfo(db: pg.ClientBase, now: Date): Promise<SessionInfo> {
@@ -227,12 +228,56 @@ export async function sessionInfo(db: pg.ClientBase, now: Date): Promise<Session
     [now],
   );
   if (cur.rows[0]) {
-    // Days are stored separately, so the next transition is the next period of a different state.
-    const next = await db.query(`SELECT starts_at FROM trading_session WHERE starts_at >= $1 AND session <> $2 ORDER BY starts_at LIMIT 1`, [cur.rows[0].ends_at, cur.rows[0].session]);
-    return { state: cur.rows[0].session, exchange_date: cur.rows[0].exchange_date, next_transition_at: next.rows[0]?.starts_at ?? null };
+    const current = cur.rows[0];
+    let nextTransitionAt: Date | null = null;
+    let holidayName: string | null = null;
+
+    if (current.session === 'holiday') {
+      const h = await db.query(`SELECT name FROM market_holiday WHERE holiday_date = $1`, [current.exchange_date]);
+      holidayName = h.rows[0]?.name ?? null;
+    }
+
+    if (current.session === 'open' || current.session === 'pre_open' || current.session === 'special' || current.session === 'halted') {
+      nextTransitionAt = current.ends_at;
+    } else {
+      // Inactive (closed or holiday): next transition is when trading opens next.
+      const next = await db.query(
+        `SELECT starts_at FROM trading_session
+          WHERE starts_at >= $1 AND session IN ('pre_open', 'open', 'special')
+          ORDER BY starts_at ASC LIMIT 1`,
+        [current.ends_at],
+      );
+      nextTransitionAt = next.rows[0]?.starts_at ?? null;
+
+      // When closed and an upcoming holiday occurs before the next opening, identify it
+      if (!holidayName && nextTransitionAt) {
+        const nextDate = istDate(nextTransitionAt);
+        const upcoming = await db.query(
+          `SELECT name FROM market_holiday
+            WHERE holiday_date > $1::date AND holiday_date < $2::date
+            ORDER BY holiday_date ASC LIMIT 1`,
+          [current.exchange_date, nextDate],
+        );
+        if (upcoming.rows[0]?.name) {
+          holidayName = upcoming.rows[0].name;
+        }
+      }
+    }
+
+    return {
+      state: current.session,
+      exchange_date: current.exchange_date,
+      next_transition_at: nextTransitionAt,
+      ...(holidayName ? { holiday_name: holidayName } : {}),
+    };
   }
-  const next = await db.query(`SELECT starts_at FROM trading_session WHERE starts_at > $1 ORDER BY starts_at LIMIT 1`, [now]);
-  const ist = new Date(now.getTime() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const next = await db.query(
+    `SELECT starts_at FROM trading_session
+      WHERE starts_at > $1 AND session IN ('pre_open', 'open', 'special')
+      ORDER BY starts_at ASC LIMIT 1`,
+    [now],
+  );
+  const ist = istDate(now);
   return { state: 'closed', exchange_date: ist, next_transition_at: next.rows[0]?.starts_at ?? null };
 }
 

@@ -27,6 +27,7 @@ export interface SessionInfo {
   state: string;
   exchange_date: string;
   next_transition_at: string | null;
+  holiday_name?: string | null;
 }
 
 const STATE_LABEL: Record<string, string> = {

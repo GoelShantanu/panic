@@ -21,6 +21,11 @@ export function SessionStatus({ initial }: { initial: SessionInfo | null }) {
   if (!session) return null;
   // "Closed · opens Mon 09:00 IST": the state and its detail stack in the desktop rail.
   const [state, detail] = sessionLabel(session).split(' · ');
+  const title = session.holiday_name
+    ? session.state === 'holiday'
+      ? `${session.holiday_name} (Exchange Holiday) · Exchange date ${session.exchange_date}`
+      : `Market holiday: ${session.holiday_name} · Exchange date ${session.exchange_date}`
+    : `Exchange date ${session.exchange_date}`;
   return (
     <>
       {reconnecting && (
@@ -28,7 +33,7 @@ export function SessionStatus({ initial }: { initial: SessionInfo | null }) {
           Reconnecting…
         </span>
       )}
-      <span className="session" data-state={session.state} title={`Exchange date ${session.exchange_date}`}>
+      <span className="session" data-state={session.state} title={title}>
         <span className="session-state">
           <span className="session-dot" aria-hidden="true" />
           {state}

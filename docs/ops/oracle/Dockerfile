@@ -5,7 +5,7 @@ COPY package.json package-lock.json ./
 COPY src ./src
 COPY docs/database/migrations ./docs/database/migrations
 COPY tsconfig.json ./tsconfig.json
-RUN npm ci && npm run web:build
+RUN npm ci && npm run web:build && npm prune --production && rm -rf src/apps/web/.next/cache
 ENV NODE_ENV=production
 USER node
 CMD ["node", "src/apps/web/src/cli/serve.ts"]

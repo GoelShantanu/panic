@@ -29,15 +29,7 @@ export interface PulseScreenProps {
 
 function formatIstTime(isoString: string): string {
   try {
-    const d = new Date(isoString);
-    return new Intl.DateTimeFormat('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(d) + ' IST';
+    return `${istDateTime(isoString)} IST`;
   } catch {
     return isoString;
   }

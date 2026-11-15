@@ -12,9 +12,16 @@ export class WindowLimiter {
     this.#windowMs = windowMs;
   }
 
+  // Prune expired counters to free memory.
+  prune(now: number = Date.now()): void {
+    for (const [k, v] of this.#hits) {
+      if (now - v.start >= this.#windowMs) this.#hits.delete(k);
+    }
+  }
+
   // True when the request is allowed (and counted).
   allow(key: string, now: number = Date.now()): boolean {
-    if (this.#hits.size > 50_000) for (const [k, v] of this.#hits) if (now - v.start >= this.#windowMs) this.#hits.delete(k);
+    if (this.#hits.size > 10_000) this.prune(now);
     const cur = this.#hits.get(key);
     if (!cur || now - cur.start >= this.#windowMs) {
       this.#hits.set(key, { start: now, n: 1 });
@@ -31,3 +38,11 @@ export const authAttemptsPerIp = new WindowLimiter(30, 15 * 60_000);
 export const passwordAttemptsPerAccount = new WindowLimiter(10, 15 * 60_000);
 // Public grievance form: a flood would bury real complaints that carry legal deadlines.
 export const grievancesPerIp = new WindowLimiter(5, 3600_000);
+
+const ALL_LIMITERS = [codeRequestsPerIp, authAttemptsPerIp, passwordAttemptsPerAccount, grievancesPerIp];
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const limiter of ALL_LIMITERS) limiter.prune(now);
+  }, 5 * 60_000).unref();
+}

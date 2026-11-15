@@ -167,11 +167,18 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, sit
       // everyone for LATEST_CACHE_MS, and concurrent misses wait for it (D-050).
       const cacheable = req.method === 'GET' && url.pathname === '/v1/stream' && url.search === '' && !sessionToken;
       if (cacheable) {
-        const fresh = latestCache && latestCache.until > Date.now() ? latestCache.body : await (latestPending ?? Promise.resolve(null));
-        if (fresh) {
+        if (latestCache && latestCache.until > Date.now()) {
           res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-          res.end(fresh);
+          res.end(latestCache.body);
           return;
+        }
+        if (latestPending) {
+          const fresh = await latestPending;
+          if (fresh) {
+            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(fresh);
+            return;
+          }
         }
       }
       // Past capacity, fail fast rather than queue for tens of seconds (QA load test, D-050).
@@ -181,17 +188,18 @@ export function createApiServer(pool: pg.Pool, deps: AuthDeps | null = null, sit
         return;
       }
       let settle: ((v: string | null) => void) | undefined;
-      if (cacheable) latestPending = new Promise((r) => (settle = r));
+      if (cacheable) latestPending = new Promise((r) => { settle = r; });
       try {
         client = await pool.connect();
         const r = await route(client, req.method ?? 'GET', url, new Date(), { body, sessionToken, ip: clientIp(req) }, deps);
         const text = r.status === 204 || r.status === 302 ? undefined : JSON.stringify(r.body);
         if (cacheable && r.status === 200 && text) latestCache = { until: Date.now() + LATEST_CACHE_MS, body: text };
         settle?.(cacheable && r.status === 200 ? (text ?? null) : null);
+        latestPending = null;
         res.writeHead(r.status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(r.headers ?? {}) });
         res.end(text);
       } finally {
-        if (cacheable) {
+        if (cacheable && latestPending) {
           settle?.(null);
           latestPending = null;
         }

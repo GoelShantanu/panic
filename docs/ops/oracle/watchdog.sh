@@ -87,7 +87,11 @@ Top Processes by CPU:
   fi
 
   # 2. Container Health Check
-  expected_containers=("bazaarnews-db-1" "bazaarnews-web-1" "bazaarnews-live-1" "bazaarnews-ingest-1" "bazaarnews-alerts-1" "bazaarnews-pipeline-1" "bazaarnews-account-1")
+  if docker ps --format '{{.Names}}' | grep -q "bazaarnews-worker-1"; then
+    expected_containers=("bazaarnews-db-1" "bazaarnews-web-1" "bazaarnews-live-1" "bazaarnews-worker-1")
+  else
+    expected_containers=("bazaarnews-db-1" "bazaarnews-web-1" "bazaarnews-live-1" "bazaarnews-ingest-1" "bazaarnews-alerts-1" "bazaarnews-pipeline-1" "bazaarnews-account-1")
+  fi
   missing_or_unhealthy=()
 
   for c in "${expected_containers[@]}"; do

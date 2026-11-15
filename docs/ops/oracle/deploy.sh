@@ -42,7 +42,7 @@ Action: Could not pull container from GHCR. Deployment aborted."
 fi
 
 cd /opt/stockpanic/current
-sudo docker compose -f docs/ops/oracle/compose.yaml up -d
+sudo docker compose -f docs/ops/oracle/compose.yaml up -d --remove-orphans
 
 echo "[$(date -u --iso-8601=seconds)] Applying database migrations..."
 if ! sudo docker compose -f docs/ops/oracle/compose.yaml exec -T web npm run db:migrate; then
@@ -93,7 +93,7 @@ Time: <code>${ist_time}</code>
 • Public URL: https://bazaarpanic.com
 
 🐳 <b>CONTAINERS</b>
-• All 7 stack services up & healthy
+• All stack services up & healthy
 • Obsolete images automatically pruned"
 
 send_telegram "$msg"

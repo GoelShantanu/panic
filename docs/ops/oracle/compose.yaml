@@ -61,17 +61,24 @@ services:
     environment:
       PORT: "3003"
       HOST: "0.0.0.0"
+  worker:
+    <<: *app
+    command: [node, src/apps/worker/src/cli/unified.ts]
   ingest:
     <<: *app
+    profiles: ["split"]
     command: [node, src/apps/worker/src/cli/ingest.ts]
   pipeline:
     <<: *app
+    profiles: ["split"]
     command: [node, src/apps/worker/src/cli/pipeline.ts]
   account:
     <<: *app
+    profiles: ["split"]
     command: [node, src/apps/worker/src/cli/account.ts]
   alerts:
     <<: *app
+    profiles: ["split"]
     command: [node, src/apps/worker/src/cli/alerts.ts]
 
 secrets:

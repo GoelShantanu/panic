@@ -19,13 +19,13 @@ export interface Viewer {
 export function Header({ session, viewer }: { session: SessionInfo | null; viewer: Viewer | null }) {
   return (
     <header className="header">
-      <a href="/" className="brand" aria-label="BazaarPanic home">
+      <Link href="/" className="brand" aria-label="BazaarPanic home">
         <BrandMark />
         <span className="brand-name">
           <span className="brand-bazaar">Bazaar</span>
           <span className="brand-panic">Panic</span>
         </span>
-      </a>
+      </Link>
       <NavLinks signedIn={!!viewer} />
       <Search />
       <div className="header-spacer" />

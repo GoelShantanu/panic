@@ -5,8 +5,8 @@
 import { createServer } from 'node:http';
 import type { ServerResponse } from 'node:http';
 import pg from 'pg';
-import { LIVE_CHANNEL, liveEventBounds, liveEventsAfter, loadStoryCards, storyIdByPublicId } from '@stockpanic/db';
-import type { LiveEventRow } from '@stockpanic/db';
+import { LIVE_CHANNEL, liveEventBounds, liveEventsAfter, loadStoryCards } from '@stockpanic/db';
+import type { LiveEventRow, StoryCard } from '@stockpanic/db';
 
 export interface LiveServerOptions {
   pool: pg.Pool;
@@ -41,12 +41,35 @@ const REPLAY_LIMIT = 1_000;
 // bound fan-out (QA load test, D-049); the frames and their order are unchanged.
 const COALESCE_MS = 250;
 
-async function toFrame(db: pg.ClientBase, row: LiveEventRow): Promise<Frame | null> {
+async function loadStoryCardsForRows(db: pg.ClientBase, rows: LiveEventRow[]): Promise<Map<string, StoryCard>> {
+  const publicIds = new Set<string>();
+  for (const r of rows) {
+    if ((r.type === 'story.created' || r.type === 'story.updated') && typeof r.payload['story_id'] === 'string') {
+      publicIds.add(r.payload['story_id'] as string);
+    }
+  }
+  if (publicIds.size === 0) return new Map();
+  const { rows: idRows } = await db.query<{ id: string; public_id: string }>(
+    'SELECT id, public_id FROM story WHERE public_id = ANY($1)',
+    [[...publicIds]]
+  );
+  const publicToInternal = new Map<string, string>();
+  for (const row of idRows) publicToInternal.set(row.public_id, String(row.id));
+  const internalIds = [...publicToInternal.values()];
+  const cardsByInternalId = await loadStoryCards(db, internalIds);
+  const cardsByPublicId = new Map<string, StoryCard>();
+  for (const [pub, internal] of publicToInternal) {
+    const card = cardsByInternalId.get(internal);
+    if (card) cardsByPublicId.set(pub, card);
+  }
+  return cardsByPublicId;
+}
+
+function rowToFrame(row: LiveEventRow, cards: Map<string, StoryCard>): Frame | null {
   let data: Record<string, unknown>;
   if (row.type === 'story.created' || row.type === 'story.updated') {
     const publicId = row.payload['story_id'];
-    const id = typeof publicId === 'string' ? await storyIdByPublicId(db, publicId) : null;
-    const card = id ? (await loadStoryCards(db, [id])).get(id) : undefined;
+    const card = typeof publicId === 'string' ? cards.get(publicId) : undefined;
     if (!card) return null;
     if (row.type === 'story.created') {
       data = { type: row.type, story: card };
@@ -91,9 +114,10 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
         for (;;) {
           const rows = await liveEventsAfter(db, lastBroadcast.toString(), REPLAY_LIMIT);
           if (rows.length === 0) break;
+          const cards = await loadStoryCardsForRows(db, rows);
           const batch: Frame[] = [];
           for (const row of rows) {
-            const frame = await toFrame(db, row);
+            const frame = rowToFrame(row, cards);
             lastBroadcast = BigInt(row.id);
             if (frame) batch.push(frame);
           }
@@ -170,9 +194,10 @@ export async function startLiveServer(opts: LiveServerOptions, port = 0): Promis
           while (after < lastBroadcast) {
             const rows = await liveEventsAfter(db, after.toString(), REPLAY_LIMIT);
             if (rows.length === 0) break;
+            const cards = await loadStoryCardsForRows(db, rows);
             for (const row of rows) {
               if (BigInt(row.id) > lastBroadcast) break;
-              const frame = await toFrame(db, row);
+              const frame = rowToFrame(row, cards);
               if (frame) send(client, frame);
               after = BigInt(row.id);
             }

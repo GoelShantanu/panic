@@ -77,8 +77,8 @@ export function getIndianMarketStatus(session?: SessionInfo | null, date: Date =
     return {
       isOpen: false,
       statusKind: 'closed',
-      badgeText: 'Market Closed (Holiday)',
-      tooltip: 'NSE/BSE Indian stock market is CLOSED for an exchange holiday',
+      badgeText: session.holiday_name ? `Market Closed (${session.holiday_name})` : 'Market Closed (Holiday)',
+      tooltip: session.holiday_name ? `NSE/BSE Indian stock market is CLOSED for ${session.holiday_name}` : 'NSE/BSE Indian stock market is CLOSED for an exchange holiday',
     };
   }
 
